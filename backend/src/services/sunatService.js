@@ -2,6 +2,16 @@ const axios = require('axios');
 
 const APIS_TOKEN = process.env.APIS_NET_PE_TOKEN || 'sk_15754.TlOTUeK0utOb5ZcrmNy1DOrnMXo8p9Yk';
 
+
+const validarDigitoRUC = (ruc) => {
+  const factores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  let suma = 0;
+  for (let i = 0; i < 10; i++) suma += parseInt(ruc[i]) * factores[i];
+  const resto = suma % 11;
+  const digitoCalculado = resto < 2 ? resto : 11 - resto;
+  return digitoCalculado === parseInt(ruc[10]);
+};
+
 const consultarRUC = async (ruc) => {
   try {
     if (!/^\d{11}$/.test(ruc)) {
