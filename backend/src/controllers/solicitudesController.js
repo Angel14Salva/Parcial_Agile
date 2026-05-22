@@ -44,21 +44,14 @@ const registrarSolicitud = async (req, res) => {
       }
     }
 
-    // Verificar si ya tiene negocio registrado
-    const negocioExiste = await client.query(
-      'SELECT id FROM negocios WHERE usuario_id = $1',
-      [req.usuario.id]
+    // Verificar que el RUC no esté registrado por OTRO usuario
+    const rucOtroUsuario = await client.query(
+      'SELECT n.id FROM negocios n WHERE n.ruc = $1 AND n.usuario_id != $2',
+      [ruc, req.usuario.id]
     );
-    if (negocioExiste.rows[0]) {
+    if (rucOtroUsuario.rows[0]) {
       await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'Ya tienes un negocio registrado' });
-    }
-
-    // Verificar RUC único
-    const rucExiste = await client.query('SELECT id FROM negocios WHERE ruc = $1', [ruc]);
-    if (rucExiste.rows[0]) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'El RUC ya tiene un trámite registrado' });
+      return res.status(409).json({ error: 'Este RUC ya está registrado por otra cuenta' });
     }
 
     // Crear negocio
