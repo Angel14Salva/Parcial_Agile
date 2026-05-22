@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/shared/Layout';
 import api from '../../services/api';
-import { FileText, PlusCircle, Download, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { FileText, PlusCircle, Download, Clock, CheckCircle, XCircle, AlertCircle, Upload } from 'lucide-react';
 
 const ESTADOS = {
   pendiente_pago: { label: 'Pendiente de pago', color: 'bg-gray-100 text-gray-700', icon: Clock },
@@ -18,6 +18,8 @@ const ESTADOS = {
 
 export default function MisSolicitudes() {
   const [solicitudes, setSolicitudes] = useState([]);
+  const [subiendoDocs, setSubiendoDocs] = useState(null);
+  const [archivoCorregido, setArchivoCorregido] = useState(null);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -26,6 +28,20 @@ export default function MisSolicitudes() {
       .catch(() => {})
       .finally(() => setCargando(false));
   }, []);
+
+  const subirDocsCorregidos = async (solicitudId) => {
+    if (!archivoCorregido) { toast.error('Selecciona un archivo'); return; }
+    const fd = new FormData();
+    fd.append('plano', archivoCorregido);
+    try {
+      await api.post('/solicitudes/' + solicitudId + '/subir-docs-corregidos', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      toast.success('Documentos corregidos enviados correctamente');
+      setSubiendoDocs(null);
+      setArchivoCorregido(null);
+      const r = await api.get('/solicitudes/mis-solicitudes');
+      setSolicitudes(r.data);
+    } catch (err) { toast.error(err.response?.data?.error || 'Error al subir'); }
+  };
 
   const descargarLicencia = async (id) => {
     try {
@@ -102,8 +118,24 @@ export default function MisSolicitudes() {
 
                 {sol.estado === 'observado' && (
                   <div className="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
-                    <p className="font-medium">Tu solicitud tiene observaciones.</p>
-                    <p>Se programará una segunda visita técnica en 30 días hábiles. Realiza las correcciones indicadas por el inspector.</p>
+                    <p className="font-medium mb-2">Tu solicitud tiene observaciones. Realiza las correcciones y sube los documentos corregidos si aplica.</p>
+                    {subiendoDocs === sol.id ? (
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer bg-white border border-orange-300 rounded-lg p-2">
+                          <Upload className="w-4 h-4 text-orange-600"/>
+                          <span className="text-xs">{archivoCorregido ? archivoCorregido.name : 'Seleccionar documento corregido'}</span>
+                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setArchivoCorregido(e.target.files[0])}/>
+                        </label>
+                        <div className="flex gap-2">
+                          <button onClick={() => subirDocsCorregidos(sol.id)} className="text-xs bg-orange-600 text-white px-3 py-1.5 rounded-lg hover:bg-orange-700">Enviar</button>
+                          <button onClick={() => { setSubiendoDocs(null); setArchivoCorregido(null); }} className="text-xs border border-orange-300 px-3 py-1.5 rounded-lg">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => setSubiendoDocs(sol.id)} className="text-xs bg-orange-600 text-white px-3 py-1.5 rounded-lg hover:bg-orange-700 flex items-center gap-1">
+                        <Upload className="w-3 h-3"/> Subir documentos corregidos
+                      </button>
+                    )}
                   </div>
                 )}
                 {sol.estado === 'denegado' && (

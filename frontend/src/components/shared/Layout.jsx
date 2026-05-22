@@ -6,9 +6,11 @@ const menuPorRol = {
   negocio: [
     { to: '/mis-solicitudes', icon: FileText, label: 'Mis solicitudes' },
     { to: '/nueva-solicitud', icon: PlusCircle, label: 'Nueva solicitud' },
+    { to: '/mis-licencias', icon: FileText, label: 'Mis licencias' },
   ],
   inspector: [
     { to: '/inspector', icon: ClipboardList, label: 'Mis inspecciones' },
+    { to: '/supervisiones', icon: ClipboardList, label: 'Supervisiones' },
   ],
   municipalidad: [
     { to: '/municipalidad', icon: Home, label: 'Dashboard' },

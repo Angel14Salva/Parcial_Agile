@@ -295,7 +295,36 @@ const verificarLicencia = async (req, res) => {
   }
 };
 
+
+// POST /api/solicitudes/:id/subir-docs-corregidos
+const subirDocsCorregidos = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ error: 'No se subio ningun archivo' });
+    const { rows } = await db.query(
+      'SELECT s.*, n.usuario_id FROM solicitudes s JOIN negocios n ON s.negocio_id = n.id WHERE s.id = $1',
+      [id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Solicitud no encontrada' });
+    if (rows[0].usuario_id !== req.usuario.id) return res.status(403).json({ error: 'No autorizado' });
+    if (rows[0].estado !== 'observado') return res.status(400).json({ error: 'La solicitud no tiene observaciones pendientes' });
+    const planoUrl = '/uploads/' + req.file.filename;
+    await db.query(
+      'UPDATE solicitudes SET plano_url = $1, plano_actualizado = TRUE WHERE id = $2',
+      [planoUrl, id]
+    );
+    await db.query(
+      'UPDATE inspecciones SET docs_corregidos = TRUE WHERE solicitud_id = $1 AND numero_inspeccion = 1',
+      [id]
+    );
+    res.json({ mensaje: 'Documentos corregidos subidos correctamente', planoUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al subir documentos' });
+  }
+};
+
 module.exports = {
   validarRUC, registrarSolicitud, procesarPagoSolicitud, subirPlano,
-  misSolicitudes, todasSolicitudes, programarInspeccion, verificarLicencia
+  misSolicitudes, todasSolicitudes, programarInspeccion, verificarLicencia, subirDocsCorregidos
 };

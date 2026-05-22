@@ -43,6 +43,7 @@ router.post('/solicitudes/registrar', autenticar, autorizar('negocio'), solicitu
 router.post('/solicitudes/:id/pagar', autenticar, autorizar('negocio'), solicitudesCtrl.procesarPagoSolicitud);
 router.post('/solicitudes/:id/subir-plano', autenticar, autorizar('negocio'),
   upload.single('plano'), solicitudesCtrl.subirPlano);
+router.post('/solicitudes/:id/subir-docs-corregidos', autenticar, autorizar('negocio'), upload.single('plano'), solicitudesCtrl.subirDocsCorregidos);
 router.get('/solicitudes/mis-solicitudes', autenticar, autorizar('negocio'), solicitudesCtrl.misSolicitudes);
 
 // ── LICENCIAS (descarga - negocio autenticado) ───────────────
@@ -113,5 +114,20 @@ router.get('/municipalidad/inspectores', autenticar, autorizar('municipalidad'),
     res.status(500).json({ error: 'Error al obtener inspectores' });
   }
 });
+
+
+const renovacionCtrl = require('../controllers/renovacionController');
+const supervisionCtrl = require('../controllers/supervisionController');
+
+// RENOVACION (negocio)
+router.get('/renovaciones/mis-licencias', autenticar, autorizar('negocio'), renovacionCtrl.misLicencias);
+router.post('/renovaciones/:licenciaId/renovar', autenticar, autorizar('negocio'), renovacionCtrl.renovarLicencia);
+
+// SUPERVISIONES (inspector)
+router.get('/supervisiones/licencias-activas', autenticar, autorizar('inspector'), supervisionCtrl.licenciasActivas);
+router.post('/supervisiones/:licenciaId/registrar', autenticar, autorizar('inspector'), supervisionCtrl.registrarSupervision);
+
+// SUPERVISIONES (municipalidad)
+router.get('/supervisiones/historial', autenticar, autorizar('municipalidad'), supervisionCtrl.listarSupervisiones);
 
 module.exports = router;

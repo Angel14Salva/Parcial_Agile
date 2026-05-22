@@ -26,6 +26,13 @@ export default function PanelMunicipalidad() {
   const [formInsp, setFormInsp] = useState({ inspectorId: '', fechaProgramada: '', horaProgramada: '' });
   const [enviando, setEnviando] = useState(false);
   const [tabActiva, setTabActiva] = useState('dashboard');
+  const [historialSupervisiones, setHistorialSupervisiones] = useState([]);
+
+  useEffect(() => {
+    if (tabActiva === 'supervisiones') {
+      api.get('/supervisiones/historial').then(r => setHistorialSupervisiones(r.data)).catch(() => {});
+    }
+  }, [tabActiva]);
 
   const cargar = () => {
     api.get('/municipalidad/stats').then(r => setStats(r.data)).catch(() => {});
@@ -64,7 +71,7 @@ export default function PanelMunicipalidad() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
-        {[['dashboard', 'Dashboard'], ['solicitudes', 'Solicitudes'], ['programar', 'Programar Inspecciones']].map(([key, label]) => (
+        {[['dashboard', 'Dashboard'], ['solicitudes', 'Solicitudes'], ['programar', 'Programar Inspecciones'], ['supervisiones', 'Supervisiones']].map(([key, label]) => (
           <button key={key} onClick={() => setTabActiva(key)}
             className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors
               ${tabActiva === key ? 'border-blue-700 text-blue-800' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
@@ -129,6 +136,34 @@ export default function PanelMunicipalidad() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* SUPERVISIONES */}
+      {tabActiva === 'supervisiones' && (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500">Historial de supervisiones realizadas ({historialSupervisiones.length})</p>
+          {historialSupervisiones.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">No hay supervisiones registradas</div>
+          ) : historialSupervisiones.map(sv => (
+            <div key={sv.id} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-gray-800 text-sm">{sv.razon_social}</p>
+                  <p className="text-xs text-gray-500">Licencia: {sv.numero_licencia} · Inspector: {sv.inspector_email}</p>
+                  <p className="text-xs text-gray-400">{new Date(sv.creado_en).toLocaleDateString('es-PE')}</p>
+                  {sv.observaciones && <p className="text-xs text-gray-600 mt-1">{sv.observaciones}</p>}
+                  {sv.multa_aplicada && <p className="text-xs text-red-600 font-medium mt-1">Multa: S/ {sv.multa_monto}</p>}
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={"text-xs font-medium px-2 py-0.5 rounded-full " + (sv.resultado === 'conforme' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>
+                    {sv.resultado === 'conforme' ? 'Conforme' : 'Infraccion'}
+                  </span>
+                  {sv.licencia_revocada && <span className="text-xs bg-red-200 text-red-800 px-2 py-0.5 rounded-full font-bold">Revocada</span>}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

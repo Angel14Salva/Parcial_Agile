@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard';
 import NuevaSolicitud from './pages/negocio/NuevaSolicitud';
 import MisSolicitudes from './pages/negocio/MisSolicitudes';
 import PanelInspector from './pages/inspector/PanelInspector';
+import Supervisiones from './pages/inspector/Supervisiones';
+import MisLicencias from './pages/negocio/MisLicencias';
 import PanelMunicipalidad from './pages/municipalidad/PanelMunicipalidad';
 import VerificarLicencia from './pages/VerificarLicencia';
 
@@ -35,9 +37,11 @@ export default function App() {
           {/* Negocio */}
           <Route path="/nueva-solicitud" element={<ProtectedRoute roles={['negocio']}><NuevaSolicitud /></ProtectedRoute>} />
           <Route path="/mis-solicitudes" element={<ProtectedRoute roles={['negocio']}><MisSolicitudes /></ProtectedRoute>} />
+          <Route path="/mis-licencias" element={<ProtectedRoute roles={['negocio']}><MisLicencias /></ProtectedRoute>} />
 
           {/* Inspector */}
           <Route path="/inspector" element={<ProtectedRoute roles={['inspector']}><PanelInspector /></ProtectedRoute>} />
+          <Route path="/supervisiones" element={<ProtectedRoute roles={['inspector']}><Supervisiones /></ProtectedRoute>} />
 
           {/* Municipalidad */}
           <Route path="/municipalidad" element={<ProtectedRoute roles={['municipalidad']}><PanelMunicipalidad /></ProtectedRoute>} />
