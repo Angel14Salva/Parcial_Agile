@@ -1,4 +1,5 @@
 import { useAuth } from '../../hooks/useAuth';
+import { useInactividad } from '../../hooks/useInactividad';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Building2, LogOut, FileText, PlusCircle, Home, Users, ClipboardList } from 'lucide-react';
 
@@ -19,6 +20,7 @@ const menuPorRol = {
 
 export default function Layout({ children }) {
   const { usuario, logout } = useAuth();
+  useInactividad();
   const navigate = useNavigate();
   const location = useLocation();
   const menu = menuPorRol[usuario?.rol] || [];
