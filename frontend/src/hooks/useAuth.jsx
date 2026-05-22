@@ -11,9 +11,27 @@ export const AuthProvider = ({ children }) => {
     const stored = localStorage.getItem('usuario');
     const token = localStorage.getItem('token');
     if (stored && token) {
-      setUsuario(JSON.parse(stored));
+      // Verificar si el token sigue válido con el backend
+      fetch((import.meta.env.VITE_API_URL || '/api') + '/auth/perfil', {
+        headers: { Authorization: 'Bearer ' + token }
+      })
+        .then(res => {
+          if (res.ok) {
+            setUsuario(JSON.parse(stored));
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+          }
+          setCargando(false);
+        })
+        .catch(() => {
+          // Si falla la red, mantener sesión para no bloquear al usuario
+          setUsuario(JSON.parse(stored));
+          setCargando(false);
+        });
+    } else {
+      setCargando(false);
     }
-    setCargando(false);
   }, []);
 
   const login = async (email, password) => {
