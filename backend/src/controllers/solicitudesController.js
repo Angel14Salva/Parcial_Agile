@@ -1,5 +1,5 @@
 const db = require('../../config/db');
-const { consultarRUC } = require('../services/sunatService');
+const { consultarRUC, consultarDNI } = require('../services/sunatService');
 // Culqi reemplazado por simulador de pago para demo académica
 const { generarLicenciaPDF } = require('../services/pdfService');
 const { v4: uuidv4 } = require('uuid');
@@ -33,6 +33,15 @@ const registrarSolicitud = async (req, res) => {
     if (!sunat.valido) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: sunat.error });
+    }
+
+    // Validar DNI del representante legal
+    if (repDni) {
+      const reniec = await consultarDNI(repDni);
+      if (!reniec.valido) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'DNI del representante: ' + reniec.error });
+      }
     }
 
     // Verificar si ya tiene negocio registrado

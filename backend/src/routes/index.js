@@ -39,6 +39,12 @@ router.get('/auth/perfil', autenticar, authCtrl.perfil);
 
 // ── SOLICITUDES (negocio) ────────────────────────────────────
 router.post('/solicitudes/validar-ruc', autenticar, autorizar('negocio'), solicitudesCtrl.validarRUC);
+router.post('/solicitudes/validar-dni', autenticar, autorizar('negocio'), async (req, res) => {
+  const { consultarDNI } = require('../services/sunatService');
+  const { dni } = req.body;
+  const resultado = await consultarDNI(dni);
+  res.json(resultado);
+});
 router.post('/solicitudes/registrar', autenticar, autorizar('negocio'), solicitudesCtrl.registrarSolicitud);
 router.post('/solicitudes/:id/pagar', autenticar, autorizar('negocio'), solicitudesCtrl.procesarPagoSolicitud);
 router.post('/solicitudes/:id/subir-plano', autenticar, autorizar('negocio'),
