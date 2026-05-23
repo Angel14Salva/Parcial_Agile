@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Nueva solicitud | Licencias Municipales</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style> body { background: #f0f4f8; } </style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/dashboard">
+      <i class="bi bi-building me-2"></i>Licencias Municipales
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:640px">
+  <div class="mb-4">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
+        <li class="breadcrumb-item active">Nueva solicitud</li>
+      </ol>
+    </nav>
+    <h4 class="fw-bold">Datos del negocio</h4>
+    <p class="text-muted small">Paso 1 de 3 — Ingresa los datos de identificación de tu negocio.</p>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <form th:action="@{/solicitud/nueva}" method="post" th:object="${solicitudDto}">
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Razón social <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{razonSocial}" class="form-control"
+                 th:classappend="${#fields.hasErrors('razonSocial')} ? 'is-invalid'"
+                 placeholder="Ej: Empresa Ejemplo S.A.C." required/>
+          <div class="invalid-feedback" th:errors="*{razonSocial}"></div>
+          <div class="form-text">Debe coincidir exactamente con el registro de SUNAT.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Domicilio fiscal <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{domicilioFiscal}" class="form-control"
+                 th:classappend="${#fields.hasErrors('domicilioFiscal')} ? 'is-invalid'"
+                 placeholder="Ej: Av. Los Pinos 123, Lima" required/>
+          <div class="invalid-feedback" th:errors="*{domicilioFiscal}"></div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Rubro del negocio <span class="text-danger">*</span></label>
+          <select th:field="*{rubro}" class="form-select"
+                  th:classappend="${#fields.hasErrors('rubro')} ? 'is-invalid'" required>
+            <option value="">-- Selecciona el rubro --</option>
+            <option th:each="r : ${rubros}" th:value="${r}" th:text="${r}"></option>
+          </select>
+          <div class="invalid-feedback" th:errors="*{rubro}"></div>
+        </div>
+
+        <div class="alert alert-info py-2 small mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          Los datos serán validados contra SUNAT antes de admitir la solicitud.
+        </div>
+
+        <div class="d-flex gap-2">
+          <a href="/dashboard" class="btn btn-outline-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-primary">
+            Continuar <i class="bi bi-arrow-right ms-2"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

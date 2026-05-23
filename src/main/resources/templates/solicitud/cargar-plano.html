@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Cargar plano</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>body{background:#f0f4f8}</style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container"><a class="navbar-brand fw-bold" href="/dashboard"><i class="bi bi-building me-2"></i>Licencias Municipales</a></div>
+</nav>
+<div class="container" style="max-width:640px">
+  <div class="mb-4">
+    <p class="text-muted small">Paso 2 de 3 — Carga el plano de tu local.</p>
+    <h4 class="fw-bold">Plano del local</h4>
+  </div>
+  <div th:if="${error}" class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span></div>
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <form th:action="@{/solicitud/{id}/plano(id=${solicitud.id})}" method="post" enctype="multipart/form-data">
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Archivo del plano <span class="text-danger">*</span></label>
+          <input type="file" name="plano" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required/>
+          <div class="form-text">Formatos: PDF, JPG, PNG. Máximo 10 MB.</div>
+        </div>
+        <div class="alert alert-warning py-2 small">
+          <i class="bi bi-exclamation-triangle me-2"></i>El plano debe reflejar fielmente la distribución actual del local.
+        </div>
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn btn-primary">Continuar <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body></html>
