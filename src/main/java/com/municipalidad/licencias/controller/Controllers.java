@@ -2,10 +2,9 @@ package com.municipalidad.licencias.controller;
 
 import com.municipalidad.licencias.dto.*;
 import com.municipalidad.licencias.model.*;
-import com.municipalidad.licencias.repository.Repositories.UsuarioRepository;
+import com.municipalidad.licencias.repository.UsuarioRepository;
 import com.municipalidad.licencias.service.*;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,10 +14,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.util.List;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// AUTH CONTROLLER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Auth ──────────────────────────────────────────────────────────────────────
 @Controller
 @RequestMapping("/auth")
 class AuthController {
@@ -27,28 +25,32 @@ class AuthController {
     String loginPage(@RequestParam(required = false) String error,
                      @RequestParam(required = false) String logout,
                      Model model) {
-        if (error != null)  model.addAttribute("error", "Usuario o contraseña incorrectos.");
-        if (logout != null) model.addAttribute("msg", "Sesión cerrada correctamente.");
+        if (error  != null) model.addAttribute("error", "Usuario o contraseña incorrectos.");
+        if (logout != null) model.addAttribute("msg",   "Sesión cerrada correctamente.");
         return "auth/login";
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// DASHBOARD CONTROLLER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 @Controller
-@RequiredArgsConstructor
 class DashboardController {
 
     private final UsuarioRepository usuarioRepo;
     private final SolicitudService solicitudService;
     private final InspeccionService inspeccionService;
 
+    DashboardController(UsuarioRepository usuarioRepo,
+                        SolicitudService solicitudService,
+                        InspeccionService inspeccionService) {
+        this.usuarioRepo       = usuarioRepo;
+        this.solicitudService  = solicitudService;
+        this.inspeccionService = inspeccionService;
+    }
+
     @GetMapping("/dashboard")
     String dashboard(@AuthenticationPrincipal UserDetails ud, Model model) {
         Usuario usuario = getUsuario(ud);
         model.addAttribute("usuario", usuario);
-
         if (usuario.getRol() == Enums.Rol.NEGOCIO) {
             model.addAttribute("solicitudes", solicitudService.obtenerPorUsuario(usuario));
             return "solicitud/dashboard-negocio";
@@ -68,17 +70,22 @@ class DashboardController {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SOLICITUD CONTROLLER (negocio)
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Solicitud ─────────────────────────────────────────────────────────────────
 @Controller
 @RequestMapping("/solicitud")
-@RequiredArgsConstructor
 class SolicitudController {
 
     private final SolicitudService solicitudService;
-    private final LicenciaService licenciaService;
+    private final LicenciaService  licenciaService;
     private final UsuarioRepository usuarioRepo;
+
+    SolicitudController(SolicitudService solicitudService,
+                        LicenciaService licenciaService,
+                        UsuarioRepository usuarioRepo) {
+        this.solicitudService = solicitudService;
+        this.licenciaService  = licenciaService;
+        this.usuarioRepo      = usuarioRepo;
+    }
 
     @GetMapping("/nueva")
     String nuevaForm(Model model) {
@@ -149,23 +156,26 @@ class SolicitudController {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// INSPECTOR CONTROLLER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Inspector ─────────────────────────────────────────────────────────────────
 @Controller
 @RequestMapping("/inspector")
-@RequiredArgsConstructor
 class InspectorController {
 
     private final InspeccionService inspeccionService;
-    private final LicenciaService licenciaService;
-    private final SolicitudService solicitudService;
+    private final LicenciaService   licenciaService;
     private final UsuarioRepository usuarioRepo;
+
+    InspectorController(InspeccionService inspeccionService,
+                        LicenciaService licenciaService,
+                        UsuarioRepository usuarioRepo) {
+        this.inspeccionService = inspeccionService;
+        this.licenciaService   = licenciaService;
+        this.usuarioRepo       = usuarioRepo;
+    }
 
     @GetMapping("/inspeccion/{id}")
     String verInspeccion(@PathVariable Long id, Model model) {
-        Inspeccion inspeccion = inspeccionService.obtenerPorId(id);
-        model.addAttribute("inspeccion", inspeccion);
+        model.addAttribute("inspeccion", inspeccionService.obtenerPorId(id));
         model.addAttribute("dto", new ResultadoInspeccionDto());
         return "inspector/registrar-resultado";
     }
@@ -174,7 +184,6 @@ class InspectorController {
     String registrarResultado(@PathVariable Long id,
                               @Valid @ModelAttribute("dto") ResultadoInspeccionDto dto,
                               BindingResult errors,
-                              @AuthenticationPrincipal UserDetails ud,
                               RedirectAttributes ra, Model model) {
         if (errors.hasErrors()) {
             model.addAttribute("inspeccion", inspeccionService.obtenerPorId(id));
@@ -182,7 +191,6 @@ class InspectorController {
         }
         try {
             Inspeccion inspeccion = inspeccionService.registrarResultado(id, dto);
-            // Si aprobado → emitir licencia automáticamente
             if (inspeccion.getResultado() == Enums.ResultadoInspeccion.CONFORME) {
                 licenciaService.emitirLicencia(inspeccion.getSolicitud());
                 ra.addFlashAttribute("exito", "Trámite aprobado y licencia emitida.");
@@ -197,15 +205,16 @@ class InspectorController {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// LICENCIA CONTROLLER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Licencia ──────────────────────────────────────────────────────────────────
 @Controller
 @RequestMapping("/licencia")
-@RequiredArgsConstructor
 class LicenciaController {
 
     private final LicenciaService licenciaService;
+
+    LicenciaController(LicenciaService licenciaService) {
+        this.licenciaService = licenciaService;
+    }
 
     @GetMapping("/{id}/descargar")
     ResponseEntity<byte[]> descargar(@PathVariable Long id) {
@@ -242,17 +251,22 @@ class LicenciaController {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// FISCALIZACION CONTROLLER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Fiscalización ─────────────────────────────────────────────────────────────
 @Controller
 @RequestMapping("/fiscalizacion")
-@RequiredArgsConstructor
 class FiscalizacionController {
 
     private final FiscalizacionService fiscalizacionService;
-    private final LicenciaService licenciaService;
-    private final UsuarioRepository usuarioRepo;
+    private final LicenciaService      licenciaService;
+    private final UsuarioRepository    usuarioRepo;
+
+    FiscalizacionController(FiscalizacionService fiscalizacionService,
+                             LicenciaService licenciaService,
+                             UsuarioRepository usuarioRepo) {
+        this.fiscalizacionService = fiscalizacionService;
+        this.licenciaService      = licenciaService;
+        this.usuarioRepo          = usuarioRepo;
+    }
 
     @GetMapping("/licencia/{id}/oficio")
     String inspeccionOficioForm(@PathVariable Long id, Model model) {
@@ -292,21 +306,12 @@ class FiscalizacionController {
 
 // ── Catálogo de rubros ────────────────────────────────────────────────────────
 class Rubros {
-    static final java.util.List<String> LISTA = java.util.List.of(
-        "Bodega / Abarrotes",
-        "Restaurante / Comida",
-        "Farmacia / Botica",
-        "Ferretería",
-        "Salón de belleza / Peluquería",
-        "Taller mecánico",
-        "Tienda de ropa / Calzado",
-        "Librería / Papelería",
-        "Consultorio médico / Dental",
-        "Gimnasio / Centro deportivo",
-        "Hotel / Hospedaje",
-        "Panadería / Pastelería",
-        "Lavandería",
-        "Agencia de viajes",
-        "Otro"
+    static final List<String> LISTA = List.of(
+        "Bodega / Abarrotes", "Restaurante / Comida", "Farmacia / Botica",
+        "Ferretería", "Salón de belleza / Peluquería", "Taller mecánico",
+        "Tienda de ropa / Calzado", "Librería / Papelería",
+        "Consultorio médico / Dental", "Gimnasio / Centro deportivo",
+        "Hotel / Hospedaje", "Panadería / Pastelería", "Lavandería",
+        "Agencia de viajes", "Otro"
     );
 }

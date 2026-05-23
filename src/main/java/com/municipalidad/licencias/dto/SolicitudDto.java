@@ -1,14 +1,8 @@
 package com.municipalidad.licencias.dto;
 
-import com.municipalidad.licencias.model.Enums;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
-import java.util.List;
 
-// ── Solicitud ─────────────────────────────────────────────────────────────────
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class SolicitudDto {
 
     @NotBlank(message = "La razón social es obligatoria.")
@@ -21,4 +15,13 @@ public class SolicitudDto {
 
     @NotBlank(message = "El rubro es obligatorio.")
     private String rubro;
+
+    public SolicitudDto() {}
+
+    public String getRazonSocial()         { return razonSocial; }
+    public String getDomicilioFiscal()     { return domicilioFiscal; }
+    public String getRubro()               { return rubro; }
+    public void setRazonSocial(String v)   { this.razonSocial = v; }
+    public void setDomicilioFiscal(String v){ this.domicilioFiscal = v; }
+    public void setRubro(String v)         { this.rubro = v; }
 }

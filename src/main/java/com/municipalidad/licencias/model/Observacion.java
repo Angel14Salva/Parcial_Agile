@@ -1,12 +1,10 @@
 package com.municipalidad.licencias.model;
 
 import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "observaciones")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Observacion {
 
     @Id
@@ -24,16 +22,42 @@ public class Observacion {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String descripcion;
 
-    // Solo si tipo == DOCUMENTAL: URL del archivo corregido
     private String documentoCorregidoUrl;
-
     private boolean subsanada = false;
     private LocalDateTime fechaSubsanacion;
-
     private LocalDateTime creadoEn;
 
     @PrePersist
-    void prePersist() {
-        this.creadoEn = LocalDateTime.now();
+    void prePersist() { this.creadoEn = LocalDateTime.now(); }
+
+    public Observacion() {}
+
+    public static Builder builder() { return new Builder(); }
+
+    public static class Builder {
+        private Inspeccion inspeccion;
+        private Enums.TipoObservacion tipo;
+        private String descripcion;
+
+        public Builder inspeccion(Inspeccion v)      { this.inspeccion = v; return this; }
+        public Builder tipo(Enums.TipoObservacion v) { this.tipo = v; return this; }
+        public Builder descripcion(String v)         { this.descripcion = v; return this; }
+
+        public Observacion build() {
+            Observacion o = new Observacion();
+            o.inspeccion = this.inspeccion;
+            o.tipo = this.tipo;
+            o.descripcion = this.descripcion;
+            return o;
+        }
     }
+
+    public Long getId()                        { return id; }
+    public Inspeccion getInspeccion()          { return inspeccion; }
+    public Enums.TipoObservacion getTipo()     { return tipo; }
+    public String getDescripcion()             { return descripcion; }
+    public boolean isSubsanada()               { return subsanada; }
+    public void setSubsanada(boolean v)        { this.subsanada = v; }
+    public void setFechaSubsanacion(LocalDateTime v) { this.fechaSubsanacion = v; }
+    public void setDocumentoCorregidoUrl(String v)   { this.documentoCorregidoUrl = v; }
 }

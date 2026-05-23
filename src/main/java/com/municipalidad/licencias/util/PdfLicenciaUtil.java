@@ -3,6 +3,7 @@ package com.municipalidad.licencias.util;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import com.municipalidad.licencias.model.Licencia;
+import com.municipalidad.licencias.model.Solicitud;
 
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
@@ -20,32 +21,29 @@ public class PdfLicenciaUtil {
             PdfWriter.getInstance(doc, out);
             doc.open();
 
-            // Encabezado
             Font fuenteTitulo = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD, BaseColor.WHITE);
             PdfPTable header = new PdfPTable(1);
             header.setWidthPercentage(100);
-            PdfPCell celdaHeader = new PdfPCell(new Phrase("MUNICIPALIDAD\nLICENCIA DE FUNCIONAMIENTO", fuenteTitulo));
+            PdfPCell celdaHeader = new PdfPCell(
+                new Phrase("MUNICIPALIDAD\nLICENCIA DE FUNCIONAMIENTO", fuenteTitulo));
             celdaHeader.setBackgroundColor(AZUL_MUNICIPAL);
             celdaHeader.setPadding(20);
             celdaHeader.setHorizontalAlignment(Element.ALIGN_CENTER);
             celdaHeader.setBorder(Rectangle.NO_BORDER);
             header.addCell(celdaHeader);
             doc.add(header);
-
             doc.add(Chunk.NEWLINE);
 
-            // Número de licencia destacado
             Font fuenteNumero = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, VERDE_VIGENTE);
             Paragraph numPar = new Paragraph("N.º " + licencia.getNumeroLicencia(), fuenteNumero);
             numPar.setAlignment(Element.ALIGN_CENTER);
             doc.add(numPar);
-
             doc.add(Chunk.NEWLINE);
 
-            // Datos del negocio
-            Solicitud s = licencia.getSolicitud();
             Font fuenteLabel = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, AZUL_MUNICIPAL);
             Font fuenteValor = new Font(Font.FontFamily.HELVETICA, 11, Font.NORMAL, BaseColor.BLACK);
+
+            Solicitud s = licencia.getSolicitud();
 
             PdfPTable tabla = new PdfPTable(2);
             tabla.setWidthPercentage(100);
@@ -64,18 +62,15 @@ public class PdfLicenciaUtil {
                 licencia.getFechaVencimiento().format(FMT), fuenteLabel, fuenteValor);
             agregarFila(tabla, "Estado:",
                 licencia.getEstado().name(), fuenteLabel, fuenteValor);
-
             doc.add(tabla);
 
             doc.add(Chunk.NEWLINE);
             doc.add(Chunk.NEWLINE);
 
-            // Nota legal
             Font fuenteNota = new Font(Font.FontFamily.HELVETICA, 8, Font.ITALIC, BaseColor.GRAY);
             Paragraph nota = new Paragraph(
                 "Esta licencia debe estar colocada en un lugar visible dentro del establecimiento. " +
-                "La municipalidad se reserva el derecho de realizar inspecciones de fiscalización " +
-                "en cualquier momento para verificar el cumplimiento de las condiciones declaradas.",
+                "La municipalidad se reserva el derecho de realizar inspecciones en cualquier momento.",
                 fuenteNota);
             nota.setAlignment(Element.ALIGN_JUSTIFIED);
             doc.add(nota);
@@ -84,7 +79,7 @@ public class PdfLicenciaUtil {
             return out.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException("Error generando PDF de licencia: " + e.getMessage(), e);
+            throw new RuntimeException("Error generando PDF: " + e.getMessage(), e);
         }
     }
 
@@ -102,12 +97,5 @@ public class PdfLicenciaUtil {
 
         tabla.addCell(cLabel);
         tabla.addCell(cValor);
-    }
-
-    // Clase interna para evitar import circular
-    static class Solicitud {
-        String getRazonSocial() { return ""; }
-        String getDomicilioFiscal() { return ""; }
-        String getRubro() { return ""; }
     }
 }

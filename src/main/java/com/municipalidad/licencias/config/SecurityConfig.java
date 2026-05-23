@@ -1,9 +1,7 @@
 package com.municipalidad.licencias.config;
 
-import com.municipalidad.licencias.model.Enums;
 import com.municipalidad.licencias.model.Usuario;
-import com.municipalidad.licencias.repository.Repositories.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
+import com.municipalidad.licencias.repository.UsuarioRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,15 +11,17 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final UsuarioRepository usuarioRepo;
+
+    public SecurityConfig(UsuarioRepository usuarioRepo) {
+        this.usuarioRepo = usuarioRepo;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -53,7 +53,6 @@ public class SecurityConfig {
         return username -> {
             Usuario usuario = usuarioRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
-
             return new org.springframework.security.core.userdetails.User(
                 usuario.getUsername(),
                 usuario.getPassword(),
