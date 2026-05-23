@@ -1,0 +1,40 @@
+package com.municipalidad.licencias.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "usuarios")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class Usuario {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String username;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Enums.Rol rol;
+
+    private String nombreCompleto;
+
+    @Column(nullable = false)
+    private boolean activo = true;
+
+    private LocalDateTime creadoEn;
+
+    @PrePersist
+    void prePersist() {
+        this.creadoEn = LocalDateTime.now();
+    }
+}

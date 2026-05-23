@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Inspección de oficio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>body{background:#f0f4f8} #secInfraccion{display:none}</style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container"><a class="navbar-brand fw-bold" href="/dashboard"><i class="bi bi-building me-2"></i>Licencias Municipales</a></div>
+</nav>
+<div class="container" style="max-width:640px">
+  <h4 class="fw-bold mb-1">Inspección de oficio</h4>
+  <p class="text-muted small mb-4" th:text="'Licencia: ' + ${licencia.numeroLicencia}"></p>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body small">
+      <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">Razón social</dt>
+        <dd class="col-sm-8 fw-bold" th:text="${licencia.solicitud.razonSocial}"></dd>
+        <dt class="col-sm-4 text-muted">Domicilio</dt>
+        <dd class="col-sm-8" th:text="${licencia.solicitud.domicilioFiscal}"></dd>
+        <dt class="col-sm-4 text-muted">Vence el</dt>
+        <dd class="col-sm-8" th:text="${#temporals.format(licencia.fechaVencimiento,'dd/MM/yyyy')}"></dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <form th:action="@{/fiscalizacion/licencia/{id}/oficio(id=${licencia.id})}"
+            method="post" th:object="${dto}">
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Resultado <span class="text-danger">*</span></label>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" th:field="*{resultado}"
+                     value="CONFORME" id="sinNov" onchange="toggleInfr(this.value)"/>
+              <label class="form-check-label text-success fw-semibold" for="sinNov">Sin novedad</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" th:field="*{resultado}"
+                     value="CON_OBSERVACIONES" id="conInfr" onchange="toggleInfr(this.value)"/>
+              <label class="form-check-label text-danger fw-semibold" for="conInfr">Con infracción</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- E6-US04: licencia visible -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">¿Licencia visible en el local? <span class="text-danger">*</span></label>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" th:field="*{licenciaVisible}" value="true" id="visibleSi"/>
+              <label class="form-check-label" for="visibleSi">Sí</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" th:field="*{licenciaVisible}" value="false" id="visibleNo"/>
+              <label class="form-check-label text-warning" for="visibleNo">No (genera alerta)</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Notas</label>
+          <textarea th:field="*{notas}" class="form-control" rows="3"></textarea>
+        </div>
+
+        <!-- Infracción -->
+        <div id="secInfraccion" class="border rounded p-3 mb-3" style="background:#fff5f5">
+          <h6 class="fw-semibold text-danger mb-2"><i class="bi bi-exclamation-octagon me-2"></i>Descripción de la infracción</h6>
+          <input type="text" th:field="*{descripcionInfraccion}" class="form-control"
+                 placeholder="Ej: Piso adicional construido sin autorización"/>
+          <div class="mt-3">
+            <p class="small text-muted mb-2">¿Amerita revocación de licencia?</p>
+            <form th:action="@{/fiscalizacion/licencia/{id}/revocar(id=${licencia.id})}"
+                  method="post" class="d-inline">
+              <input type="text" name="motivo" class="form-control form-control-sm mb-2"
+                     placeholder="Motivo de revocación"/>
+              <button type="submit" class="btn btn-danger btn-sm"
+                      onclick="return confirm('¿Confirmar revocación de la licencia?')">
+                <i class="bi bi-x-circle me-1"></i>Revocar licencia
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+          <a href="/dashboard" class="btn btn-outline-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-primary fw-semibold">
+            <i class="bi bi-save me-2"></i>Guardar inspección
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function toggleInfr(val) {
+    document.getElementById('secInfraccion').style.display =
+      val === 'CON_OBSERVACIONES' ? 'block' : 'none';
+  }
+</script>
+</body></html>
