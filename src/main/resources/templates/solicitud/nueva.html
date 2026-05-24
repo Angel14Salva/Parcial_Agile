@@ -449,6 +449,71 @@
     if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnValidarDni').click(); }
   });
 
+  // ── Widget de horario ─────────────────────────────────────────────────────────
+  const diasSeleccionados = new Set();
+  const horarios = [];
+
+  document.querySelectorAll('.dia-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dia = btn.dataset.dia;
+      if (diasSeleccionados.has(dia)) {
+        diasSeleccionados.delete(dia);
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline-primary');
+      } else {
+        diasSeleccionados.add(dia);
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-primary');
+      }
+    });
+  });
+
+  document.getElementById('btnAgregarHorario').addEventListener('click', () => {
+    if (diasSeleccionados.size === 0) {
+      document.getElementById('horarioHint').innerHTML =
+        '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>Selecciona al menos un dia.</span>';
+      return;
+    }
+    const desde = document.getElementById('horaDesde').value;
+    const hasta = document.getElementById('horaHasta').value;
+    if (desde >= hasta) {
+      document.getElementById('horarioHint').innerHTML =
+        '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>La hora de cierre debe ser despues de la apertura.</span>';
+      return;
+    }
+    const orden = ['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
+    const dias = [...diasSeleccionados].sort((a,b) => orden.indexOf(a) - orden.indexOf(b));
+    horarios.push({ dias, desde, hasta });
+    renderHorarios();
+    diasSeleccionados.clear();
+    document.querySelectorAll('.dia-btn').forEach(b => {
+      b.classList.remove('btn-primary');
+      b.classList.add('btn-outline-primary');
+    });
+    document.getElementById('horarioHint').innerHTML =
+      '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Horario agregado.</span>';
+  });
+
+  function renderHorarios() {
+    const lista = document.getElementById('horariosLista');
+    lista.innerHTML = '';
+    horarios.forEach((h, i) => {
+      const div = document.createElement('div');
+      div.className = 'badge bg-primary d-flex align-items-center gap-2 p-2';
+      div.style.fontSize = '.85rem';
+      div.innerHTML = '<i class="bi bi-clock"></i><span>' + h.dias.join(', ') + ' - ' + h.desde + ' a ' + h.hasta + '</span>' +
+        '<button type="button" class="btn-close btn-close-white btn-sm" style="font-size:.55rem" onclick="eliminarHorario(' + i + ')"></button>';
+      lista.appendChild(div);
+    });
+    const texto = horarios.map(h => h.dias.join('-') + ' ' + h.desde + '-' + h.hasta).join(' | ');
+    document.getElementById('inputHorario').value = texto;
+  }
+
+  window.eliminarHorario = function(i) {
+    horarios.splice(i, 1);
+    renderHorarios();
+  };
+
   // ── Rubro "Otro" ────────────────────────────────────────────────────────────
   const selectRubro = document.getElementById('selectRubro');
   const otroDiv     = document.getElementById('otroRubroDiv');
