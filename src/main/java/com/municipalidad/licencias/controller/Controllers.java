@@ -511,3 +511,46 @@ class MultaController {
         return "multas/todas";
     }
 }
+
+// ── API de validación SUNAT/RENIEC (llamadas AJAX desde el formulario) ────────
+@org.springframework.web.bind.annotation.RestController
+@org.springframework.web.bind.annotation.RequestMapping("/api/validar")
+class ValidacionApiController {
+
+    private final com.municipalidad.licencias.service.FactilizaService factilizaService;
+
+    ValidacionApiController(com.municipalidad.licencias.service.FactilizaService factilizaService) {
+        this.factilizaService = factilizaService;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/ruc/{ruc}")
+    org.springframework.http.ResponseEntity<?> consultarRuc(
+        @org.springframework.web.bind.annotation.PathVariable String ruc) {
+        var datos = factilizaService.consultarRuc(ruc);
+        if (datos == null)
+            return org.springframework.http.ResponseEntity.badRequest()
+                .body(java.util.Map.of("error", "RUC no encontrado en SUNAT"));
+        return org.springframework.http.ResponseEntity.ok(datos);
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/dni/{dni}")
+    org.springframework.http.ResponseEntity<?> consultarDni(
+        @org.springframework.web.bind.annotation.PathVariable String dni) {
+        var datos = factilizaService.consultarDni(dni);
+        if (datos == null)
+            return org.springframework.http.ResponseEntity.badRequest()
+                .body(java.util.Map.of("error", "DNI no encontrado en RENIEC"));
+        return org.springframework.http.ResponseEntity.ok(datos);
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/ruc-dni")
+    org.springframework.http.ResponseEntity<?> validarRucDni(
+        @org.springframework.web.bind.annotation.RequestBody java.util.Map<String,String> body) {
+        String ruc = body.get("ruc");
+        String dni = body.get("dni");
+        var resultado = factilizaService.validarRucYDni(ruc, dni);
+        if (!resultado.valido())
+            return org.springframework.http.ResponseEntity.badRequest().body(resultado);
+        return org.springframework.http.ResponseEntity.ok(resultado);
+    }
+}

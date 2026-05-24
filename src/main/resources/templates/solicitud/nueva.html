@@ -2,10 +2,15 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Nueva solicitud | Licencias Municipales</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
-  <style> body { background: #f0f4f8; } </style>
+  <style>
+    body { background: #f0f4f8; }
+    .field-loading { opacity: .6; pointer-events: none; }
+    .check-icon { color: #1D9E75; }
+  </style>
 </head>
 <body>
 <nav class="navbar navbar-dark mb-4" style="background:#1D3557">
@@ -17,38 +22,84 @@
 </nav>
 
 <div class="container" style="max-width:640px">
-  <div class="mb-4">
-    <nav aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
-        <li class="breadcrumb-item active">Nueva solicitud</li>
-      </ol>
-    </nav>
-    <h4 class="fw-bold">Datos del negocio</h4>
-    <p class="text-muted small">Paso 1 de 3 — Ingresa los datos de identificación de tu negocio.</p>
-  </div>
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
+      <li class="breadcrumb-item active">Nueva solicitud</li>
+    </ol>
+  </nav>
+  <h4 class="fw-bold mb-1">Datos del negocio</h4>
+  <p class="text-muted small mb-4">Paso 1 de 3 — Ingresa el RUC y DNI del representante legal para validar automáticamente.</p>
+
+  <!-- Alerta de errores -->
+  <div id="alertaError" class="alert alert-danger d-none"></div>
+  <div id="alertaExito" class="alert alert-success d-none"></div>
 
   <div class="card shadow-sm">
     <div class="card-body p-4">
-      <form th:action="@{/solicitud/nueva}" method="post" th:object="${solicitudDto}">
+      <form th:action="@{/solicitud/nueva}" method="post" th:object="${solicitudDto}" id="formSolicitud">
 
+        <!-- RUC -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Razón social <span class="text-danger">*</span></label>
-          <input type="text" th:field="*{razonSocial}" class="form-control"
-                 th:classappend="${#fields.hasErrors('razonSocial')} ? 'is-invalid'"
-                 placeholder="Ej: Empresa Ejemplo S.A.C." required/>
-          <div class="invalid-feedback" th:errors="*{razonSocial}"></div>
-          <div class="form-text">Debe coincidir exactamente con el registro de SUNAT.</div>
+          <label class="form-label fw-semibold">RUC <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="text" id="inputRuc" class="form-control"
+                   placeholder="Ej: 20552103816" maxlength="11"
+                   pattern="\d{11}" required/>
+            <button type="button" class="btn btn-outline-primary" id="btnBuscarRuc">
+              <i class="bi bi-search me-1"></i>Buscar
+            </button>
+          </div>
+          <div id="rucStatus" class="form-text"></div>
         </div>
 
+        <!-- DNI -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">DNI del representante legal <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="text" id="inputDni" class="form-control"
+                   placeholder="Ej: 12345678" maxlength="8"
+                   pattern="\d{8}" required/>
+            <button type="button" class="btn btn-outline-primary" id="btnValidarDni">
+              <i class="bi bi-person-check me-1"></i>Validar
+            </button>
+          </div>
+          <div id="dniStatus" class="form-text"></div>
+        </div>
+
+        <hr class="my-4"/>
+        <p class="text-muted small mb-3">
+          <i class="bi bi-magic me-1"></i>Los siguientes campos se rellenan automáticamente al validar el RUC.
+        </p>
+
+        <!-- Razón social (autorellenado) -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Razón social <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{razonSocial}" id="inputRazonSocial"
+                 class="form-control"
+                 th:classappend="${#fields.hasErrors('razonSocial')} ? 'is-invalid'"
+                 placeholder="Se autorellena con el RUC" required readonly/>
+          <div class="invalid-feedback" th:errors="*{razonSocial}"></div>
+        </div>
+
+        <!-- Domicilio fiscal (autorellenado) -->
         <div class="mb-3">
           <label class="form-label fw-semibold">Domicilio fiscal <span class="text-danger">*</span></label>
-          <input type="text" th:field="*{domicilioFiscal}" class="form-control"
+          <input type="text" th:field="*{domicilioFiscal}" id="inputDomicilio"
+                 class="form-control"
                  th:classappend="${#fields.hasErrors('domicilioFiscal')} ? 'is-invalid'"
-                 placeholder="Ej: Av. Los Pinos 123, Lima" required/>
+                 placeholder="Se autorellena con el RUC" required readonly/>
           <div class="invalid-feedback" th:errors="*{domicilioFiscal}"></div>
         </div>
 
+        <!-- Nombre representante (autorellenado) -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Representante legal</label>
+          <input type="text" id="inputRepresentante" class="form-control"
+                 placeholder="Se autorellena al validar DNI" readonly/>
+        </div>
+
+        <!-- Rubro -->
         <div class="mb-4">
           <label class="form-label fw-semibold">Rubro del negocio <span class="text-danger">*</span></label>
           <select th:field="*{rubro}" class="form-select"
@@ -59,14 +110,18 @@
           <div class="invalid-feedback" th:errors="*{rubro}"></div>
         </div>
 
-        <div class="alert alert-info py-2 small mb-4">
-          <i class="bi bi-info-circle me-2"></i>
-          Los datos serán validados contra SUNAT antes de admitir la solicitud.
+        <!-- Campo oculto para RUC validado -->
+        <input type="hidden" id="rucValidado" name="rucValidado" value=""/>
+        <input type="hidden" id="dniValidado" name="dniValidado" value=""/>
+
+        <div id="alertaValidacion" class="alert alert-warning d-none mb-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          Debes validar el RUC y el DNI antes de continuar.
         </div>
 
         <div class="d-flex gap-2">
           <a href="/dashboard" class="btn btn-outline-secondary">Cancelar</a>
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary" id="btnContinuar">
             Continuar <i class="bi bi-arrow-right ms-2"></i>
           </button>
         </div>
@@ -76,5 +131,111 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let rucOk = false;
+  let dniOk = false;
+
+  // ── Buscar RUC ──────────────────────────────────────────────────────────────
+  document.getElementById('btnBuscarRuc').addEventListener('click', async () => {
+    const ruc = document.getElementById('inputRuc').value.trim();
+    const status = document.getElementById('rucStatus');
+
+    if (!/^\d{11}$/.test(ruc)) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>El RUC debe tener 11 dígitos.</span>';
+      return;
+    }
+
+    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Consultando SUNAT...</span>';
+    document.getElementById('btnBuscarRuc').disabled = true;
+
+    try {
+      const res = await fetch(`/api/validar/ruc/${ruc}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error}</span>`;
+        rucOk = false;
+      } else {
+        document.getElementById('inputRazonSocial').value = data.razonSocial;
+        document.getElementById('inputDomicilio').value   = data.domicilioFiscal;
+        document.getElementById('rucValidado').value      = ruc;
+        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>RUC encontrado: <strong>${data.razonSocial}</strong> · ${data.condicion}</span>`;
+        rucOk = true;
+      }
+    } catch (e) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión con SUNAT.</span>';
+      rucOk = false;
+    } finally {
+      document.getElementById('btnBuscarRuc').disabled = false;
+    }
+  });
+
+  // ── Validar DNI contra representante del RUC ────────────────────────────────
+  document.getElementById('btnValidarDni').addEventListener('click', async () => {
+    const ruc = document.getElementById('rucValidado').value;
+    const dni = document.getElementById('inputDni').value.trim();
+    const status = document.getElementById('dniStatus');
+
+    if (!rucOk) {
+      status.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Primero busca y valida el RUC.</span>';
+      return;
+    }
+    if (!/^\d{8}$/.test(dni)) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>El DNI debe tener 8 dígitos.</span>';
+      return;
+    }
+
+    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Validando con RENIEC y SUNAT...</span>';
+    document.getElementById('btnValidarDni').disabled = true;
+
+    try {
+      const res = await fetch('/api/validar/ruc-dni', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json',
+                   'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
+        body: JSON.stringify({ ruc, dni })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.mensaje}</span>`;
+        dniOk = false;
+      } else {
+        const nombre = data.datosDni ? data.datosDni.nombreCompleto : '';
+        document.getElementById('inputRepresentante').value = nombre;
+        document.getElementById('dniValidado').value = dni;
+        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>DNI validado: <strong>${nombre}</strong> es representante legal.</span>`;
+        dniOk = true;
+      }
+    } catch (e) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión.</span>';
+      dniOk = false;
+    } finally {
+      document.getElementById('btnValidarDni').disabled = false;
+    }
+  });
+
+  // ── Validar antes de enviar ─────────────────────────────────────────────────
+  document.getElementById('formSolicitud').addEventListener('submit', (e) => {
+    if (!rucOk || !dniOk) {
+      e.preventDefault();
+      document.getElementById('alertaValidacion').classList.remove('d-none');
+      document.getElementById('alertaValidacion').scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // ── Buscar con Enter ────────────────────────────────────────────────────────
+  document.getElementById('inputRuc').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnBuscarRuc').click(); }
+  });
+  document.getElementById('inputDni').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnValidarDni').click(); }
+  });
+
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : '';
+  }
+</script>
 </body>
 </html>
