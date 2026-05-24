@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><title>Observaciones del trámite</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body { background: #f0f4f8; }
+    .obs-card { border-left: 4px solid #ffc107; }
+    .obs-card.subsanada { border-left-color: #198754; opacity: .8; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/dashboard">
+      <i class="bi bi-building me-2"></i>Licencias Municipales
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:720px">
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <a th:href="@{/solicitud/{id}/detalle(id=${solicitud.id})}"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h4 class="fw-bold mb-0">Observaciones del trámite</h4>
+      <p class="text-muted small mb-0" th:text="${solicitud.razonSocial}"></p>
+    </div>
+  </div>
+
+  <!-- Alertas -->
+  <div th:if="${exito}" class="alert alert-success alert-dismissible fade show">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${exito}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- Alerta de fecha límite -->
+  <div class="alert alert-warning d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-clock-history fs-4"></i>
+    <div>
+      <div class="fw-semibold">Plazo para subsanar observaciones</div>
+      <div class="small">Debes corregir todas las observaciones antes del
+        <strong th:text="${fechaLimite}"></strong>.
+        Después se realizará la segunda inspección técnica.
+      </div>
+    </div>
+  </div>
+
+  <!-- Sin observaciones -->
+  <div th:if="${#lists.isEmpty(observaciones)}" class="text-center py-5">
+    <i class="bi bi-clipboard-check text-success" style="font-size:3rem"></i>
+    <p class="text-muted mt-3">No hay observaciones registradas.</p>
+  </div>
+
+  <!-- Lista de observaciones -->
+  <div th:each="obs, stat : ${observaciones}" class="card shadow-sm mb-3"
+       th:classappend="${obs.subsanada} ? 'obs-card subsanada' : 'obs-card'">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <span class="badge me-2"
+                th:classappend="${obs.tipo.name() == 'DOCUMENTAL'} ? 'bg-info text-dark' : 'bg-secondary'"
+                th:text="${obs.tipo.name()}">TIPO</span>
+          <span th:if="${obs.subsanada}" class="badge bg-success">
+            <i class="bi bi-check me-1"></i>Subsanada
+          </span>
+          <span th:unless="${obs.subsanada}" class="badge bg-warning text-dark">
+            Pendiente
+          </span>
+        </div>
+        <small class="text-muted" th:if="${obs.fechaSubsanacion != null}"
+               th:text="'Subsanada el ' + ${#temporals.format(obs.fechaSubsanacion,'dd/MM/yyyy')}">
+        </small>
+      </div>
+
+      <p class="mb-3" th:text="${obs.descripcion}">Descripción</p>
+
+      <!-- Acción según tipo y estado -->
+      <div th:unless="${obs.subsanada}">
+
+        <!-- DOCUMENTAL: subir archivo corregido -->
+        <div th:if="${obs.tipo.name() == 'DOCUMENTAL'}">
+          <form th:action="@{/solicitud/{sid}/observacion/{oid}/subsanar(sid=${solicitud.id},oid=${obs.id})}"
+                method="post" enctype="multipart/form-data">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+              <input type="file" name="archivo" class="form-control form-control-sm"
+                     style="max-width:300px" accept=".pdf,.jpg,.jpeg,.png" required/>
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-upload me-1"></i>Subir documento corregido
+              </button>
+            </div>
+            <div class="form-text mt-1">
+              <i class="bi bi-info-circle me-1"></i>
+              Sube el documento corregido (PDF, JPG o PNG, máx. 10 MB).
+            </div>
+          </form>
+        </div>
+
+        <!-- FÍSICA: solo confirmar corrección en local -->
+        <div th:if="${obs.tipo.name() == 'FISICA'}">
+          <p class="text-muted small mb-2">
+            <i class="bi bi-tools me-1"></i>
+            Esta observación requiere correcciones físicas en el local.
+            Confirma cuando hayas realizado los cambios.
+          </p>
+          <form th:action="@{/solicitud/{sid}/observacion/{oid}/subsanar(sid=${solicitud.id},oid=${obs.id})}"
+                method="post">
+            <button type="submit" class="btn btn-outline-success btn-sm">
+              <i class="bi bi-check-circle me-1"></i>Confirmar corrección en local
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Documento corregido ya subido -->
+      <div th:if="${obs.subsanada and obs.documentoCorregidoUrl != null}"
+           class="text-success small mt-2">
+        <i class="bi bi-file-check me-1"></i>Documento corregido cargado correctamente.
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div th:if="${!#lists.isEmpty(observaciones)}" class="card shadow-sm bg-light mt-4">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Estado general</span>
+      <div>
+        <span class="badge bg-success me-1"
+              th:text="${#lists.size(observaciones.?[subsanada == true])} + ' subsanadas'"></span>
+        <span class="badge bg-warning text-dark"
+              th:text="${#lists.size(observaciones.?[subsanada == false])} + ' pendientes'"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

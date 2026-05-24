@@ -323,3 +323,90 @@ class RootController {
         return "redirect:/dashboard";
     }
 }
+
+// ── Subsanación de observaciones ──────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/solicitud")
+class ObservacionController {
+
+    private final com.municipalidad.licencias.repository.ObservacionRepository observacionRepo;
+    private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
+    private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
+
+    ObservacionController(
+        com.municipalidad.licencias.repository.ObservacionRepository observacionRepo,
+        com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
+        com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo) {
+        this.observacionRepo = observacionRepo;
+        this.solicitudRepo = solicitudRepo;
+        this.inspeccionRepo = inspeccionRepo;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/{id}/observaciones")
+    String verObservaciones(@org.springframework.web.bind.annotation.PathVariable Long id,
+                            org.springframework.ui.Model model) {
+        com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada"));
+
+        // Obtener la última inspección con observaciones
+        java.util.List<com.municipalidad.licencias.model.Inspeccion> inspecciones =
+            inspeccionRepo.findBySolicitud(s);
+
+        com.municipalidad.licencias.model.Inspeccion ultimaConObs = inspecciones.stream()
+            .filter(i -> i.getResultado() ==
+                com.municipalidad.licencias.model.Enums.ResultadoInspeccion.CON_OBSERVACIONES)
+            .reduce((a, b) -> b)
+            .orElse(null);
+
+        java.util.List<com.municipalidad.licencias.model.Observacion> observaciones =
+            ultimaConObs != null
+                ? observacionRepo.findByInspeccion(ultimaConObs)
+                : java.util.List.of();
+
+        // Calcular fecha límite: 30 días hábiles desde la inspección
+        String fechaLimite = "-";
+        if (ultimaConObs != null) {
+            java.time.LocalDate limite = ultimaConObs.getFechaProgramada().plusDays(42); // ~30 días hábiles
+            fechaLimite = limite.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        }
+
+        model.addAttribute("solicitud", s);
+        model.addAttribute("observaciones", observaciones);
+        model.addAttribute("fechaLimite", fechaLimite);
+        return "solicitud/observaciones";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{solicitudId}/observacion/{obsId}/subsanar")
+    String subsanarObservacion(
+        @org.springframework.web.bind.annotation.PathVariable Long solicitudId,
+        @org.springframework.web.bind.annotation.PathVariable Long obsId,
+        @org.springframework.web.bind.annotation.RequestParam(required = false)
+            org.springframework.web.multipart.MultipartFile archivo,
+        org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+
+        com.municipalidad.licencias.model.Observacion obs = observacionRepo.findById(obsId)
+            .orElseThrow(() -> new IllegalArgumentException("Observación no encontrada"));
+
+        if (obs.getTipo() == com.municipalidad.licencias.model.Enums.TipoObservacion.DOCUMENTAL
+            && archivo != null && !archivo.isEmpty()) {
+            try {
+                String nombre = java.util.UUID.randomUUID() + "_" + archivo.getOriginalFilename();
+                java.nio.file.Path destino = java.nio.file.Paths.get("uploads/").resolve(nombre);
+                java.nio.file.Files.createDirectories(destino.getParent());
+                java.nio.file.Files.copy(archivo.getInputStream(), destino,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                obs.setDocumentoCorregidoUrl(nombre);
+            } catch (Exception e) {
+                ra.addFlashAttribute("error", "Error al subir archivo: " + e.getMessage());
+                return "redirect:/solicitud/" + solicitudId + "/observaciones";
+            }
+        }
+
+        obs.setSubsanada(true);
+        obs.setFechaSubsanacion(java.time.LocalDateTime.now());
+        observacionRepo.save(obs);
+
+        ra.addFlashAttribute("exito", "Observación marcada como subsanada.");
+        return "redirect:/solicitud/" + solicitudId + "/observaciones";
+    }
+}
