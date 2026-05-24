@@ -38,14 +38,19 @@ class DashboardController {
     private final UsuarioRepository usuarioRepo;
     private final SolicitudService solicitudService;
     private final InspeccionService inspeccionService;
+    private final com.municipalidad.licencias.service.NotificacionService notificacionService;
+    private final LicenciaService licenciaService;
 
     DashboardController(UsuarioRepository usuarioRepo,
-                        com.municipalidad.licencias.service.NotificacionService notificacionService,
                         SolicitudService solicitudService,
-                        InspeccionService inspeccionService) {
-        this.usuarioRepo       = usuarioRepo;
-        this.solicitudService  = solicitudService;
-        this.inspeccionService = inspeccionService;
+                        InspeccionService inspeccionService,
+                        com.municipalidad.licencias.service.NotificacionService notificacionService,
+                        LicenciaService licenciaService) {
+        this.usuarioRepo         = usuarioRepo;
+        this.solicitudService    = solicitudService;
+        this.inspeccionService   = inspeccionService;
+        this.notificacionService = notificacionService;
+        this.licenciaService     = licenciaService;
     }
 
     @GetMapping("/dashboard")
