@@ -16,6 +16,5 @@ target/
 .factorypath
 uploads/
 /tmp/
-application-prod.properties
 *.env
 .env
