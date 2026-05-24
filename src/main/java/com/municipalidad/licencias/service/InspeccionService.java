@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -21,6 +22,7 @@ public class InspeccionService {
     private final ObservacionRepository observacionRepo;
     private final UsuarioRepository     usuarioRepo;
     private final DiasHabilesUtil       diasHabiles;
+    private final NotificacionService   notificacionService;
 
     @Value("${app.inspeccion.dias-habiles}")
     private int diasHabilesSegundaInspeccion;
@@ -29,12 +31,14 @@ public class InspeccionService {
                              SolicitudRepository solicitudRepo,
                              ObservacionRepository observacionRepo,
                              UsuarioRepository usuarioRepo,
-                             DiasHabilesUtil diasHabiles) {
-        this.inspeccionRepo  = inspeccionRepo;
-        this.solicitudRepo   = solicitudRepo;
-        this.observacionRepo = observacionRepo;
-        this.usuarioRepo     = usuarioRepo;
-        this.diasHabiles     = diasHabiles;
+                             DiasHabilesUtil diasHabiles,
+                             NotificacionService notificacionService) {
+        this.inspeccionRepo      = inspeccionRepo;
+        this.solicitudRepo       = solicitudRepo;
+        this.observacionRepo     = observacionRepo;
+        this.usuarioRepo         = usuarioRepo;
+        this.diasHabiles         = diasHabiles;
+        this.notificacionService = notificacionService;
     }
 
     @Transactional
@@ -43,12 +47,22 @@ public class InspeccionService {
         Usuario inspector = usuarioRepo.findByRol(Enums.Rol.INSPECTOR)
             .stream().findFirst()
             .orElseThrow(() -> new IllegalStateException("No hay inspectores registrados."));
+
         Inspeccion inspeccion = Inspeccion.builder()
             .solicitud(solicitud).inspector(inspector)
             .tipo(Enums.TipoInspeccion.PRIMERA).fechaProgramada(fecha)
             .resultado(Enums.ResultadoInspeccion.PENDIENTE).build();
+
         solicitud.setEstado(Enums.EstadoTramite.INSPECCION_PROGRAMADA);
         solicitudRepo.save(solicitud);
+
+        // Notificar al negocio
+        notificacionService.crear(solicitud.getUsuario(),
+            "Inspección técnica programada",
+            "Tu solicitud fue admitida. Se programó una inspección técnica para el " +
+            fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+            " con el inspector " + inspector.getNombreCompleto() + ".");
+
         return inspeccionRepo.save(inspeccion);
     }
 
@@ -66,23 +80,38 @@ public class InspeccionService {
         if (dto.getResultado() == Enums.ResultadoInspeccion.CONFORME) {
             solicitud.setEstado(Enums.EstadoTramite.APROBADO);
             solicitudRepo.save(solicitud);
+            notificacionService.crear(solicitud.getUsuario(),
+                "¡Inspección aprobada!",
+                "Tu local fue inspeccionado y todo está conforme. " +
+                "Ya puedes descargar tu licencia de funcionamiento.");
         } else {
             if (dto.getObservaciones() == null || dto.getObservaciones().isEmpty())
                 throw new IllegalArgumentException("Debe registrar al menos una observación.");
+
             for (ObservacionDto obsDto : dto.getObservaciones()) {
                 observacionRepo.save(Observacion.builder()
-                    .inspeccion(inspeccion)
-                    .tipo(obsDto.getTipo())
-                    .descripcion(obsDto.getDescripcion())
-                    .build());
+                    .inspeccion(inspeccion).tipo(obsDto.getTipo())
+                    .descripcion(obsDto.getDescripcion()).build());
             }
+
             if (inspeccion.getTipo() == Enums.TipoInspeccion.PRIMERA) {
                 solicitud.setEstado(Enums.EstadoTramite.OBSERVADO);
                 solicitudRepo.save(solicitud);
+                notificacionService.crear(solicitud.getUsuario(),
+                    "Inspección con observaciones",
+                    "Tu local fue inspeccionado y se encontraron " +
+                    dto.getObservaciones().size() + " observación(es). " +
+                    "Debes subsanarlas antes de la segunda inspección. " +
+                    "Revisa el detalle de tu solicitud.");
                 programarSegundaInspeccion(solicitud, inspeccion.getInspector());
             } else if (inspeccion.getTipo() == Enums.TipoInspeccion.SEGUNDA) {
                 solicitud.setEstado(Enums.EstadoTramite.DENEGADO);
                 solicitudRepo.save(solicitud);
+                notificacionService.crear(solicitud.getUsuario(),
+                    "Licencia denegada",
+                    "Las observaciones de tu solicitud no fueron subsanadas. " +
+                    "La licencia de funcionamiento ha sido denegada. " +
+                    "Puedes iniciar un nuevo trámite.");
             }
         }
         return inspeccionRepo.save(inspeccion);
@@ -97,6 +126,13 @@ public class InspeccionService {
             .resultado(Enums.ResultadoInspeccion.PENDIENTE).build();
         solicitud.setEstado(Enums.EstadoTramite.SEGUNDA_INSPECCION_PROGRAMADA);
         solicitudRepo.save(solicitud);
+
+        notificacionService.crear(solicitud.getUsuario(),
+            "Segunda inspección programada",
+            "Se programó una segunda inspección para el " +
+            fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+            ". Asegúrate de haber subsanado todas las observaciones antes de esa fecha.");
+
         return inspeccionRepo.save(segunda);
     }
 

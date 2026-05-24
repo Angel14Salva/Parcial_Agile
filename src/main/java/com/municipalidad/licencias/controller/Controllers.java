@@ -40,6 +40,7 @@ class DashboardController {
     private final InspeccionService inspeccionService;
 
     DashboardController(UsuarioRepository usuarioRepo,
+                        com.municipalidad.licencias.service.NotificacionService notificacionService,
                         SolicitudService solicitudService,
                         InspeccionService inspeccionService) {
         this.usuarioRepo       = usuarioRepo;
@@ -408,5 +409,34 @@ class ObservacionController {
 
         ra.addFlashAttribute("exito", "Observación marcada como subsanada.");
         return "redirect:/solicitud/" + solicitudId + "/observaciones";
+    }
+}
+
+// ── Notificaciones ────────────────────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/notificaciones")
+class NotificacionController {
+
+    private final com.municipalidad.licencias.service.NotificacionService notificacionService;
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+
+    NotificacionController(
+        com.municipalidad.licencias.service.NotificacionService notificacionService,
+        com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
+        this.notificacionService = notificacionService;
+        this.usuarioRepo = usuarioRepo;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping
+    String verNotificaciones(
+        @org.springframework.security.core.annotation.AuthenticationPrincipal
+        org.springframework.security.core.userdetails.UserDetails ud,
+        org.springframework.ui.Model model) {
+        com.municipalidad.licencias.model.Usuario usuario =
+            usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+        model.addAttribute("notificaciones",
+            notificacionService.obtenerPorUsuario(usuario));
+        notificacionService.marcarTodasLeidas(usuario);
+        return "notificaciones/lista";
     }
 }
