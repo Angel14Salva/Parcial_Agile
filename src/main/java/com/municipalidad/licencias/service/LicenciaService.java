@@ -106,6 +106,10 @@ public class LicenciaService {
         return licenciaRepo.findBySolicitud(solicitud).orElse(null);
     }
 
+    public java.util.List<Licencia> obtenerLicenciasVigentes() {
+        return licenciaRepo.findByEstado(Enums.EstadoLicencia.VIGENTE);
+    }
+
     private String generarNumero(Solicitud solicitud) {
         String anio = DateTimeFormatter.ofPattern("yyyy").format(LocalDate.now());
         return "LIC-" + anio + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();

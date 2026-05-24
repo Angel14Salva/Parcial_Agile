@@ -58,6 +58,8 @@ class DashboardController {
         } else if (usuario.getRol() == Enums.Rol.INSPECTOR) {
             model.addAttribute("inspeccionesPendientes",
                 inspeccionService.obtenerPendientesPorInspector(usuario));
+            model.addAttribute("licenciasVigentes",
+                licenciaService.obtenerLicenciasVigentes());
             return "inspector/dashboard-inspector";
         } else {
             model.addAttribute("tramitesActivos", solicitudService.obtenerTramitesActivos());
