@@ -17,6 +17,9 @@
     .estado-APROBADO { background:#d1e7dd; color:#0a3622; }
     .estado-DENEGADO { background:#f8d7da; color:#58151c; }
     .estado-PENDIENTE_VALIDACION { background:#e2d9f3; color:#3d1a78; }
+    .licencia-vencer { border-left: 4px solid #ffc107 !important; }
+    .licencia-expirada { border-left: 4px solid #dc3545 !important; }
+    .licencia-vigente { border-left: 4px solid #1D9E75 !important; }
   </style>
 </head>
 <body>
@@ -63,7 +66,10 @@
 
   <div class="row g-3" th:unless="${#lists.isEmpty(solicitudes)}">
     <div class="col-md-6" th:each="s : ${solicitudes}">
-      <div class="card h-100 shadow-sm">
+      <div class="card h-100 shadow-sm"
+           th:classappend="${s.licencia != null and s.licencia.estado.name() == 'POR_VENCER'} ? 'licencia-vencer' :
+                           (${s.licencia != null and s.licencia.estado.name() == 'EXPIRADA'} ? 'licencia-expirada' :
+                           (${s.licencia != null and s.licencia.estado.name() == 'VIGENTE'} ? 'licencia-vigente' : ''))">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <h6 class="card-title fw-bold mb-0" th:text="${s.razonSocial}">Razón Social</h6>
@@ -96,13 +102,46 @@
               <strong th:text="${#temporals.format(s.fechaPago,'dd/MM/yyyy HH:mm')}"></strong></div>
           </div>
 
-          <!-- E3-US01: Alerta de observaciones con fecha límite -->
+          <!-- E3-US01: Alerta observaciones pendientes -->
           <div th:if="${s.estado.name() == 'OBSERVADO' or s.estado.name() == 'SEGUNDA_INSPECCION_PROGRAMADA'}"
                class="alert alert-warning py-2 px-3 mb-2 small">
             <i class="bi bi-exclamation-triangle me-1"></i>
             <strong>Tienes observaciones pendientes.</strong>
             <div class="mt-1">Plazo límite aproximado:
               <strong th:text="${#temporals.format(s.creadoEn.plusDays(42), 'dd/MM/yyyy')}"></strong>
+            </div>
+          </div>
+
+          <!-- E4-US02: Alerta vencimiento 30 días -->
+          <div th:if="${s.licencia != null and s.licencia.estado.name() == 'POR_VENCER'}"
+               class="alert alert-warning py-2 px-3 mb-2 small">
+            <i class="bi bi-clock-history me-1"></i>
+            <strong>¡Tu licencia está próxima a vencer!</strong>
+            <div class="mt-1">Vence el
+              <strong th:text="${#temporals.format(s.licencia.fechaVencimiento,'dd/MM/yyyy')}"></strong>.
+              Renuévala para continuar operando.
+            </div>
+          </div>
+
+          <!-- E4-US02: Alerta licencia expirada -->
+          <div th:if="${s.licencia != null and s.licencia.estado.name() == 'EXPIRADA'}"
+               class="alert alert-danger py-2 px-3 mb-2 small">
+            <i class="bi bi-x-circle me-1"></i>
+            <strong>Tu licencia ha vencido.</strong>
+            <div class="mt-1">Venció el
+              <strong th:text="${#temporals.format(s.licencia.fechaVencimiento,'dd/MM/yyyy')}"></strong>.
+              Debes iniciar un nuevo trámite.
+            </div>
+          </div>
+
+          <!-- E4-US02: Licencia vigente con días restantes -->
+          <div th:if="${s.licencia != null and s.licencia.estado.name() == 'VIGENTE'}"
+               class="alert alert-success py-2 px-3 mb-2 small">
+            <i class="bi bi-award me-1"></i>
+            <strong>Licencia vigente</strong>
+            <span th:text="'· N.° ' + ${s.licencia.numeroLicencia}" class="text-muted"></span>
+            <div class="mt-1">Válida hasta
+              <strong th:text="${#temporals.format(s.licencia.fechaVencimiento,'dd/MM/yyyy')}"></strong>
             </div>
           </div>
 
@@ -125,7 +164,7 @@
             <th:block th:if="${s.licencia != null and s.licencia.estado.name() == 'POR_VENCER'}">
               <a th:href="@{/licencia/{id}/renovar(id=${s.licencia.id})}"
                  class="btn btn-warning btn-sm">
-                <i class="bi bi-arrow-clockwise me-1"></i>Renovar
+                <i class="bi bi-arrow-clockwise me-1"></i>Renovar ahora
               </a>
             </th:block>
           </div>
