@@ -77,14 +77,44 @@
           <p class="text-muted small mb-2">
             <i class="bi bi-tag me-1"></i><span th:text="${s.rubro}"></span>
           </p>
-          <p class="text-muted small mb-3">
+          <p class="text-muted small mb-2">
             <i class="bi bi-calendar me-1"></i>
             <span th:text="${#temporals.format(s.creadoEn, 'dd/MM/yyyy')}"></span>
           </p>
-          <div class="d-flex gap-2 flex-wrap">
+
+          <!-- E1-US04: Comprobante de pago -->
+          <div th:if="${s.referenciaPago != null}"
+               class="alert alert-light border py-2 px-3 mb-2 small">
+            <div class="fw-semibold text-success mb-1">
+              <i class="bi bi-receipt me-1"></i>Comprobante de pago
+            </div>
+            <div><span class="text-muted">N.° operación:</span>
+              <strong th:text="${s.referenciaPago}"></strong></div>
+            <div><span class="text-muted">Monto:</span>
+              <strong th:text="'S/ ' + ${s.montoPagado}"></strong></div>
+            <div><span class="text-muted">Fecha:</span>
+              <strong th:text="${#temporals.format(s.fechaPago,'dd/MM/yyyy HH:mm')}"></strong></div>
+          </div>
+
+          <!-- E3-US01: Alerta de observaciones con fecha límite -->
+          <div th:if="${s.estado.name() == 'OBSERVADO' or s.estado.name() == 'SEGUNDA_INSPECCION_PROGRAMADA'}"
+               class="alert alert-warning py-2 px-3 mb-2 small">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <strong>Tienes observaciones pendientes.</strong>
+            <div class="mt-1">Plazo límite aproximado:
+              <strong th:text="${#temporals.format(s.creadoEn.plusDays(42), 'dd/MM/yyyy')}"></strong>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap mt-2">
             <a th:href="@{/solicitud/{id}/detalle(id=${s.id})}"
                class="btn btn-outline-secondary btn-sm">
               <i class="bi bi-eye me-1"></i>Ver detalle
+            </a>
+            <a th:if="${s.estado.name() == 'OBSERVADO' or s.estado.name() == 'SEGUNDA_INSPECCION_PROGRAMADA'}"
+               th:href="@{/solicitud/{id}/observaciones(id=${s.id})}"
+               class="btn btn-warning btn-sm">
+              <i class="bi bi-clipboard-x me-1"></i>Subsanar
             </a>
             <th:block th:if="${s.licencia != null and s.licencia.estado.name() != 'EXPIRADA' and s.licencia.estado.name() != 'REVOCADA'}">
               <a th:href="@{/licencia/{id}/descargar(id=${s.licencia.id})}"
