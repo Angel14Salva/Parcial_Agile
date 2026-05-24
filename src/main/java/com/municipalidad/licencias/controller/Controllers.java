@@ -443,3 +443,64 @@ class NotificacionController {
         return "notificaciones/lista";
     }
 }
+
+// ── Multas ────────────────────────────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/multas")
+class MultaController {
+
+    private final com.municipalidad.licencias.service.MultaService multaService;
+    private final com.municipalidad.licencias.service.LicenciaService licenciaService;
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+
+    MultaController(com.municipalidad.licencias.service.MultaService multaService,
+                    com.municipalidad.licencias.service.LicenciaService licenciaService,
+                    com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
+        this.multaService    = multaService;
+        this.licenciaService = licenciaService;
+        this.usuarioRepo     = usuarioRepo;
+    }
+
+    // Ver historial de multas de una licencia
+    @org.springframework.web.bind.annotation.GetMapping("/licencia/{id}")
+    String historial(@org.springframework.web.bind.annotation.PathVariable Long id,
+                     org.springframework.ui.Model model) {
+        model.addAttribute("licencia", licenciaService.obtenerPorId(id));
+        model.addAttribute("multas", multaService.obtenerPorLicencia(id));
+        return "multas/historial";
+    }
+
+    // Formulario registrar multa
+    @org.springframework.web.bind.annotation.GetMapping("/licencia/{id}/nueva")
+    String nuevaForm(@org.springframework.web.bind.annotation.PathVariable Long id,
+                     org.springframework.ui.Model model) {
+        model.addAttribute("licencia", licenciaService.obtenerPorId(id));
+        return "multas/nueva";
+    }
+
+    // Registrar multa
+    @org.springframework.web.bind.annotation.PostMapping("/licencia/{id}/nueva")
+    String registrar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                     @org.springframework.web.bind.annotation.RequestParam String descripcion,
+                     @org.springframework.web.bind.annotation.RequestParam java.math.BigDecimal monto,
+                     @org.springframework.security.core.annotation.AuthenticationPrincipal
+                         org.springframework.security.core.userdetails.UserDetails ud,
+                     org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Usuario inspector =
+                usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+            multaService.registrar(id, descripcion, monto, inspector);
+            ra.addFlashAttribute("exito", "Multa registrada y negocio notificado.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/multas/licencia/" + id;
+    }
+
+    // Panel admin: todas las multas
+    @org.springframework.web.bind.annotation.GetMapping
+    String todas(org.springframework.ui.Model model) {
+        model.addAttribute("multas", multaService.obtenerTodas());
+        return "multas/todas";
+    }
+}
