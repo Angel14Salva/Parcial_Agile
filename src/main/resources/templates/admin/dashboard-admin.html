@@ -18,7 +18,7 @@
     <a class="navbar-brand fw-bold" href="/dashboard"><i class="bi bi-building me-2"></i>Licencias Municipales</a>
     <div class="ms-auto d-flex gap-3 align-items-center">
       <span class="text-white-50 small" sec:authentication="name"></span>
-      <a href="/auth/logout" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Salir</a>
+      <form action="/auth/logout" method="post" style="display:inline"><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/><button type="submit" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Salir</button></form>
     </div>
   </div>
 </nav>
