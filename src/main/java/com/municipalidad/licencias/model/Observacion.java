@@ -58,6 +58,7 @@ public class Observacion {
     public String getDescripcion()             { return descripcion; }
     public boolean isSubsanada()               { return subsanada; }
     public void setSubsanada(boolean v)        { this.subsanada = v; }
+    public LocalDateTime getFechaSubsanacion() { return fechaSubsanacion; }
     public void setFechaSubsanacion(LocalDateTime v) { this.fechaSubsanacion = v; }
     public void setDocumentoCorregidoUrl(String v)   { this.documentoCorregidoUrl = v; }
 }
