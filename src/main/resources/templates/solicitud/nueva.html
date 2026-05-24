@@ -102,12 +102,18 @@
         <!-- Rubro -->
         <div class="mb-4">
           <label class="form-label fw-semibold">Rubro del negocio <span class="text-danger">*</span></label>
-          <select th:field="*{rubro}" class="form-select"
+          <select th:field="*{rubro}" class="form-select" id="selectRubro"
                   th:classappend="${#fields.hasErrors('rubro')} ? 'is-invalid'" required>
             <option value="">-- Selecciona el rubro --</option>
             <option th:each="r : ${rubros}" th:value="${r}" th:text="${r}"></option>
           </select>
           <div class="invalid-feedback" th:errors="*{rubro}"></div>
+          <!-- Campo adicional para "Otro" -->
+          <div id="otroRubroDiv" class="mt-2 d-none">
+            <input type="text" id="otroRubroTexto" class="form-control"
+                   placeholder="Describe el rubro de tu negocio *" maxlength="100"/>
+            <div class="form-text">Este campo es obligatorio si seleccionas "Otro".</div>
+          </div>
         </div>
 
         <!-- Campo oculto para RUC validado -->
@@ -232,6 +238,42 @@
   document.getElementById('inputDni').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnValidarDni').click(); }
   });
+
+  // ── Rubro "Otro" ──────────────────────────────────────────────────────────────
+  const selectRubro = document.getElementById('selectRubro');
+  const otroDiv = document.getElementById('otroRubroDiv');
+  const otroTexto = document.getElementById('otroRubroTexto');
+
+  selectRubro.addEventListener('change', () => {
+    if (selectRubro.value === 'Otro') {
+      otroDiv.classList.remove('d-none');
+      otroTexto.required = true;
+    } else {
+      otroDiv.classList.add('d-none');
+      otroTexto.required = false;
+      otroTexto.value = '';
+    }
+  });
+
+  // Al enviar, si es "Otro" reemplazar el valor del select con el texto
+  document.getElementById('formSolicitud').addEventListener('submit', (e) => {
+    if (selectRubro.value === 'Otro') {
+      if (!otroTexto.value.trim()) {
+        e.preventDefault();
+        otroTexto.classList.add('is-invalid');
+        otroTexto.focus();
+        return;
+      }
+      // Crear un campo oculto con el valor real del rubro
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'rubro';
+      hidden.value = otroTexto.value.trim();
+      // Deshabilitar el select para que no envíe "Otro"
+      selectRubro.disabled = true;
+      document.getElementById('formSolicitud').appendChild(hidden);
+    }
+  }, true); // true = captura antes del listener de validación RUC/DNI
 
   function getCookie(name) {
     const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
