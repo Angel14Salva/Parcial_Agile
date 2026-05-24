@@ -315,3 +315,11 @@ class Rubros {
         "Agencia de viajes", "Otro"
     );
 }
+
+@org.springframework.stereotype.Controller
+class RootController {
+    @org.springframework.web.bind.annotation.GetMapping("/")
+    String root() {
+        return "redirect:/dashboard";
+    }
+}
