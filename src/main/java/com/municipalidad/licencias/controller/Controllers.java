@@ -434,8 +434,11 @@ class NotificacionController {
         org.springframework.ui.Model model) {
         com.municipalidad.licencias.model.Usuario usuario =
             usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+        // Contar ANTES de marcar como leídas para mostrar en navbar
+        long noLeidas = notificacionService.contarNoLeidas(usuario);
         model.addAttribute("notificaciones",
             notificacionService.obtenerPorUsuario(usuario));
+        model.addAttribute("notifCount", noLeidas);
         notificacionService.marcarTodasLeidas(usuario);
         return "notificaciones/lista";
     }
