@@ -8,8 +8,16 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
   <style>
     body { background: #f0f4f8; }
-    .field-loading { opacity: .6; pointer-events: none; }
-    .check-icon { color: #1D9E75; }
+    .section-header {
+      background: #1D3557; color: #fff;
+      padding: .6rem 1rem; border-radius: 6px 6px 0 0;
+      font-weight: 600; font-size: .95rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .section-body { background: #fff; border: 1px solid #dee2e6; border-top: none;
+                    border-radius: 0 0 6px 6px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .auto-field { background: #f8fff8 !important; }
+    .field-hint { font-size: .78rem; color: #6c757d; }
   </style>
 </head>
 <body>
@@ -21,213 +29,378 @@
   </div>
 </nav>
 
-<div class="container" style="max-width:640px">
+<div class="container" style="max-width:780px">
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
       <li class="breadcrumb-item active">Nueva solicitud</li>
     </ol>
   </nav>
-  <h4 class="fw-bold mb-1">Datos del negocio</h4>
-  <p class="text-muted small mb-4">Paso 1 de 3 — Ingresa el RUC y DNI del representante legal para validar automáticamente.</p>
 
-  <!-- Alerta de errores -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div>
+      <h4 class="fw-bold mb-0">Declaración Jurada para Licencia de Funcionamiento</h4>
+      <p class="text-muted small mb-0">Municipalidad Provincial de Trujillo · Ley N°28976</p>
+    </div>
+  </div>
+
+  <!-- Pasos -->
+  <div class="d-flex gap-2 mb-4">
+    <span class="badge bg-primary px-3 py-2">1 · Datos y Documentos</span>
+    <span class="text-muted small d-flex align-items-center">→</span>
+    <span class="badge bg-secondary px-3 py-2">2 · Pago S/180</span>
+  </div>
+
   <div id="alertaError" class="alert alert-danger d-none"></div>
-  <div id="alertaExito" class="alert alert-success d-none"></div>
 
-  <div class="card shadow-sm">
-    <div class="card-body p-4">
-      <form th:action="@{/solicitud/nueva}" method="post" th:object="${solicitudDto}" id="formSolicitud">
+  <form th:action="@{/solicitud/nueva}" method="post"
+        th:object="${solicitudDto}" id="formSolicitud"
+        enctype="multipart/form-data">
 
+    <!-- ── SECCIÓN I: Modalidad ───────────────────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-check-square"></i> I · Modalidad del trámite</div>
+    <div class="section-body">
+      <div class="d-flex flex-wrap gap-3">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="modalidadTramite"
+                 value="NUEVA" id="modNueva" checked/>
+          <label class="form-check-label" for="modNueva">Licencia nueva</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="modalidadTramite"
+                 value="INDETERMINADA" id="modIndet"/>
+          <label class="form-check-label" for="modIndet">Indeterminada</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="modalidadTramite"
+                 value="TEMPORAL" id="modTemp"/>
+          <label class="form-check-label" for="modTemp">Temporal</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="modalidadTramite"
+                 value="CAMBIO_NOMBRE" id="modCambio"/>
+          <label class="form-check-label" for="modCambio">Cambio de denominación</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN II: Datos del solicitante ─────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-person-vcard"></i> II · Datos del solicitante</div>
+    <div class="section-body">
+      <p class="text-muted small mb-3">
+        <i class="bi bi-magic me-1"></i>Ingresa el RUC y DNI — los campos marcados con
+        <span class="badge bg-success">auto</span> se rellenan automáticamente.
+      </p>
+
+      <div class="row g-3">
         <!-- RUC -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">RUC <span class="text-danger">*</span></label>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">N° RUC <span class="text-danger">*</span></label>
           <div class="input-group">
-            <input type="text" id="inputRuc" class="form-control"
-                   placeholder="Ej: 20552103816" maxlength="11"
-                   pattern="\d{11}" required/>
+            <input type="text" id="inputRuc" name="ruc" class="form-control"
+                   placeholder="11 dígitos" maxlength="11" pattern="\d{11}" required/>
             <button type="button" class="btn btn-outline-primary" id="btnBuscarRuc">
-              <i class="bi bi-search me-1"></i>Buscar
+              <i class="bi bi-search"></i>
             </button>
           </div>
-          <div id="rucStatus" class="form-text"></div>
+          <div id="rucStatus" class="field-hint mt-1"></div>
         </div>
 
         <!-- DNI -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">DNI del representante legal <span class="text-danger">*</span></label>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">N° DNI del representante <span class="text-danger">*</span></label>
           <div class="input-group">
-            <input type="text" id="inputDni" class="form-control"
-                   placeholder="Ej: 12345678" maxlength="8"
-                   pattern="\d{8}" required/>
+            <input type="text" id="inputDni" name="dni" class="form-control"
+                   placeholder="8 dígitos" maxlength="8" pattern="\d{8}" required/>
             <button type="button" class="btn btn-outline-primary" id="btnValidarDni">
-              <i class="bi bi-person-check me-1"></i>Validar
+              <i class="bi bi-person-check"></i>
             </button>
           </div>
-          <div id="dniStatus" class="form-text"></div>
+          <div id="dniStatus" class="field-hint mt-1"></div>
         </div>
 
-        <hr class="my-4"/>
-        <p class="text-muted small mb-3">
-          <i class="bi bi-magic me-1"></i>Los siguientes campos se rellenan automáticamente al validar el RUC.
-        </p>
-
-        <!-- Razón social (autorellenado) -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Razón social <span class="text-danger">*</span></label>
+        <!-- Razón social -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">
+            Apellidos y Nombre / Razón Social <span class="text-danger">*</span>
+            <span class="badge bg-success ms-1">auto</span>
+          </label>
           <input type="text" th:field="*{razonSocial}" id="inputRazonSocial"
-                 class="form-control"
-                 th:classappend="${#fields.hasErrors('razonSocial')} ? 'is-invalid'"
-                 placeholder="Se autorellena con el RUC" required readonly/>
-          <div class="invalid-feedback" th:errors="*{razonSocial}"></div>
+                 class="form-control auto-field" readonly required
+                 placeholder="Se autorellena con el RUC"/>
         </div>
 
-        <!-- Domicilio fiscal (autorellenado) -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Domicilio fiscal <span class="text-danger">*</span></label>
+        <!-- Dirección del solicitante -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">
+            Dirección del solicitante <span class="text-danger">*</span>
+            <span class="badge bg-success ms-1">auto</span>
+          </label>
           <input type="text" th:field="*{domicilioFiscal}" id="inputDomicilio"
-                 class="form-control"
-                 th:classappend="${#fields.hasErrors('domicilioFiscal')} ? 'is-invalid'"
-                 placeholder="Se autorellena con el RUC" required readonly/>
-          <div class="invalid-feedback" th:errors="*{domicilioFiscal}"></div>
+                 class="form-control auto-field" readonly required
+                 placeholder="Se autorellena con el RUC"/>
         </div>
 
-        <!-- Nombre representante (autorellenado) -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Representante legal</label>
-          <input type="text" id="inputRepresentante" class="form-control"
-                 placeholder="Se autorellena al validar DNI" readonly/>
+        <!-- Teléfono -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">N° Teléfono <span class="text-danger">*</span></label>
+          <input type="tel" th:field="*{telefono}" class="form-control"
+                 placeholder="Ej: 044-123456" required/>
+        </div>
+
+        <!-- Correo -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Correo Electrónico <span class="text-danger">*</span></label>
+          <input type="email" th:field="*{correoElectronico}" class="form-control"
+                 placeholder="correo@ejemplo.com" required/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN III: Representante legal ──────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-person-badge"></i> III · Representante legal o apoderado</div>
+    <div class="section-body">
+      <div class="row g-3">
+        <!-- Nombre representante -->
+        <div class="col-md-7">
+          <label class="form-label fw-semibold">
+            Apellidos y Nombres <span class="badge bg-success ms-1">auto</span>
+          </label>
+          <input type="text" th:field="*{nombreRepresentante}" id="inputRepresentante"
+                 class="form-control auto-field" readonly
+                 placeholder="Se autorellena al validar DNI"/>
+        </div>
+
+        <!-- DNI representante -->
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">
+            N° DNI / C.E. <span class="badge bg-success ms-1">auto</span>
+          </label>
+          <input type="text" th:field="*{dniRepresentante}" id="inputDniRep"
+                 class="form-control auto-field" readonly
+                 placeholder="Se autorellena al validar DNI"/>
+        </div>
+
+        <!-- Partida SUNARP -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">N° Partida electrónica SUNARP (opcional)</label>
+          <input type="text" th:field="*{partidaSunarp}" class="form-control"
+                 placeholder="Ej: 12345678"/>
+          <div class="field-hint">Solo para personas jurídicas con inscripción en SUNARP.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN IV: Datos del establecimiento ─────────────────────────── -->
+    <div class="section-header"><i class="bi bi-shop"></i> IV · Datos del establecimiento</div>
+    <div class="section-body">
+      <div class="row g-3">
+        <!-- Nombre comercial -->
+        <div class="col-md-7">
+          <label class="form-label fw-semibold">Nombre comercial <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{nombreComercial}" class="form-control"
+                 placeholder="Nombre del local o negocio" required/>
+        </div>
+
+        <!-- Horario -->
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Horario de atención <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{horarioAtencion}" class="form-control"
+                 placeholder="Ej: Lun-Sab 9:00-18:00" required/>
+        </div>
+
+        <!-- Dirección del establecimiento -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">Dirección del establecimiento <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{direccionEstablecimiento}" class="form-control"
+                 placeholder="Av./Jr./Ca. N° Urb. Distrito" required/>
+          <div class="field-hint">Puede diferir del domicilio fiscal del RUC.</div>
         </div>
 
         <!-- Rubro -->
-        <div class="mb-4">
-          <label class="form-label fw-semibold">Rubro del negocio <span class="text-danger">*</span></label>
-          <select th:field="*{rubro}" class="form-select" id="selectRubro"
-                  th:classappend="${#fields.hasErrors('rubro')} ? 'is-invalid'" required>
-            <option value="">-- Selecciona el rubro --</option>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Giro / Rubro <span class="text-danger">*</span></label>
+          <select th:field="*{rubro}" class="form-select" id="selectRubro" required>
+            <option value="">-- Selecciona --</option>
             <option th:each="r : ${rubros}" th:value="${r}" th:text="${r}"></option>
           </select>
-          <div class="invalid-feedback" th:errors="*{rubro}"></div>
-          <!-- Campo adicional para "Otro" -->
           <div id="otroRubroDiv" class="mt-2 d-none">
             <input type="text" id="otroRubroTexto" class="form-control"
-                   placeholder="Describe el rubro de tu negocio *" maxlength="100"/>
-            <div class="form-text">Este campo es obligatorio si seleccionas "Otro".</div>
+                   placeholder="Describe el rubro *" maxlength="100"/>
           </div>
         </div>
 
-        <!-- Campo oculto para RUC validado -->
-        <input type="hidden" id="rucValidado" name="rucValidado" value=""/>
-        <input type="hidden" id="dniValidado" name="dniValidado" value=""/>
-
-        <div id="alertaValidacion" class="alert alert-warning d-none mb-3">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          Debes validar el RUC y el DNI antes de continuar.
+        <!-- Área total -->
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Área total (m²)</label>
+          <input type="number" th:field="*{areaTotalM2}" class="form-control"
+                 min="1" step="0.01" placeholder="Ej: 50.5"/>
         </div>
 
-        <div class="d-flex gap-2">
-          <a href="/dashboard" class="btn btn-outline-secondary">Cancelar</a>
-          <button type="submit" class="btn btn-primary" id="btnContinuar">
-            Continuar <i class="bi bi-arrow-right ms-2"></i>
-          </button>
+        <!-- Estacionamientos -->
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">N° Estacionamientos</label>
+          <input type="number" th:field="*{numEstacionamientos}" class="form-control"
+                 min="0" placeholder="Ej: 2"/>
         </div>
-      </form>
+      </div>
     </div>
-  </div>
+
+    <!-- ── SECCIÓN V: Documentos ──────────────────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-paperclip"></i> V · Documentos adjuntos</div>
+    <div class="section-body">
+      <div class="row g-3">
+        <!-- Plano del local -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">
+            Plano del local <span class="text-danger">*</span>
+          </label>
+          <input type="file" name="plano" id="inputPlano" class="form-control"
+                 accept=".pdf,.jpg,.jpeg,.png" required/>
+          <div class="field-hint mt-1">
+            <i class="bi bi-info-circle me-1"></i>PDF, JPG o PNG · Máx. 10 MB
+          </div>
+        </div>
+
+        <!-- Firma del solicitante -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">
+            Firma del solicitante / Representante legal <span class="text-danger">*</span>
+          </label>
+          <input type="file" name="firma" id="inputFirma" class="form-control"
+                 accept=".jpg,.jpeg,.png" required/>
+          <div class="field-hint mt-1">
+            <i class="bi bi-info-circle me-1"></i>JPG o PNG · Foto o escáner de la firma · Máx. 5 MB
+          </div>
+        </div>
+
+        <!-- Preview firma -->
+        <div class="col-12" id="firmaPreviewDiv" style="display:none">
+          <label class="form-label fw-semibold small text-muted">Vista previa de la firma:</label>
+          <div class="border rounded p-2 bg-white" style="max-width:300px">
+            <img id="firmaPreview" src="" alt="Firma" style="max-width:100%; max-height:120px"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN VI: Observaciones ─────────────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-chat-text"></i> Observaciones del solicitante (opcional)</div>
+    <div class="section-body">
+      <textarea th:field="*{observacionesSolicitante}" class="form-control" rows="3"
+                placeholder="Ingresa aquí cualquier comentario u observación adicional sobre tu solicitud..."></textarea>
+    </div>
+
+    <!-- ── Declaración jurada ─────────────────────────────────────────────── -->
+    <div class="card border-warning mb-4">
+      <div class="card-body">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="checkDeclaracion" required/>
+          <label class="form-check-label small" for="checkDeclaracion">
+            <strong>Declaración jurada:</strong> Declaro bajo juramento que los datos consignados son
+            verdaderos y que el establecimiento cumple con las condiciones de seguridad establecidas
+            por ley. Tengo conocimiento de que esta declaración está sujeta a fiscalización posterior
+            y que la falsedad de los datos acarrea sanciones administrativas y penales.
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campos ocultos para RUC/DNI validados -->
+    <input type="hidden" id="rucValidado" value=""/>
+    <input type="hidden" id="dniValidado" value=""/>
+
+    <div id="alertaValidacion" class="alert alert-warning d-none mb-3">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      Debes validar el RUC y el DNI antes de continuar.
+    </div>
+
+    <div class="d-flex gap-2 mb-5">
+      <a href="/dashboard" class="btn btn-outline-secondary">
+        <i class="bi bi-x me-1"></i>Cancelar
+      </a>
+      <button type="submit" class="btn btn-primary px-4" id="btnContinuar">
+        <i class="bi bi-arrow-right me-2"></i>Continuar al pago
+      </button>
+    </div>
+
+  </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  let rucOk = false;
-  let dniOk = false;
+  let rucOk = false, dniOk = false;
 
   // ── Buscar RUC ──────────────────────────────────────────────────────────────
   document.getElementById('btnBuscarRuc').addEventListener('click', async () => {
     const ruc = document.getElementById('inputRuc').value.trim();
     const status = document.getElementById('rucStatus');
-
     if (!/^\d{11}$/.test(ruc)) {
-      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>El RUC debe tener 11 dígitos.</span>';
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>RUC debe tener 11 dígitos.</span>';
       return;
     }
-
     status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Consultando SUNAT...</span>';
     document.getElementById('btnBuscarRuc').disabled = true;
-
     try {
       const res = await fetch(`/api/validar/ruc/${ruc}`);
       const data = await res.json();
-
       if (!res.ok) {
-        status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error}</span>`;
+        status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error || 'RUC no encontrado'}</span>`;
         rucOk = false;
       } else {
         document.getElementById('inputRazonSocial').value = data.razonSocial;
         document.getElementById('inputDomicilio').value   = data.domicilioFiscal;
         document.getElementById('rucValidado').value      = ruc;
-        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>RUC encontrado: <strong>${data.razonSocial}</strong> · ${data.condicion}</span>`;
+        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i><strong>${data.razonSocial}</strong> · ${data.condicion}</span>`;
         rucOk = true;
       }
-    } catch (e) {
-      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión con SUNAT.</span>';
+    } catch(e) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión.</span>';
       rucOk = false;
     } finally {
       document.getElementById('btnBuscarRuc').disabled = false;
     }
   });
 
-  // ── Validar DNI contra representante del RUC ────────────────────────────────
+  // ── Validar DNI ─────────────────────────────────────────────────────────────
   document.getElementById('btnValidarDni').addEventListener('click', async () => {
     const ruc = document.getElementById('rucValidado').value;
     const dni = document.getElementById('inputDni').value.trim();
     const status = document.getElementById('dniStatus');
-
     if (!rucOk) {
-      status.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Primero busca y valida el RUC.</span>';
+      status.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Primero valida el RUC.</span>';
       return;
     }
     if (!/^\d{8}$/.test(dni)) {
-      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>El DNI debe tener 8 dígitos.</span>';
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>DNI debe tener 8 dígitos.</span>';
       return;
     }
-
-    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Validando con RENIEC y SUNAT...</span>';
+    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Validando con RENIEC...</span>';
     document.getElementById('btnValidarDni').disabled = true;
-
     try {
       const res = await fetch('/api/validar/ruc-dni', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json',
-                   'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ruc, dni })
       });
       const data = await res.json();
-
       if (!res.ok) {
-        const msg = data.mensaje || data.error || 'Error al validar. Intenta nuevamente.';
+        const msg = data.mensaje || data.error || 'Error al validar.';
         status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${msg}</span>`;
         dniOk = false;
       } else {
         const nombre = data.datosDni ? data.datosDni.nombreCompleto : '';
         document.getElementById('inputRepresentante').value = nombre;
-        document.getElementById('dniValidado').value = dni;
-        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>DNI validado: <strong>${nombre}</strong> es representante legal.</span>`;
+        document.getElementById('inputDniRep').value        = dni;
+        document.getElementById('dniValidado').value        = dni;
+        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i><strong>${nombre}</strong> confirmado como representante legal.</span>`;
         dniOk = true;
       }
-    } catch (e) {
+    } catch(e) {
       status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión.</span>';
       dniOk = false;
     } finally {
       document.getElementById('btnValidarDni').disabled = false;
-    }
-  });
-
-  // ── Validar antes de enviar ─────────────────────────────────────────────────
-  document.getElementById('formSolicitud').addEventListener('submit', (e) => {
-    if (!rucOk || !dniOk) {
-      e.preventDefault();
-      document.getElementById('alertaValidacion').classList.remove('d-none');
-      document.getElementById('alertaValidacion').scrollIntoView({ behavior: 'smooth' });
     }
   });
 
@@ -239,11 +412,10 @@
     if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnValidarDni').click(); }
   });
 
-  // ── Rubro "Otro" ──────────────────────────────────────────────────────────────
+  // ── Rubro "Otro" ────────────────────────────────────────────────────────────
   const selectRubro = document.getElementById('selectRubro');
-  const otroDiv = document.getElementById('otroRubroDiv');
-  const otroTexto = document.getElementById('otroRubroTexto');
-
+  const otroDiv     = document.getElementById('otroRubroDiv');
+  const otroTexto   = document.getElementById('otroRubroTexto');
   selectRubro.addEventListener('change', () => {
     if (selectRubro.value === 'Otro') {
       otroDiv.classList.remove('d-none');
@@ -255,8 +427,27 @@
     }
   });
 
-  // Al enviar, si es "Otro" reemplazar el valor del select con el texto
+  // ── Preview firma ───────────────────────────────────────────────────────────
+  document.getElementById('inputFirma').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('firmaPreview').src = ev.target.result;
+        document.getElementById('firmaPreviewDiv').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // ── Validar antes de enviar ─────────────────────────────────────────────────
   document.getElementById('formSolicitud').addEventListener('submit', (e) => {
+    if (!rucOk || !dniOk) {
+      e.preventDefault();
+      document.getElementById('alertaValidacion').classList.remove('d-none');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (selectRubro.value === 'Otro') {
       if (!otroTexto.value.trim()) {
         e.preventDefault();
@@ -264,21 +455,14 @@
         otroTexto.focus();
         return;
       }
-      // Crear un campo oculto con el valor real del rubro
       const hidden = document.createElement('input');
       hidden.type = 'hidden';
       hidden.name = 'rubro';
       hidden.value = otroTexto.value.trim();
-      // Deshabilitar el select para que no envíe "Otro"
       selectRubro.disabled = true;
       document.getElementById('formSolicitud').appendChild(hidden);
     }
-  }, true); // true = captura antes del listener de validación RUC/DNI
-
-  function getCookie(name) {
-    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-    return v ? v[2] : '';
-  }
+  });
 </script>
 </body>
 </html>

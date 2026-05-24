@@ -47,10 +47,36 @@ public class SolicitudService {
             .razonSocial(dto.getRazonSocial().trim())
             .domicilioFiscal(dto.getDomicilioFiscal().trim())
             .rubro(dto.getRubro().trim())
+            .ruc(dto.getRuc())
+            .dni(dto.getDni())
+            .telefono(dto.getTelefono())
+            .correoElectronico(dto.getCorreoElectronico())
+            .nombreRepresentante(dto.getNombreRepresentante())
+            .dniRepresentante(dto.getDniRepresentante())
+            .partidaSunarp(dto.getPartidaSunarp())
+            .nombreComercial(dto.getNombreComercial())
+            .direccionEstablecimiento(dto.getDireccionEstablecimiento())
+            .horarioAtencion(dto.getHorarioAtencion())
+            .areaTotalM2(dto.getAreaTotalM2())
+            .numEstacionamientos(dto.getNumEstacionamientos())
+            .modalidadTramite(dto.getModalidadTramite())
+            .observacionesSolicitante(dto.getObservacionesSolicitante())
             .usuario(usuario)
             .estado(Enums.EstadoTramite.BORRADOR)
             .build();
         return solicitudRepo.save(s);
+    }
+
+    @Transactional
+    public void cargarFirma(Long solicitudId, MultipartFile archivo) throws IOException {
+        Solicitud s = obtenerPorId(solicitudId);
+        if (archivo == null || archivo.isEmpty()) return;
+        String nombre = UUID.randomUUID() + "_firma_" + archivo.getOriginalFilename();
+        Path destino = Paths.get(uploadDir).resolve(nombre);
+        Files.createDirectories(destino.getParent());
+        Files.copy(archivo.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+        s.setFirmaUrl(nombre);
+        solicitudRepo.save(s);
     }
 
     @Transactional

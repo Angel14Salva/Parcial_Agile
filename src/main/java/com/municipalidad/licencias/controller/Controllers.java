@@ -105,15 +105,37 @@ class SolicitudController {
     @PostMapping("/nueva")
     String crearBorrador(@Valid @ModelAttribute SolicitudDto dto,
                          BindingResult errors,
+                         @RequestParam(required = false) org.springframework.web.multipart.MultipartFile plano,
+                         @RequestParam(required = false) org.springframework.web.multipart.MultipartFile firma,
                          @AuthenticationPrincipal UserDetails ud,
                          RedirectAttributes ra, Model model) {
         if (errors.hasErrors()) {
             model.addAttribute("rubros", Rubros.LISTA);
             return "solicitud/nueva";
         }
-        Usuario usuario = usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
-        Solicitud s = solicitudService.crearBorrador(dto, usuario);
-        return "redirect:/solicitud/" + s.getId() + "/plano";
+        if (plano == null || plano.isEmpty()) {
+            model.addAttribute("rubros", Rubros.LISTA);
+            model.addAttribute("errorPlano", "El plano del local es obligatorio.");
+            return "solicitud/nueva";
+        }
+        if (firma == null || firma.isEmpty()) {
+            model.addAttribute("rubros", Rubros.LISTA);
+            model.addAttribute("errorFirma", "La firma del solicitante es obligatoria.");
+            return "solicitud/nueva";
+        }
+        try {
+            Usuario usuario = usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+            Solicitud s = solicitudService.crearBorrador(dto, usuario);
+            // Guardar plano
+            solicitudService.cargarPlano(s.getId(), plano);
+            // Guardar firma
+            solicitudService.cargarFirma(s.getId(), firma);
+            return "redirect:/solicitud/" + s.getId() + "/pago";
+        } catch (Exception e) {
+            model.addAttribute("rubros", Rubros.LISTA);
+            model.addAttribute("errorGeneral", e.getMessage());
+            return "solicitud/nueva";
+        }
     }
 
     @GetMapping("/{id}/plano")
