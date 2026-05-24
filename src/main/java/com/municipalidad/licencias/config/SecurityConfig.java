@@ -46,6 +46,9 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/auth/login?logout=true")
                 .permitAll()
             );
+        http.csrf(csrf -> csrf
+            .ignoringRequestMatchers("/api/validar/**")
+        );
         return http.build();
     }
 
