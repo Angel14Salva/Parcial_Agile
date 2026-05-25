@@ -470,39 +470,39 @@ class ObservacionController {
         this.solicitudRepo = solicitudRepo;
         this.inspeccionRepo = inspeccionRepo;
     }
-
     @org.springframework.web.bind.annotation.GetMapping("/solicitud/{id}/observaciones")
     String verObservaciones(@org.springframework.web.bind.annotation.PathVariable Long id,
                             org.springframework.ui.Model model) {
-        com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada"));
-
-        // Obtener la última inspección con observaciones
-        java.util.List<com.municipalidad.licencias.model.Inspeccion> inspecciones =
-            inspeccionRepo.findBySolicitud(s);
-
-        com.municipalidad.licencias.model.Inspeccion ultimaConObs = inspecciones.stream()
-            .filter(i -> i.getResultado() ==
-                com.municipalidad.licencias.model.Enums.ResultadoInspeccion.CON_OBSERVACIONES)
-            .reduce((a, b) -> b)
-            .orElse(null);
-
-        java.util.List<com.municipalidad.licencias.model.Observacion> observaciones =
-            ultimaConObs != null
-                ? observacionRepo.findByInspeccion(ultimaConObs)
-                : java.util.List.of();
-
-        // Calcular fecha límite: 30 días hábiles desde la inspección
-        String fechaLimite = "-";
-        if (ultimaConObs != null) {
-            java.time.LocalDate limite = ultimaConObs.getFechaProgramada().plusDays(42); // ~30 días hábiles
-            fechaLimite = limite.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        try {
+            com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada"));
+            java.util.List<com.municipalidad.licencias.model.Inspeccion> inspecciones =
+                inspeccionRepo.findBySolicitud(s);
+            com.municipalidad.licencias.model.Inspeccion ultimaConObs = inspecciones.stream()
+                .filter(i -> i.getResultado() ==
+                    com.municipalidad.licencias.model.Enums.ResultadoInspeccion.CON_OBSERVACIONES)
+                .reduce((a, b) -> b)
+                .orElse(null);
+            java.util.List<com.municipalidad.licencias.model.Observacion> observaciones =
+                ultimaConObs != null
+                    ? observacionRepo.findByInspeccion(ultimaConObs)
+                    : java.util.List.of();
+            String fechaLimite = "-";
+            if (ultimaConObs != null) {
+                java.time.LocalDate limite = ultimaConObs.getFechaProgramada().plusDays(42);
+                fechaLimite = limite.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            }
+            model.addAttribute("solicitud", s);
+            model.addAttribute("observaciones", observaciones);
+            model.addAttribute("fechaLimite", fechaLimite);
+            model.addAttribute("error", null);
+        } catch (Exception e) {
+            model.addAttribute("error", "Error cargando observaciones: " + e.getMessage());
+            model.addAttribute("observaciones", java.util.List.of());
+            model.addAttribute("fechaLimite", "-");
         }
-
-        model.addAttribute("solicitud", s);
-        model.addAttribute("observaciones", observaciones);
-        model.addAttribute("fechaLimite", fechaLimite);
         return "solicitud/observaciones";
+    }
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/solicitud/{solicitudId}/observacion/{obsId}/subsanar")
