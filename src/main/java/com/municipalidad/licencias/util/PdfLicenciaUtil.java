@@ -33,8 +33,8 @@ public class PdfLicenciaUtil {
             canvas.setColorFill(AZUL_OSCURO);
             canvas.moveTo(0, H);
             canvas.lineTo(W, H);
-            canvas.lineTo(W, H - 175);
-            canvas.curveTo(W * 0.7f, H - 140, W * 0.3f, H - 195, 0, H - 165);
+            canvas.lineTo(W, H - 200);
+            canvas.curveTo(W * 0.7f, H - 165, W * 0.3f, H - 220, 0, H - 190);
             canvas.closePath();
             canvas.fill();
 
@@ -50,8 +50,8 @@ public class PdfLicenciaUtil {
             // Linea curva azul medio superior
             canvas.setColorStroke(AZUL_MEDIO);
             canvas.setLineWidth(8);
-            canvas.moveTo(0, H - 168);
-            canvas.curveTo(W * 0.3f, H - 198, W * 0.7f, H - 143, W, H - 178);
+            canvas.moveTo(0, H - 193);
+            canvas.curveTo(W * 0.3f, H - 223, W * 0.7f, H - 168, W, H - 203);
             canvas.stroke();
 
             // Linea curva azul medio inferior
@@ -80,7 +80,7 @@ public class PdfLicenciaUtil {
                 if (escudoStream != null) {
                     Image escudo = Image.getInstance(escudoStream.readAllBytes());
                     escudo.scaleToFit(85, 95);
-                    escudo.setAbsolutePosition(48, H - 165);
+                    escudo.setAbsolutePosition(48, H - 188);
                     writer.getDirectContent().addImage(escudo);
                 }
             } catch (Exception ignored) {}
@@ -106,10 +106,10 @@ public class PdfLicenciaUtil {
             c4.setHorizontalAlignment(Element.ALIGN_CENTER);
             headerTxt.addCell(c4);
 
-            headerTxt.writeSelectedRows(0, -1, 155, H - 20, writer.getDirectContent());
+            headerTxt.writeSelectedRows(0, -1, 155, H - 12, writer.getDirectContent());
 
             // Espacio para saltar zona azul
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 68)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 78)));
             doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 5)));
 
             // Texto facultades
