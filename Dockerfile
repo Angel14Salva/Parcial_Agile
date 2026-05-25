@@ -10,6 +10,7 @@ COPY --from=build /app/target/licencias-0.0.1-SNAPSHOT.jar app.jar
 RUN mkdir -p /tmp/uploads
 EXPOSE 8080
 ENTRYPOINT ["java", \
+  "-Duser.timezone=America/Lima", \
   "-Dspring.profiles.active=prod", \
   "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", "app.jar"]
