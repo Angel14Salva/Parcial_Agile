@@ -14,3 +14,4 @@ ENTRYPOINT ["java", \
   "-Dspring.profiles.active=prod", \
   "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", "app.jar"]
+# rebuild Mon May 25 07:18:51 UTC 2026
