@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><title>Buscar licencia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>body{background:#f0f4f8}</style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/dashboard">
+      <i class="bi bi-building me-2"></i>Licencias Municipales
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:800px">
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <a href="/dashboard" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="fw-bold mb-0">Buscar licencia por número</h4>
+  </div>
+
+  <!-- Formulario de búsqueda -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <form th:action="@{/inspector/buscar}" method="get">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" name="numero" class="form-control form-control-lg"
+                 placeholder="Ej: LIC-2026-3A06740F"
+                 th:value="${param.numero}"
+                 autofocus required/>
+          <button type="submit" class="btn btn-primary btn-lg px-4">
+            Buscar
+          </button>
+        </div>
+        <div class="form-text mt-2">
+          Ingresa el número completo o parcial de la licencia.
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mensaje de error -->
+  <div th:if="${error}" class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+  </div>
+
+  <!-- Resultado -->
+  <div th:if="${licencia != null}">
+
+    <!-- Estado general -->
+    <div class="card shadow-sm mb-3"
+         th:classappend="${licencia.estado.name() == 'VIGENTE'} ? 'border-success' :
+                          (${licencia.estado.name() == 'REVOCADA'} ? 'border-danger' : 'border-warning')">
+      <div class="card-header fw-semibold d-flex justify-content-between"
+           th:classappend="${licencia.estado.name() == 'VIGENTE'} ? 'bg-success text-white' :
+                            (${licencia.estado.name() == 'REVOCADA'} ? 'bg-danger text-white' : 'bg-warning')">
+        <span><i class="bi bi-award me-2"></i>Licencia <span th:text="${licencia.numeroLicencia}"></span></span>
+        <span class="badge bg-white"
+              th:classappend="${licencia.estado.name() == 'VIGENTE'} ? 'text-success' :
+                               (${licencia.estado.name() == 'REVOCADA'} ? 'text-danger' : 'text-warning')"
+              th:text="${licencia.estado.name()}"></span>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <dl class="mb-0">
+              <dt class="text-muted small">Negocio</dt>
+              <dd class="fw-bold" th:text="${licencia.solicitud.razonSocial}"></dd>
+              <dt class="text-muted small">Rubro</dt>
+              <dd th:text="${licencia.solicitud.rubro}"></dd>
+              <dt class="text-muted small">Dirección</dt>
+              <dd class="small" th:text="${licencia.solicitud.domicilioFiscal}"></dd>
+            </dl>
+          </div>
+          <div class="col-md-6">
+            <dl class="mb-0">
+              <dt class="text-muted small">Emitida</dt>
+              <dd th:text="${#temporals.format(licencia.fechaEmision,'dd/MM/yyyy')}"></dd>
+              <dt class="text-muted small">Válida hasta</dt>
+              <dd th:text="${#temporals.format(licencia.fechaVencimiento,'dd/MM/yyyy')}"></dd>
+              <dt class="text-muted small" th:if="${licencia.motivoRevocacion != null}">Motivo revocación</dt>
+              <dd th:if="${licencia.motivoRevocacion != null}" class="text-danger"
+                  th:text="${licencia.motivoRevocacion}"></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial de inspecciones -->
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-clipboard-check me-2"></i>Historial de inspecciones
+      </div>
+      <div class="card-body p-0">
+        <div th:if="${#lists.isEmpty(inspecciones)}" class="p-3 text-muted small">
+          No hay inspecciones registradas.
+        </div>
+        <table class="table table-sm mb-0" th:unless="${#lists.isEmpty(inspecciones)}">
+          <thead class="table-light">
+            <tr><th>Tipo</th><th>Fecha</th><th>Resultado</th><th>Inspector</th><th>Notas</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="i : ${inspecciones}">
+              <td><span class="badge bg-secondary" th:text="${i.tipo.name()}"></span></td>
+              <td th:text="${#temporals.format(i.fechaProgramada,'dd/MM/yyyy')}"></td>
+              <td>
+                <span class="badge"
+                      th:classappend="${i.resultado.name() == 'CONFORME'} ? 'bg-success' :
+                                       (${i.resultado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-danger')"
+                      th:text="${i.resultado.name()}"></span>
+              </td>
+              <td th:text="${i.inspector != null ? i.inspector.nombreCompleto : '-'}"></td>
+              <td class="small text-muted" th:text="${i.notasInspector ?: '-'}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historial de observaciones -->
+    <div class="card shadow-sm mb-3" th:if="${!#lists.isEmpty(observaciones)}">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-exclamation-triangle me-2 text-warning"></i>Observaciones
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr><th>Tipo</th><th>Descripción</th><th>Estado</th><th>Subsanada el</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="o : ${observaciones}">
+              <td><span class="badge bg-info text-dark" th:text="${o.tipo.name()}"></span></td>
+              <td th:text="${o.descripcion}"></td>
+              <td>
+                <span th:if="${o.subsanada}" class="badge bg-success">Subsanada</span>
+                <span th:unless="${o.subsanada}" class="badge bg-warning text-dark">Pendiente</span>
+              </td>
+              <td class="small text-muted"
+                  th:text="${o.fechaSubsanacion != null ? #temporals.format(o.fechaSubsanacion,'dd/MM/yyyy') : '-'}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historial de multas -->
+    <div class="card shadow-sm mb-3" th:if="${!#lists.isEmpty(multas)}">
+      <div class="card-header fw-semibold bg-danger text-white">
+        <i class="bi bi-exclamation-octagon me-2"></i>Multas
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Estado</th><th>Inspector</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="m : ${multas}">
+              <td th:text="${#temporals.format(m.creadoEn,'dd/MM/yyyy')}"></td>
+              <td th:text="${m.descripcion}"></td>
+              <td class="fw-bold text-danger" th:text="'S/ ' + ${m.monto}"></td>
+              <td>
+                <span class="badge"
+                      th:classappend="${m.estado.name() == 'PAGADA'} ? 'bg-success' :
+                                       (${m.estado.name() == 'PENDIENTE'} ? 'bg-danger' : 'bg-warning text-dark')"
+                      th:text="${m.estado.name()}"></span>
+              </td>
+              <td th:text="${m.inspector.nombreCompleto}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="d-flex gap-2 mb-4">
+      <a th:href="@{/fiscalizacion/licencia/{id}/oficio(id=${licencia.id})}"
+         class="btn btn-outline-warning">
+        <i class="bi bi-search me-1"></i>Inspección de oficio
+      </a>
+      <a th:href="@{/multas/licencia/{id}/nueva(id=${licencia.id})}"
+         class="btn btn-outline-danger">
+        <i class="bi bi-exclamation-octagon me-1"></i>Registrar multa
+      </a>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

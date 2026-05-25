@@ -695,6 +695,54 @@ class MultaController {
 
 }
 
+// ── Buscador de licencias (inspector) ────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/inspector")
+class BuscadorLicenciaController {
+
+    private final com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo;
+    private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
+    private final com.municipalidad.licencias.repository.ObservacionRepository observacionRepo;
+    private final com.municipalidad.licencias.service.MultaService multaService;
+
+    BuscadorLicenciaController(
+            com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
+            com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
+            com.municipalidad.licencias.repository.ObservacionRepository observacionRepo,
+            com.municipalidad.licencias.service.MultaService multaService) {
+        this.licenciaRepo    = licenciaRepo;
+        this.inspeccionRepo  = inspeccionRepo;
+        this.observacionRepo = observacionRepo;
+        this.multaService    = multaService;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/buscar")
+    String buscar(@org.springframework.web.bind.annotation.RequestParam(required = false) String numero,
+                  org.springframework.ui.Model model) {
+        if (numero != null && !numero.isBlank()) {
+            var licOpt = licenciaRepo.findByNumeroLicencia(numero.trim().toUpperCase());
+            if (licOpt.isPresent()) {
+                var lic = licOpt.get();
+                model.addAttribute("licencia", lic);
+                // Inspecciones de la solicitud
+                model.addAttribute("inspecciones",
+                    inspeccionRepo.findBySolicitud(lic.getSolicitud()));
+                // Observaciones de todas las inspecciones
+                java.util.List<com.municipalidad.licencias.model.Observacion> obs = new java.util.ArrayList<>();
+                for (var insp : inspeccionRepo.findBySolicitud(lic.getSolicitud())) {
+                    obs.addAll(observacionRepo.findByInspeccion(insp));
+                }
+                model.addAttribute("observaciones", obs);
+                // Multas
+                model.addAttribute("multas", multaService.obtenerPorLicencia(lic.getId()));
+            } else {
+                model.addAttribute("error", "No se encontró ninguna licencia con el número: " + numero);
+            }
+        }
+        return "inspector/buscar-licencia";
+    }
+}
+
 // ── API de validación SUNAT/RENIEC (llamadas AJAX desde el formulario) ────────
 @org.springframework.web.bind.annotation.RestController
 @org.springframework.web.bind.annotation.RequestMapping("/api/validar")
