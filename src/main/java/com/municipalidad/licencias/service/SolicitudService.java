@@ -43,6 +43,22 @@ public class SolicitudService {
 
     @Transactional
     public Solicitud crearBorrador(SolicitudDto dto, Usuario usuario) {
+        // RF15: Si tiene licencia vigente con misma dirección → bloquear, pedir renovación
+        String direccionNueva = dto.getDireccionEstablecimiento() != null ?
+            dto.getDireccionEstablecimiento().trim().toLowerCase() : "";
+        for (Solicitud solicitudExistente : solicitudRepo.findByUsuario(usuario)) {
+            if (solicitudExistente.getLicencia() != null &&
+                solicitudExistente.getLicencia().getEstado() == Enums.EstadoLicencia.VIGENTE) {
+                String direccionExistente = solicitudExistente.getDireccionEstablecimiento() != null ?
+                    solicitudExistente.getDireccionEstablecimiento().trim().toLowerCase() : "";
+                if (!direccionNueva.isEmpty() && direccionNueva.equals(direccionExistente)) {
+                    throw new IllegalStateException(
+                        "Ya tienes una licencia vigente para este local. " +
+                        "Si deseas continuar operando, debes renovar tu licencia existente. " +
+                        "Solo puedes iniciar un nuevo trámite si cambias de local.");
+                }
+            }
+        }
         Solicitud s = Solicitud.builder()
             .razonSocial(dto.getRazonSocial().trim())
             .domicilioFiscal(dto.getDomicilioFiscal().trim())

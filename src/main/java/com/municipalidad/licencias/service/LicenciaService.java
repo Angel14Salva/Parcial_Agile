@@ -40,6 +40,18 @@ public class LicenciaService {
 
     @Transactional
     public Licencia emitirLicencia(Solicitud solicitud) {
+        // RNF01: No emitir licencia si tiene multas pendientes
+        long multasPendientes = multaRepo.findByLicenciaOrderByCreadoEnDesc(
+            licenciaRepo.findBySolicitud(solicitud).orElse(null) != null ?
+            licenciaRepo.findBySolicitud(solicitud).get() : null) != null ?
+            multaRepo.findByLicenciaOrderByCreadoEnDesc(
+                licenciaRepo.findBySolicitud(solicitud).orElse(null))
+                .stream()
+                .filter(m -> m.getEstado() == com.municipalidad.licencias.model.Multa.EstadoMulta.PENDIENTE)
+                .count() : 0;
+        if (multasPendientes > 0) {
+            throw new IllegalStateException("No se puede emitir la licencia: el negocio tiene " + multasPendientes + " multa(s) pendiente(s) de pago.");
+        }
         if (solicitud.getEstado() != Enums.EstadoTramite.APROBADO)
             throw new IllegalStateException("Solo se puede emitir licencia para trámites aprobados.");
         LocalDate hoy = LocalDate.now();
