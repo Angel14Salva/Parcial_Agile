@@ -674,49 +674,6 @@ class FlowRetornoController {
         this.multaService        = multaService;
     }
 
-    @org.springframework.web.bind.annotation.RequestMapping(value = "/pago/multa/retorno/{id}",
-        method = {org.springframework.web.bind.annotation.RequestMethod.GET,
-                  org.springframework.web.bind.annotation.RequestMethod.POST})
-    String retornoMulta(@org.springframework.web.bind.annotation.PathVariable Long id,
-                        @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
-                        org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        try {
-            if (token != null) {
-                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
-                if (estado != null && estado.path("status").asInt() == 2) {
-                    solicitudService.getClass(); // solo para verificar contexto
-                    // Marcar multa como pagada
-                    com.municipalidad.licencias.model.Multa multa =
-                        multaService.obtenerPorId(id);
-                    multa.setEstado(com.municipalidad.licencias.model.Multa.EstadoMulta.PAGADA);
-                    ra.addFlashAttribute("exito", "Multa pagada correctamente.");
-                    return "redirect:/multas/" + multa.getLicencia().getId() + "/licencia/" + multa.getLicencia().getId();
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error retorno pago multa: {}", e.getMessage());
-        }
-        return "redirect:/dashboard";
-    }
-
-    @org.springframework.web.bind.annotation.PostMapping("/pago/multa/confirmar/{id}")
-    @org.springframework.web.bind.annotation.ResponseBody
-    String confirmarMulta(@org.springframework.web.bind.annotation.PathVariable Long id,
-                          @org.springframework.web.bind.annotation.RequestParam(required = false) String token) {
-        try {
-            if (token != null) {
-                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
-                if (estado != null && estado.path("status").asInt() == 2) {
-                    multaService.pagarMulta(id);
-                    log.info("Multa {} pagada via webhook", id);
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error webhook multa {}: {}", id, e.getMessage());
-        }
-        return "OK";
-    }
-
     @org.springframework.web.bind.annotation.RequestMapping(
         value = "/pago/multa/retorno/{id}",
         method = {org.springframework.web.bind.annotation.RequestMethod.GET,
