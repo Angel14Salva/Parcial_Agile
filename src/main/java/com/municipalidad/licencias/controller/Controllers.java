@@ -75,6 +75,8 @@ class DashboardController {
                 inspeccionService.obtenerPendientesPorInspector(usuario));
             model.addAttribute("licenciasVigentes",
                 licenciaService.obtenerLicenciasVigentes());
+            model.addAttribute("licenciasRevocadas",
+                licenciaService.obtenerLicenciasRevocadas());
             return "inspector/dashboard-inspector";
         } else {
             model.addAttribute("tramitesActivos", solicitudService.obtenerTramitesActivos());

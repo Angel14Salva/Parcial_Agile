@@ -118,6 +118,10 @@ public class LicenciaService {
         } catch (Exception e) { return 0; }
     }
 
+    public java.util.List<Licencia> obtenerLicenciasRevocadas() {
+        return licenciaRepo.findByEstado(Enums.EstadoLicencia.REVOCADA);
+    }
+
     public java.util.List<Licencia> obtenerLicenciasVigentes() {
         return licenciaRepo.findByEstado(Enums.EstadoLicencia.VIGENTE);
     }
