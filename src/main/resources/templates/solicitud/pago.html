@@ -1,64 +1,82 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8"/><title>Pago del trámite</title>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Pago del trámite | Licencias Municipales</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
   <style>body{background:#f0f4f8}</style>
 </head>
 <body>
 <nav class="navbar navbar-dark mb-4" style="background:#1D3557">
-  <div class="container"><a class="navbar-brand fw-bold" href="/dashboard"><i class="bi bi-building me-2"></i>Licencias Municipales</a></div>
-</nav>
-<div class="container" style="max-width:640px">
-  <div class="mb-4">
-    <p class="text-muted small">Paso 3 de 3 — Pago del derecho de trámite.</p>
-    <h4 class="fw-bold">Pago de S/ 180.00</h4>
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/dashboard">
+      <i class="bi bi-building me-2"></i>Licencias Municipales
+    </a>
   </div>
-  <div th:if="${error}" class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span></div>
+</nav>
 
-  <!-- Resumen -->
-  <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold">Resumen de la solicitud</div>
-    <div class="card-body">
-      <dl class="row mb-0">
-        <dt class="col-sm-4 text-muted">Razón social</dt>
-        <dd class="col-sm-8 fw-semibold" th:text="${solicitud.razonSocial}"></dd>
-        <dt class="col-sm-4 text-muted">Domicilio</dt>
-        <dd class="col-sm-8" th:text="${solicitud.domicilioFiscal}"></dd>
-        <dt class="col-sm-4 text-muted">Rubro</dt>
-        <dd class="col-sm-8" th:text="${solicitud.rubro}"></dd>
-      </dl>
+<div class="container" style="max-width:560px">
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <a href="/dashboard" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h4 class="fw-bold mb-0">Pago del derecho de trámite</h4>
+      <p class="text-muted small mb-0" th:text="${solicitud.razonSocial}"></p>
     </div>
   </div>
 
-  <!-- Pago -->
-  <div class="card shadow-sm">
-    <div class="card-body p-4">
-      <div class="d-flex align-items-center justify-content-between mb-4 p-3 rounded" style="background:#f8f9fa;border:2px dashed #1D9E75">
-        <span class="fw-semibold">Derecho de trámite de licencia</span>
-        <span class="fs-4 fw-bold text-success">S/ 180.00</span>
-      </div>
+  <div th:if="${error}" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+  </div>
 
-      <form th:action="@{/solicitud/{id}/pago(id=${solicitud.id})}" method="post">
-        <div class="mb-4">
-          <label class="form-label fw-semibold">Número de operación / referencia de pago <span class="text-danger">*</span></label>
-          <input type="text" name="referenciaPago" class="form-control"
-                 placeholder="Ej: OP-20241201-001" required minlength="5"/>
-          <div class="form-text">Ingresa el código de la operación bancaria o voucher de pago.</div>
-        </div>
-        <div class="alert alert-info py-2 small mb-4">
-          <i class="bi bi-info-circle me-2"></i>
-          Al confirmar, se validarán tus datos en SUNAT y se programará la inspección técnica automáticamente.
-        </div>
-        <div class="d-flex gap-2">
-          <a href="/dashboard" class="btn btn-outline-secondary">Cancelar</a>
-          <button type="submit" class="btn btn-success fw-semibold">
-            <i class="bi bi-check-circle me-2"></i>Confirmar pago y enviar solicitud
-          </button>
-        </div>
+  <!-- Resumen -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold" style="background:#1D3557;color:#fff">
+      <i class="bi bi-receipt me-2"></i>Resumen del trámite
+    </div>
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-5 text-muted">Solicitud N°</dt>
+        <dd class="col-sm-7 fw-bold" th:text="${solicitud.id}"></dd>
+        <dt class="col-sm-5 text-muted">Razón social</dt>
+        <dd class="col-sm-7" th:text="${solicitud.razonSocial}"></dd>
+        <dt class="col-sm-5 text-muted">Establecimiento</dt>
+        <dd class="col-sm-7" th:text="${solicitud.nombreComercial ?: solicitud.razonSocial}"></dd>
+        <dt class="col-sm-5 text-muted">Dirección</dt>
+        <dd class="col-sm-7 small" th:text="${solicitud.direccionEstablecimiento ?: solicitud.domicilioFiscal}"></dd>
+      </dl>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <span class="text-muted">Derecho de trámite (Ley N°28976)</span>
+      <span class="fw-bold fs-5 text-success">S/ 180.00</span>
+    </div>
+  </div>
+
+  <!-- Botón de pago Flow -->
+  <div class="card shadow-sm border-success mb-4">
+    <div class="card-body text-center p-4">
+      <img src="https://www.flow.cl/img/flow-logo.svg" alt="Flow" height="40" class="mb-3"
+           onerror="this.style.display='none'"/>
+      <p class="text-muted small mb-3">
+        Serás redirigido a la plataforma de pago seguro <strong>Flow</strong>
+        para completar tu pago con tarjeta de crédito, débito o transferencia bancaria.
+      </p>
+      <form th:action="@{/solicitud/{id}/pago/flow(id=${solicitud.id})}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-success btn-lg w-100 fw-semibold">
+          <i class="bi bi-credit-card me-2"></i>Pagar S/ 180.00 con Flow
+        </button>
       </form>
     </div>
   </div>
+
+  <p class="text-muted small text-center">
+    <i class="bi bi-shield-lock me-1"></i>
+    Pago procesado de forma segura por Flow · Tu información está protegida.
+  </p>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body></html>
+</body>
+</html>

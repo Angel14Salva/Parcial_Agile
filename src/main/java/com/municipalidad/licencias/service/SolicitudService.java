@@ -68,6 +68,13 @@ public class SolicitudService {
     }
 
     @Transactional
+    public void guardarReferencia(Long solicitudId, String token) {
+        Solicitud s = obtenerPorId(solicitudId);
+        s.setReferenciaPago(token);
+        solicitudRepo.save(s);
+    }
+
+    @Transactional
     public void cargarFirma(Long solicitudId, MultipartFile archivo) throws IOException {
         Solicitud s = obtenerPorId(solicitudId);
         if (archivo == null || archivo.isEmpty()) return;
