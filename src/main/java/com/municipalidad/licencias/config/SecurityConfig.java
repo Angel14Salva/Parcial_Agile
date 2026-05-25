@@ -29,8 +29,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/auth/**", "/error").permitAll()
-                .requestMatchers("/solicitud/*/pago/retorno").permitAll()
-                .requestMatchers("/solicitud/*/pago/confirmar").permitAll()
+                .requestMatchers("/solicitud/**/retorno").permitAll()
+                .requestMatchers("/solicitud/**/confirmar").permitAll()
                 .requestMatchers("/api/validar/**").authenticated()
                 .requestMatchers("/inspector/**").hasRole("INSPECTOR")
                 .requestMatchers("/fiscalizacion/**").hasAnyRole("INSPECTOR", "ADMIN")
