@@ -51,6 +51,11 @@
     <span class="badge bg-secondary px-3 py-2">2 · Pago S/180</span>
   </div>
 
+  <div th:if="${errorLicencia}" class="alert alert-warning alert-dismissible fade show mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Trámite no permitido:</strong> <span th:text="${errorLicencia}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
   <div id="alertaError" class="alert alert-danger d-none"></div>
 
   <form th:action="@{/solicitud/nueva}" method="post"

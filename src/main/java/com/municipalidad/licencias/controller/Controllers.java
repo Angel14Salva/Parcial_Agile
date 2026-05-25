@@ -150,6 +150,10 @@ class SolicitudController {
             // Guardar firma
             solicitudService.cargarFirma(s.getId(), firma);
             return "redirect:/solicitud/" + s.getId() + "/pago";
+        } catch (IllegalStateException e) {
+            model.addAttribute("rubros", Rubros.LISTA);
+            model.addAttribute("errorLicencia", e.getMessage());
+            return "solicitud/nueva";
         } catch (Exception e) {
             model.addAttribute("rubros", Rubros.LISTA);
             model.addAttribute("errorGeneral", e.getMessage());
