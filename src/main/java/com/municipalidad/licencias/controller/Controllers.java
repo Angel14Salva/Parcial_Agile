@@ -865,5 +865,3 @@ class FlowRetornoController {
 
 }
 
-// ── Pago de multas ────────────────────────────────────────────────────────────
-@org.springframework.stereotype.Controller
