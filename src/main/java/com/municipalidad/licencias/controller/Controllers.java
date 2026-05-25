@@ -181,8 +181,8 @@ class SolicitudController {
             String host = request.getHeader("X-Forwarded-Host") != null ?
                 request.getHeader("X-Forwarded-Host") : request.getServerName();
             String baseUrl = scheme + "://" + host;
-            String urlRetorno      = baseUrl + "/solicitud/" + id + "/pago/retorno";
-            String urlConfirmacion = baseUrl + "/solicitud/" + id + "/pago/confirmar";
+            String urlRetorno      = baseUrl + "/pago/retorno/" + id;
+            String urlConfirmacion = baseUrl + "/pago/confirmar/" + id;
             String email = s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank() ?
                 s.getCorreoElectronico() : usuario.getUsername() + "@licencias.gob.pe";
             String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : usuario.getNombreCompleto();
@@ -653,4 +653,60 @@ class ValidacionApiController {
             return org.springframework.http.ResponseEntity.badRequest().body(resultado);
         return org.springframework.http.ResponseEntity.ok(resultado);
     }
+// ── Retorno público de Flow (sin autenticación requerida) ────────────────────
+@org.springframework.stereotype.Controller
+class FlowRetornoController {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FlowRetornoController.class);
+    private final com.municipalidad.licencias.service.FlowService flowService;
+    private final com.municipalidad.licencias.service.SolicitudService solicitudService;
+
+    FlowRetornoController(com.municipalidad.licencias.service.FlowService flowService,
+                          com.municipalidad.licencias.service.SolicitudService solicitudService) {
+        this.flowService      = flowService;
+        this.solicitudService = solicitudService;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/pago/retorno/{id}")
+    String retorno(@org.springframework.web.bind.annotation.PathVariable Long id,
+                   @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
+                   org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    solicitudService.enviarConPago(id, token);
+                    ra.addFlashAttribute("exito", "¡Pago confirmado! Se programó la inspección técnica.");
+                    return "redirect:/auth/login?pagoExitoso=true";
+                } else {
+                    ra.addFlashAttribute("error", "El pago no fue confirmado. Estado: " +
+                        (estado != null ? estado.path("status").asText() : "desconocido"));
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error procesando retorno Flow solicitud {}: {}", id, e.getMessage());
+            ra.addFlashAttribute("error", "Error al verificar el pago.");
+        }
+        return "redirect:/auth/login?error=pago";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/pago/confirmar/{id}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    String confirmar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                     @org.springframework.web.bind.annotation.RequestParam(required = false) String token) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    solicitudService.enviarConPago(id, token);
+                    log.info("Webhook Flow: pago confirmado solicitud {}", id);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Webhook Flow error solicitud {}: {}", id, e.getMessage());
+        }
+        return "OK";
+    }
+}
+
 }
