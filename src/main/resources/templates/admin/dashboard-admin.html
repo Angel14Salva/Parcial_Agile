@@ -31,9 +31,14 @@
       <h4 class="fw-bold mb-1">Panel de administración</h4>
       <p class="text-muted small mb-0">Trámites activos en el sistema.</p>
     </div>
-    <a href="/multas" class="btn btn-outline-danger btn-sm">
-      <i class="bi bi-list-ul me-1"></i>Registro de multas
-    </a>
+    <div class="d-flex gap-2">
+      <a href="/inspector/buscar" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-search me-1"></i>Buscar licencia
+      </a>
+      <a href="/multas" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-list-ul me-1"></i>Registro de multas
+      </a>
+    </div>
   </div>
 
   <div th:if="${#lists.isEmpty(tramitesActivos)}" class="text-center py-5">
