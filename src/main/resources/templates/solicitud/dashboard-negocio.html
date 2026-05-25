@@ -116,19 +116,6 @@
             </div>
           </div>
 
-          <!-- Multas pendientes -->
-          <div th:if="${s.licencia != null and not #lists.isEmpty(s.licencia.multas)}"
-               class="alert alert-danger py-2 px-3 mb-2 small">
-            <i class="bi bi-exclamation-octagon-fill me-1"></i>
-            <strong>Tienes multas pendientes de pago.</strong>
-            <div class="mt-1">
-              <a th:href="@{/solicitud/{id}/detalle(id=${s.id})}"
-                 class="btn btn-danger btn-sm mt-1">
-                <i class="bi bi-eye me-1"></i>Ver multas
-              </a>
-            </div>
-          </div>
-
           <!-- E4-US02: Alerta vencimiento 30 días -->
           <div th:if="${s.licencia != null and s.licencia.estado.name() == 'POR_VENCER'}"
                class="alert alert-warning py-2 px-3 mb-2 small">
