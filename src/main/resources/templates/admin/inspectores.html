@@ -63,12 +63,19 @@
                  class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-pencil"></i>
               </a>
-              <form th:action="@{/admin/inspectores/{id}/desactivar(id=${i.id})}" method="post">
+              <form th:action="@{/admin/inspectores/{id}/desactivar(id=${i.id})}" method="post" style="display:inline">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button type="submit" class="btn btn-sm"
                         th:classappend="${i.activo} ? 'btn-outline-warning' : 'btn-outline-success'"
                         th:title="${i.activo} ? 'Desactivar' : 'Activar'">
                   <i th:classappend="${i.activo} ? 'bi bi-person-dash' : 'bi bi-person-check'" class="bi"></i>
+                </button>
+              </form>
+              <form th:action="@{/admin/inspectores/{id}/eliminar(id=${i.id})}" method="post" style="display:inline"
+                    onsubmit="return confirm('¿Eliminar definitivamente a ' + '[[${i.nombreCompleto}]]' + '? Esta acción no se puede deshacer.')">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar definitivamente">
+                  <i class="bi bi-trash"></i>
                 </button>
               </form>
             </div>

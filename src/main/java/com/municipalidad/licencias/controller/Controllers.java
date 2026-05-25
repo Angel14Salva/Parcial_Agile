@@ -803,6 +803,20 @@ class InspectorAdminController {
         ra.addFlashAttribute("exito", inspector.isActivo() ? "Inspector activado." : "Inspector desactivado.");
         return "redirect:/admin/inspectores";
     }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/eliminar")
+    String eliminar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                    org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(id).orElseThrow();
+            String nombre = inspector.getNombreCompleto();
+            usuarioRepo.deleteById(id);
+            ra.addFlashAttribute("exito", "Inspector " + nombre + " eliminado definitivamente.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "No se puede eliminar: el inspector tiene inspecciones o registros asociados.");
+        }
+        return "redirect:/admin/inspectores";
+    }
 }
 
 // ── Buscador de licencias (inspector) ────────────────────────────────────────
