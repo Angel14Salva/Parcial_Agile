@@ -50,7 +50,6 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/validar/**")
                 .ignoringRequestMatchers("/pago/**")
-            .ignoringRequestMatchers("/multas/*/pagar")
             );
         return http.build();
     }

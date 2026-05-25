@@ -662,13 +662,16 @@ class FlowRetornoController {
     private final com.municipalidad.licencias.service.SolicitudService solicitudService;
 
     private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    private final com.municipalidad.licencias.service.MultaService multaService;
 
     FlowRetornoController(com.municipalidad.licencias.service.FlowService flowService,
                           com.municipalidad.licencias.service.SolicitudService solicitudService,
-                          org.springframework.security.core.userdetails.UserDetailsService userDetailsService) {
+                          org.springframework.security.core.userdetails.UserDetailsService userDetailsService,
+                          com.municipalidad.licencias.service.MultaService multaService) {
         this.flowService         = flowService;
         this.solicitudService    = solicitudService;
         this.userDetailsService  = userDetailsService;
+        this.multaService        = multaService;
     }
 
     @org.springframework.web.bind.annotation.RequestMapping(value = "/pago/multa/retorno/{id}",
@@ -705,6 +708,68 @@ class FlowRetornoController {
                 com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
                 if (estado != null && estado.path("status").asInt() == 2) {
                     multaServiceRef.pagarMulta(id);
+                    log.info("Multa {} pagada via webhook", id);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error webhook multa {}: {}", id, e.getMessage());
+        }
+        return "OK";
+    }
+
+    @org.springframework.web.bind.annotation.RequestMapping(
+        value = "/pago/multa/retorno/{id}",
+        method = {org.springframework.web.bind.annotation.RequestMethod.GET,
+                  org.springframework.web.bind.annotation.RequestMethod.POST})
+    String retornoMulta(
+            @org.springframework.web.bind.annotation.PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String u,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long lid,
+            jakarta.servlet.http.HttpServletRequest request,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    multaService.pagarMulta(id);
+                    // Auto-autenticar al usuario
+                    if (u != null && !u.isBlank()) {
+                        try {
+                            org.springframework.security.core.userdetails.UserDetails ud =
+                                userDetailsService.loadUserByUsername(u);
+                            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                    ud, null, ud.getAuthorities());
+                            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+                            request.getSession(true).setAttribute(
+                                org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                                org.springframework.security.core.context.SecurityContextHolder.getContext());
+                        } catch (Exception ex) {
+                            log.warn("No se pudo restaurar sesion tras pago multa: {}", ex.getMessage());
+                        }
+                    }
+                    ra.addFlashAttribute("exito", "¡Multa pagada correctamente!");
+                    return "redirect:/multas/" + id + "/detalle";
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error retorno pago multa {}: {}", id, e.getMessage());
+        }
+        ra.addFlashAttribute("error", "No se pudo confirmar el pago.");
+        return "redirect:/multas/" + id + "/detalle";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/pago/multa/confirmar/{id}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    String confirmarMultaWebhook(
+            @org.springframework.web.bind.annotation.PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String token) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    multaService.pagarMulta(id);
                     log.info("Multa {} pagada via webhook", id);
                 }
             }
@@ -833,11 +898,14 @@ class MultaPagoController {
                 multa.getLicencia().getSolicitud().getCorreoElectronico() :
                 usuario.getUsername() + "@licencias.gob.pe";
 
+            String urlRetorno = baseUrl + "/pago/multa/retorno/" + id +
+                "?u=" + java.net.URLEncoder.encode(usuario.getUsername(), java.nio.charset.StandardCharsets.UTF_8) +
+                "&lid=" + multa.getLicencia().getId();
+            String urlConfirmar = baseUrl + "/pago/multa/confirmar/" + id;
+
             com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
                 flowService.crearOrden(id, email, usuario.getNombreCompleto(),
-                    multa.getMonto().doubleValue(),
-                    baseUrl + "/pago/multa/retorno/" + id,
-                    baseUrl + "/pago/multa/confirmar/" + id);
+                    multa.getMonto().doubleValue(), urlRetorno, urlConfirmar);
 
             return "redirect:" + orden.url();
         } catch (Exception e) {
