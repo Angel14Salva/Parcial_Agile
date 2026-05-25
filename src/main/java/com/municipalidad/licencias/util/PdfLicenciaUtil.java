@@ -33,8 +33,8 @@ public class PdfLicenciaUtil {
             canvas.setColorFill(AZUL_OSCURO);
             canvas.moveTo(0, H);
             canvas.lineTo(W, H);
-            canvas.lineTo(W, H - 155);
-            canvas.curveTo(W * 0.7f, H - 120, W * 0.3f, H - 175, 0, H - 145);
+            canvas.lineTo(W, H - 175);
+            canvas.curveTo(W * 0.7f, H - 140, W * 0.3f, H - 195, 0, H - 165);
             canvas.closePath();
             canvas.fill();
 
@@ -50,8 +50,8 @@ public class PdfLicenciaUtil {
             // Linea curva azul medio superior
             canvas.setColorStroke(AZUL_MEDIO);
             canvas.setLineWidth(8);
-            canvas.moveTo(0, H - 148);
-            canvas.curveTo(W * 0.3f, H - 178, W * 0.7f, H - 123, W, H - 158);
+            canvas.moveTo(0, H - 168);
+            canvas.curveTo(W * 0.3f, H - 198, W * 0.7f, H - 143, W, H - 178);
             canvas.stroke();
 
             // Linea curva azul medio inferior
@@ -60,18 +60,18 @@ public class PdfLicenciaUtil {
             canvas.stroke();
 
             // Fuentes
-            Font fMunicipio = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD,   BaseColor.WHITE);
-            Font fTitulo    = new Font(Font.FontFamily.HELVETICA, 13, Font.BOLD,   BaseColor.WHITE);
-            Font fNroLey    = new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD,   BaseColor.WHITE);
-            Font fNormal    = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, BaseColor.BLACK);
-            Font fBold      = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
-            Font fLabel     = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, new BaseColor(80, 80, 80));
-            Font fValor     = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
-            Font fItalic    = new Font(Font.FontFamily.HELVETICA,  9, Font.ITALIC, new BaseColor(80, 80, 80));
-            Font fSmall     = new Font(Font.FontFamily.HELVETICA,  8, Font.NORMAL, new BaseColor(60, 60, 60));
-            Font fSmallBold = new Font(Font.FontFamily.HELVETICA,  8, Font.BOLD,   BaseColor.BLACK);
-            Font fProhib    = new Font(Font.FontFamily.HELVETICA,  9, Font.BOLD,   BaseColor.BLACK);
-            Font fOblig     = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
+            Font fMunicipio = new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.BOLD,   BaseColor.WHITE);
+            Font fTitulo    = new Font(Font.FontFamily.TIMES_ROMAN, 13, Font.BOLD,   BaseColor.WHITE);
+            Font fNroLey    = new Font(Font.FontFamily.TIMES_ROMAN, 11, Font.BOLD,   BaseColor.WHITE);
+            Font fNormal    = new Font(Font.FontFamily.TIMES_ROMAN, 10, Font.NORMAL, BaseColor.BLACK);
+            Font fBold      = new Font(Font.FontFamily.TIMES_ROMAN, 10, Font.BOLD,   BaseColor.BLACK);
+            Font fLabel     = new Font(Font.FontFamily.TIMES_ROMAN, 10, Font.NORMAL, BaseColor.BLACK);
+            Font fValor     = new Font(Font.FontFamily.TIMES_ROMAN, 10, Font.BOLD,   BaseColor.BLACK);
+            Font fItalic    = new Font(Font.FontFamily.TIMES_ROMAN,  9, Font.ITALIC, BaseColor.BLACK);
+            Font fSmall     = new Font(Font.FontFamily.TIMES_ROMAN,  8, Font.NORMAL, BaseColor.BLACK);
+            Font fSmallBold = new Font(Font.FontFamily.TIMES_ROMAN,  8, Font.BOLD,   BaseColor.BLACK);
+            Font fProhib    = new Font(Font.FontFamily.TIMES_ROMAN,  9, Font.BOLD,   BaseColor.BLACK);
+            Font fOblig     = new Font(Font.FontFamily.TIMES_ROMAN, 10, Font.BOLD,   BaseColor.BLACK);
 
             // Escudo en zona azul superior
             try {
@@ -80,7 +80,7 @@ public class PdfLicenciaUtil {
                 if (escudoStream != null) {
                     Image escudo = Image.getInstance(escudoStream.readAllBytes());
                     escudo.scaleToFit(85, 95);
-                    escudo.setAbsolutePosition(48, H - 145);
+                    escudo.setAbsolutePosition(48, H - 165);
                     writer.getDirectContent().addImage(escudo);
                 }
             } catch (Exception ignored) {}
@@ -106,11 +106,11 @@ public class PdfLicenciaUtil {
             c4.setHorizontalAlignment(Element.ALIGN_CENTER);
             headerTxt.addCell(c4);
 
-            headerTxt.writeSelectedRows(0, -1, 155, H - 28, writer.getDirectContent());
+            headerTxt.writeSelectedRows(0, -1, 155, H - 20, writer.getDirectContent());
 
             // Espacio para saltar zona azul
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 60)));
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 5)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 68)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 5)));
 
             // Texto facultades
             Paragraph facultades = new Paragraph(
@@ -118,11 +118,11 @@ public class PdfLicenciaUtil {
                 "Ordenanza Municipal Nro. 014-2018-MPT y la Ley Org\u00e1nica de Municipalidades.", fItalic);
             facultades.setAlignment(Element.ALIGN_JUSTIFIED);
             doc.add(facultades);
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 5)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 5)));
 
             // CONCEDE A
             doc.add(new Paragraph("CONCEDE A:", fBold));
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 4)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 4)));
 
             // Datos
             PdfPTable datos = new PdfPTable(2);
@@ -152,14 +152,14 @@ public class PdfLicenciaUtil {
             agregarFila(datos, "Horario de Atenci\u00f3n:", horario,      fLabel, fValor);
             agregarFila(datos, "Visto el Expediente:",      expediente,    fLabel, fValor);
             doc.add(datos);
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 6)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 6)));
 
             // Fecha
             String fechaStr = "Trujillo, " + licencia.getFechaEmision().format(FMT_LARGO);
             Paragraph fecha = new Paragraph(fechaStr, fNormal);
             fecha.setAlignment(Element.ALIGN_RIGHT);
             doc.add(fecha);
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 8)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 8)));
 
             // Firma
             PdfPTable firmaTable = new PdfPTable(1);
@@ -200,15 +200,15 @@ public class PdfLicenciaUtil {
 
             firmaTable.addCell(fc);
             doc.add(firmaTable);
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 10)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 10)));
 
             // Prohibiciones
             doc.add(new Paragraph("PROHIBICIONES AL ESTABLECIMIENTO", fProhib));
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 3)));
-            Font fPI = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.BLACK);
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 3)));
+            Font fPI = new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL, BaseColor.BLACK);
             doc.add(new Paragraph("Prohibido consumir bebidas alcoh\u00f3licas dentro y fuera del local", fPI));
             doc.add(new Paragraph("Prohibido ocupar pasajes de circulaci\u00f3n", fPI));
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 5)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 5)));
 
             // Obligatorio
             Paragraph oblig = new Paragraph(
