@@ -202,12 +202,34 @@ public class PdfLicenciaUtil {
             doc.add(firmaTable);
             doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 10)));
 
-            // Prohibiciones
+            // Prohibiciones segun rubro
             doc.add(new Paragraph("PROHIBICIONES AL ESTABLECIMIENTO", fProhib));
             doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 3)));
             Font fPI = new Font(Font.FontFamily.TIMES_ROMAN, 9, Font.NORMAL, BaseColor.BLACK);
-            doc.add(new Paragraph("Prohibido consumir bebidas alcoh\u00f3licas dentro y fuera del local", fPI));
-            doc.add(new Paragraph("Prohibido ocupar pasajes de circulaci\u00f3n", fPI));
+
+            String rubroLower = giro.toLowerCase();
+            boolean esNocturno = rubroLower.contains("bar") || rubroLower.contains("cantina") ||
+                rubroLower.contains("discoteca") || rubroLower.contains("club nocturno") ||
+                rubroLower.contains("licor") || rubroLower.contains("alcohol") ||
+                rubroLower.contains("karaoke") || rubroLower.contains("pub");
+            boolean esAlimentos = rubroLower.contains("restaurante") || rubroLower.contains("comida") ||
+                rubroLower.contains("bodega") || rubroLower.contains("panaderia") ||
+                rubroLower.contains("pasteleria") || rubroLower.contains("mercado");
+
+            if (esNocturno) {
+                doc.add(new Paragraph("\u2022 Prohibido el ingreso de menores de edad", fPI));
+                doc.add(new Paragraph("\u2022 Prohibido exceder los decibeles permitidos por la normativa municipal", fPI));
+                doc.add(new Paragraph("\u2022 Prohibido funcionar fuera del horario autorizado", fPI));
+                doc.add(new Paragraph("\u2022 Prohibido ocupar pasajes y v\u00edas p\u00fablicas", fPI));
+            } else if (esAlimentos) {
+                doc.add(new Paragraph("\u2022 Prohibido expender productos vencidos o en mal estado", fPI));
+                doc.add(new Paragraph("\u2022 Prohibido ocupar pasajes de circulaci\u00f3n", fPI));
+                doc.add(new Paragraph("\u2022 Prohibido el funcionamiento sin los certificados sanitarios vigentes", fPI));
+            } else {
+                doc.add(new Paragraph("\u2022 Prohibido consumir bebidas alcoh\u00f3licas dentro y fuera del local", fPI));
+                doc.add(new Paragraph("\u2022 Prohibido ocupar pasajes de circulaci\u00f3n", fPI));
+            }
+            doc.add(new Paragraph("\u2022 Prohibido realizar actividades distintas a las autorizadas en esta licencia", fPI));
             doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 5)));
 
             // Obligatorio
