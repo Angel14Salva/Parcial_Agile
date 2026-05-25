@@ -667,6 +667,17 @@ class FlowRetornoController {
         this.solicitudService = solicitudService;
     }
 
+    @org.springframework.web.bind.annotation.GetMapping("/pago/exito/{id}")
+    String exitoPago(@org.springframework.web.bind.annotation.PathVariable Long id,
+                     org.springframework.ui.Model model) {
+        try {
+            model.addAttribute("solicitud", solicitudService.obtenerPorId(id));
+        } catch (Exception e) {
+            // solicitud no encontrada
+        }
+        return "pago/exito";
+    }
+
     @org.springframework.web.bind.annotation.RequestMapping(value = "/pago/retorno/{id}", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     String retorno(@org.springframework.web.bind.annotation.PathVariable Long id,
                    @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
@@ -676,8 +687,7 @@ class FlowRetornoController {
                 com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
                 if (estado != null && estado.path("status").asInt() == 2) {
                     solicitudService.enviarConPago(id, token);
-                    ra.addFlashAttribute("exito", "¡Pago confirmado! Se programó la inspección técnica.");
-                    return "redirect:/auth/login?pagoExitoso=true";
+                    return "redirect:/pago/exito/" + id;
                 } else {
                     ra.addFlashAttribute("error", "El pago no fue confirmado. Estado: " +
                         (estado != null ? estado.path("status").asText() : "desconocido"));
