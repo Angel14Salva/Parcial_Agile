@@ -60,5 +60,6 @@ public class Observacion {
     public void setSubsanada(boolean v)        { this.subsanada = v; }
     public LocalDateTime getFechaSubsanacion() { return fechaSubsanacion; }
     public void setFechaSubsanacion(LocalDateTime v) { this.fechaSubsanacion = v; }
+    public String getDocumentoCorregidoUrl() { return documentoCorregidoUrl; }
     public void setDocumentoCorregidoUrl(String v)   { this.documentoCorregidoUrl = v; }
 }
