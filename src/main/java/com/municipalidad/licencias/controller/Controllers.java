@@ -187,7 +187,7 @@ class SolicitudController {
                 s.getCorreoElectronico() : usuario.getUsername() + "@licencias.gob.pe";
             String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : usuario.getNombreCompleto();
             com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
-                flowService.crearOrden(id, email, nombre, 180.0, urlRetorno, urlConfirmacion);
+                flowService.crearOrden(id, email, nombre, 2.0, urlRetorno, urlConfirmacion);
             solicitudService.guardarReferencia(id, orden.token());
             return "redirect:" + orden.url();
         } catch (Exception e) {
