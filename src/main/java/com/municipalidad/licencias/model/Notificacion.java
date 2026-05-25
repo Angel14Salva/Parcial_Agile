@@ -57,6 +57,8 @@ public class Notificacion {
     public Usuario getUsuario()          { return usuario; }
     public String getTitulo()            { return titulo; }
     public String getMensaje()           { return mensaje; }
+    public String getEnlace()             { return enlace; }
+    public void   setEnlace(String v)     { this.enlace = v; }
     public boolean isLeida()             { return leida; }
     public LocalDateTime getCreadoEn()   { return creadoEn; }
     public void setLeida(boolean v)      { this.leida = v; }
