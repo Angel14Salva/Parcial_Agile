@@ -1,5 +1,4 @@
 package com.municipalidad.licencias.config;
-
 import com.municipalidad.licencias.model.Usuario;
 import com.municipalidad.licencias.repository.UsuarioRepository;
 import org.springframework.context.annotation.Bean;
@@ -30,9 +29,6 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/auth/**", "/error").permitAll()
                 .requestMatchers("/pago/**").permitAll()
-                .requestMatchers("/solicitud/*/pago/retorno").permitAll()
-                .requestMatchers("/solicitud/*/pago/confirmar").permitAll()
-                .requestMatchers("/pago/**").permitAll()
                 .requestMatchers("/api/validar/**").authenticated()
                 .requestMatchers("/inspector/**").hasRole("INSPECTOR")
                 .requestMatchers("/fiscalizacion/**").hasAnyRole("INSPECTOR", "ADMIN")
@@ -49,11 +45,11 @@ public class SecurityConfig {
                 .logoutUrl("/auth/logout")
                 .logoutSuccessUrl("/auth/login?logout=true")
                 .permitAll()
+            )
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/validar/**")
+                .ignoringRequestMatchers("/pago/**")
             );
-        http.csrf(csrf -> csrf
-            .ignoringRequestMatchers("/api/validar/**")
-            .ignoringRequestMatchers("/solicitud/*/pago/confirmar")
-        );
         return http.build();
     }
 
