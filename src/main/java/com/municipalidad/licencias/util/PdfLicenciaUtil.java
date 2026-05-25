@@ -6,201 +6,211 @@ import com.municipalidad.licencias.model.Licencia;
 import com.municipalidad.licencias.model.Solicitud;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public class PdfLicenciaUtil {
 
-    private static final BaseColor AZUL       = new BaseColor(0, 51, 102);
-    private static final BaseColor AZUL_CLARO = new BaseColor(0, 70, 140);
-    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd 'de' MMMM 'del' yyyy",
-        java.util.Locale.forLanguageTag("es"));
-    private static final DateTimeFormatter FMT_CORTO = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final BaseColor AZUL_OSCURO = new BaseColor(0, 40, 100);
+    private static final BaseColor AZUL_MEDIO  = new BaseColor(0, 70, 150);
+    private static final DateTimeFormatter FMT_LARGO = DateTimeFormatter.ofPattern(
+        "dd 'de' MMMM 'del' yyyy", new Locale("es", "PE"));
 
     public static byte[] generar(Licencia licencia) {
         try {
-            Document doc = new Document(PageSize.A4, 50, 50, 40, 40);
+            Document doc = new Document(PageSize.A4, 55, 55, 45, 45);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PdfWriter writer = PdfWriter.getInstance(doc, out);
             doc.open();
 
             Solicitud s = licencia.getSolicitud();
+            PdfContentByte canvas = writer.getDirectContentUnder();
+            float W = PageSize.A4.getWidth();
+            float H = PageSize.A4.getHeight();
 
-            // ── Fuentes ───────────────────────────────────────────────────────
-            Font fMunicipio  = new Font(Font.FontFamily.HELVETICA, 15, Font.BOLD,   AZUL);
-            Font fTitulo     = new Font(Font.FontFamily.HELVETICA, 13, Font.BOLD,   AZUL);
-            Font fNroLic     = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD,   AZUL);
-            Font fLey        = new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD,   AZUL);
-            Font fNormal     = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, BaseColor.BLACK);
-            Font fBold       = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
-            Font fLabel      = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, BaseColor.DARK_GRAY);
-            Font fValorBold  = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
-            Font fSmall      = new Font(Font.FontFamily.HELVETICA,  8, Font.NORMAL, BaseColor.DARK_GRAY);
-            Font fProhib     = new Font(Font.FontFamily.HELVETICA,  9, Font.BOLD,   BaseColor.BLACK);
-            Font fFooter     = new Font(Font.FontFamily.HELVETICA,  8, Font.ITALIC, BaseColor.DARK_GRAY);
+            // Fondo azul superior curvo
+            canvas.setColorFill(AZUL_OSCURO);
+            canvas.moveTo(0, H);
+            canvas.lineTo(W, H);
+            canvas.lineTo(W, H - 155);
+            canvas.curveTo(W * 0.7f, H - 120, W * 0.3f, H - 175, 0, H - 145);
+            canvas.closePath();
+            canvas.fill();
 
-            // ── Encabezado con logo y título ──────────────────────────────────
-            PdfPTable headerTable = new PdfPTable(2);
-            headerTable.setWidthPercentage(100);
-            headerTable.setWidths(new float[]{20, 80});
-            headerTable.setSpacingAfter(8);
+            // Fondo azul inferior curvo
+            canvas.setColorFill(AZUL_OSCURO);
+            canvas.moveTo(0, 0);
+            canvas.lineTo(W, 0);
+            canvas.lineTo(W, 80);
+            canvas.curveTo(W * 0.7f, 50, W * 0.3f, 100, 0, 70);
+            canvas.closePath();
+            canvas.fill();
 
-            // Logo (escudo placeholder)
-            PdfPCell logoCell = new PdfPCell();
-            logoCell.setBorder(Rectangle.NO_BORDER);
-            logoCell.setPadding(5);
-            // Círculo azul como placeholder del escudo
-            logoCell.addElement(new Paragraph("⚙", new Font(Font.FontFamily.SYMBOL, 36, Font.NORMAL, AZUL)));
-            headerTable.addCell(logoCell);
+            // Linea curva azul medio superior
+            canvas.setColorStroke(AZUL_MEDIO);
+            canvas.setLineWidth(8);
+            canvas.moveTo(0, H - 148);
+            canvas.curveTo(W * 0.3f, H - 178, W * 0.7f, H - 123, W, H - 158);
+            canvas.stroke();
 
-            // Título institucional
-            PdfPCell titleCell = new PdfPCell();
-            titleCell.setBorder(Rectangle.NO_BORDER);
-            titleCell.setPaddingLeft(10);
-            titleCell.setPaddingTop(5);
+            // Linea curva azul medio inferior
+            canvas.moveTo(0, 73);
+            canvas.curveTo(W * 0.3f, 103, W * 0.7f, 53, W, 83);
+            canvas.stroke();
 
-            Paragraph pMunicipio = new Paragraph("MUNICIPALIDAD PROVINCIAL DE TRUJILLO", fMunicipio);
-            pMunicipio.setAlignment(Element.ALIGN_CENTER);
-            titleCell.addElement(pMunicipio);
+            // Fuentes
+            Font fMunicipio = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD,   BaseColor.WHITE);
+            Font fTitulo    = new Font(Font.FontFamily.HELVETICA, 13, Font.BOLD,   BaseColor.WHITE);
+            Font fNroLey    = new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD,   BaseColor.WHITE);
+            Font fNormal    = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, BaseColor.BLACK);
+            Font fBold      = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
+            Font fLabel     = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, new BaseColor(80, 80, 80));
+            Font fValor     = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
+            Font fItalic    = new Font(Font.FontFamily.HELVETICA,  9, Font.ITALIC, new BaseColor(80, 80, 80));
+            Font fSmall     = new Font(Font.FontFamily.HELVETICA,  8, Font.NORMAL, new BaseColor(60, 60, 60));
+            Font fSmallBold = new Font(Font.FontFamily.HELVETICA,  8, Font.BOLD,   BaseColor.BLACK);
+            Font fProhib    = new Font(Font.FontFamily.HELVETICA,  9, Font.BOLD,   BaseColor.BLACK);
+            Font fOblig     = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD,   BaseColor.BLACK);
 
-            Paragraph pSubtitulo = new Paragraph("\n", fNormal);
-            titleCell.addElement(pSubtitulo);
+            // Escudo en zona azul superior
+            try {
+                InputStream escudoStream = PdfLicenciaUtil.class
+                    .getResourceAsStream("/static/img/escudo_trujillo.png");
+                if (escudoStream != null) {
+                    Image escudo = Image.getInstance(escudoStream.readAllBytes());
+                    escudo.scaleToFit(85, 95);
+                    escudo.setAbsolutePosition(48, H - 145);
+                    writer.getDirectContent().addImage(escudo);
+                }
+            } catch (Exception ignored) {}
 
-            Paragraph pTitulo = new Paragraph("LICENCIA DE FUNCIONAMIENTO", fTitulo);
-            pTitulo.setAlignment(Element.ALIGN_CENTER);
-            titleCell.addElement(pTitulo);
+            // Titulo en zona azul
+            PdfPTable headerTxt = new PdfPTable(1);
+            headerTxt.setTotalWidth(370);
+            headerTxt.setLockedWidth(true);
 
-            Paragraph pNro = new Paragraph("Nro. " + licencia.getNumeroLicencia(), fNroLic);
-            pNro.setAlignment(Element.ALIGN_CENTER);
-            titleCell.addElement(pNro);
+            PdfPCell c1 = cellNoBorder(new Phrase("MUNICIPALIDAD PROVINCIAL DE TRUJILLO", fMunicipio));
+            c1.setHorizontalAlignment(Element.ALIGN_CENTER); c1.setPaddingBottom(4);
+            headerTxt.addCell(c1);
 
-            Paragraph pLey = new Paragraph("Ley Nro. 28976", fLey);
-            pLey.setAlignment(Element.ALIGN_CENTER);
-            titleCell.addElement(pLey);
+            PdfPCell c2 = cellNoBorder(new Phrase("LICENCIA DE FUNCIONAMIENTO", fTitulo));
+            c2.setHorizontalAlignment(Element.ALIGN_CENTER);
+            headerTxt.addCell(c2);
 
-            headerTable.addCell(titleCell);
-            doc.add(headerTable);
+            PdfPCell c3 = cellNoBorder(new Phrase("Nro. " + licencia.getNumeroLicencia(), fNroLey));
+            c3.setHorizontalAlignment(Element.ALIGN_CENTER);
+            headerTxt.addCell(c3);
 
-            // Línea separadora azul
-            PdfPTable lineaAzul = new PdfPTable(1);
-            lineaAzul.setWidthPercentage(100);
-            PdfPCell lineaCell = new PdfPCell(new Phrase(" "));
-            lineaCell.setBackgroundColor(AZUL);
-            lineaCell.setBorder(Rectangle.NO_BORDER);
-            lineaCell.setFixedHeight(3f);
-            lineaAzul.addCell(lineaCell);
-            doc.add(lineaAzul);
-            doc.add(Chunk.NEWLINE);
+            PdfPCell c4 = cellNoBorder(new Phrase("Ley Nro. 28976", fNroLey));
+            c4.setHorizontalAlignment(Element.ALIGN_CENTER);
+            headerTxt.addCell(c4);
 
-            // ── Texto de facultades ───────────────────────────────────────────
-            Font fItalic = new Font(Font.FontFamily.HELVETICA, 9, Font.ITALIC, BaseColor.DARK_GRAY);
+            headerTxt.writeSelectedRows(0, -1, 155, H - 28, writer.getDirectContent());
+
+            // Espacio para saltar zona azul
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 60)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 5)));
+
+            // Texto facultades
             Paragraph facultades = new Paragraph(
-                "En uso de las Facultades conferidas mediante la Ordenanza Municipal y la Ley Orgánica de Municipalidades.",
-                fItalic);
+                "En uso de las Facultades conferidas mediante Resoluci\u00f3n Gerencial N\u00b0 1261-213-MPT-GDEL, la " +
+                "Ordenanza Municipal Nro. 014-2018-MPT y la Ley Org\u00e1nica de Municipalidades.", fItalic);
             facultades.setAlignment(Element.ALIGN_JUSTIFIED);
             doc.add(facultades);
-            doc.add(Chunk.NEWLINE);
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 5)));
 
-            // ── CONCEDE A ─────────────────────────────────────────────────────
-            Paragraph concedeA = new Paragraph("CONCEDE A:", fBold);
-            doc.add(concedeA);
-            doc.add(Chunk.NEWLINE);
+            // CONCEDE A
+            doc.add(new Paragraph("CONCEDE A:", fBold));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 4)));
 
-            // ── Tabla de datos ────────────────────────────────────────────────
+            // Datos
             PdfPTable datos = new PdfPTable(2);
             datos.setWidthPercentage(100);
-            datos.setWidths(new float[]{32, 68});
-            datos.setSpacingAfter(15);
+            datos.setWidths(new float[]{33, 67});
 
-            String razonSocial    = s != null ? s.getRazonSocial() : "-";
-            String ruc            = s != null && s.getRuc() != null ? "RUC: " + s.getRuc() : "-";
-            String representante  = s != null && s.getNombreRepresentante() != null ? s.getNombreRepresentante() : "-";
-            String dniRep         = s != null && s.getDniRepresentante() != null ? "DNI: " + s.getDniRepresentante() : "-";
-            String nombreComercial= s != null && s.getNombreComercial() != null ? s.getNombreComercial() : razonSocial;
-            String direccion      = s != null && s.getDireccionEstablecimiento() != null ?
-                                    s.getDireccionEstablecimiento() : (s != null ? s.getDomicilioFiscal() : "-");
-            String giro           = s != null ? s.getRubro() : "-";
-            String area           = s != null && s.getAreaTotalM2() != null ? s.getAreaTotalM2() + " m2" : "-";
-            String horario        = s != null && s.getHorarioAtencion() != null ? s.getHorarioAtencion() : "-";
-            String expediente     = "EXP-" + String.format("%05d", licencia.getId()) + "-MPT";
+            String razonSocial   = safe(s != null ? s.getRazonSocial() : null);
+            String ruc           = s != null && s.getRuc() != null ? "RUC: " + s.getRuc() : "-";
+            String representante = safe(s != null ? s.getNombreRepresentante() : null);
+            String dniRep        = s != null && s.getDniRepresentante() != null ? "DNI: " + s.getDniRepresentante() : "-";
+            String nomComercial  = safe(s != null && s.getNombreComercial() != null ? s.getNombreComercial() : (s != null ? s.getRazonSocial() : null));
+            String direccion     = safe(s != null && s.getDireccionEstablecimiento() != null ? s.getDireccionEstablecimiento() : (s != null ? s.getDomicilioFiscal() : null));
+            String giro          = "\"" + safe(s != null ? s.getRubro() : null) + "\"";
+            String area          = s != null && s.getAreaTotalM2() != null ? s.getAreaTotalM2() + " m2" : "-";
+            String horario       = safe(s != null ? s.getHorarioAtencion() : null);
+            String expediente    = String.format("%05d", licencia.getId()) + " \u2013 " + licencia.getFechaEmision().getYear() + " \u2013 MPT - 1";
 
-            agregarFilaDatos(datos, "Razón Social:",        razonSocial,    fLabel, fValorBold);
-            agregarFilaDatos(datos, "Doc. de Identidad:",   ruc,            fLabel, fValorBold);
-            agregarFilaDatos(datos, "Representante Legal:", representante,  fLabel, fValorBold);
-            agregarFilaDatos(datos, "Doc. de Identidad:",   dniRep,         fLabel, fValorBold);
-            agregarFilaDatos(datos, "Nombre Comercial:",    nombreComercial,fLabel, fValorBold);
-            agregarFilaDatos(datos, "Dirección:",           direccion,      fLabel, fValorBold);
-            agregarFilaDatos(datos, "Giro:",                giro,           fLabel, fValorBold);
-            agregarFilaDatos(datos, "Área:",                area,           fLabel, fValorBold);
-            agregarFilaDatos(datos, "Horario de Atención:", horario,        fLabel, fValorBold);
-            agregarFilaDatos(datos, "Visto el Expediente:", expediente,     fLabel, fValorBold);
+            agregarFila(datos, "Raz\u00f3n Social:",       razonSocial,   fLabel, fValor);
+            agregarFila(datos, "Doc. de Identidad:",        ruc,           fLabel, fValor);
+            agregarFila(datos, "Representante Legal:",      representante, fLabel, fValor);
+            agregarFila(datos, "Doc. de Identidad:",        dniRep,        fLabel, fValor);
+            agregarFila(datos, "Nombre Comercial:",         nomComercial,  fLabel, fValor);
+            agregarFila(datos, "Direcci\u00f3n:",          direccion,     fLabel, fValor);
+            agregarFila(datos, "Giro:",                     giro,          fLabel, fValor);
+            agregarFila(datos, "Zonificaci\u00f3n:",       "\"ZRE\"",   fLabel, fValor);
+            agregarFila(datos, "\u00c1rea:",               area,          fLabel, fValor);
+            agregarFila(datos, "Horario de Atenci\u00f3n:", horario,      fLabel, fValor);
+            agregarFila(datos, "Visto el Expediente:",      expediente,    fLabel, fValor);
             doc.add(datos);
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 6)));
 
-            // Fecha y lugar
-            String fechaEmision = licencia.getFechaEmision().format(FMT);
-            Paragraph fecha = new Paragraph("Trujillo, " + fechaEmision, fNormal);
+            // Fecha
+            String fechaStr = "Trujillo, " + licencia.getFechaEmision().format(FMT_LARGO);
+            Paragraph fecha = new Paragraph(fechaStr, fNormal);
             fecha.setAlignment(Element.ALIGN_RIGHT);
             doc.add(fecha);
-            doc.add(Chunk.NEWLINE);
-            doc.add(Chunk.NEWLINE);
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 8)));
 
-            // ── Sello y firma ─────────────────────────────────────────────────
+            // Firma
             PdfPTable firmaTable = new PdfPTable(1);
-            firmaTable.setWidthPercentage(50);
+            firmaTable.setWidthPercentage(55);
             firmaTable.setHorizontalAlignment(Element.ALIGN_CENTER);
+            PdfPCell fc = new PdfPCell();
+            fc.setBorder(Rectangle.NO_BORDER);
+            fc.setHorizontalAlignment(Element.ALIGN_CENTER);
 
-            PdfPCell firmaCell = new PdfPCell();
-            firmaCell.setBorder(Rectangle.NO_BORDER);
-            firmaCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            Paragraph pInst = new Paragraph("MUNICIPALIDAD PROVINCIAL DE TRUJILLO", fSmallBold);
+            pInst.setAlignment(Element.ALIGN_CENTER); fc.addElement(pInst);
 
-            Paragraph pFirmaInst = new Paragraph("MUNICIPALIDAD PROVINCIAL DE TRUJILLO", fSmall);
-            pFirmaInst.setAlignment(Element.ALIGN_CENTER);
-            firmaCell.addElement(pFirmaInst);
+            Paragraph pSubG = new Paragraph("Subgerencia de Licencias y Comercializaciones", fSmall);
+            pSubG.setAlignment(Element.ALIGN_CENTER); fc.addElement(pSubG);
 
-            Paragraph pSubGer = new Paragraph("Subgerencia de Licencias y Comercializaciones", fSmall);
-            pSubGer.setAlignment(Element.ALIGN_CENTER);
-            firmaCell.addElement(pSubGer);
+            try {
+                InputStream es2 = PdfLicenciaUtil.class.getResourceAsStream("/static/img/escudo_trujillo.png");
+                if (es2 != null) {
+                    Image ef = Image.getInstance(es2.readAllBytes());
+                    ef.scaleToFit(35, 40);
+                    ef.setAlignment(Element.ALIGN_CENTER);
+                    fc.addElement(ef);
+                }
+            } catch (Exception ignored) {}
 
-            // Línea de firma
             Paragraph lineaFirma = new Paragraph("_________________________", fNormal);
             lineaFirma.setAlignment(Element.ALIGN_CENTER);
-            lineaFirma.setSpacingBefore(30f);
-            firmaCell.addElement(lineaFirma);
+            lineaFirma.setSpacingBefore(18f);
+            fc.addElement(lineaFirma);
 
             Paragraph pCargoFirma = new Paragraph("Sub Gerente de Licencias", fSmall);
             pCargoFirma.setAlignment(Element.ALIGN_CENTER);
-            firmaCell.addElement(pCargoFirma);
+            fc.addElement(pCargoFirma);
 
-            firmaTable.addCell(firmaCell);
+            firmaTable.addCell(fc);
             doc.add(firmaTable);
-            doc.add(Chunk.NEWLINE);
-            doc.add(Chunk.NEWLINE);
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 10)));
 
-            // ── Línea separadora ──────────────────────────────────────────────
-            doc.add(lineaAzul);
-            doc.add(Chunk.NEWLINE);
+            // Prohibiciones
+            doc.add(new Paragraph("PROHIBICIONES AL ESTABLECIMIENTO", fProhib));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 3)));
+            Font fPI = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.BLACK);
+            doc.add(new Paragraph("Prohibido consumir bebidas alcoh\u00f3licas dentro y fuera del local", fPI));
+            doc.add(new Paragraph("Prohibido ocupar pasajes de circulaci\u00f3n", fPI));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.HELVETICA, 5)));
 
-            // ── Prohibiciones ─────────────────────────────────────────────────
-            Paragraph titProhib = new Paragraph("PROHIBICIONES AL ESTABLECIMIENTO", fProhib);
-            doc.add(titProhib);
-
-            Font fProhibItem = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.BLACK);
-            doc.add(new Paragraph("• Prohibido consumir bebidas alcohólicas dentro y fuera del local", fProhibItem));
-            doc.add(new Paragraph("• Prohibido ocupar pasajes de circulación", fProhibItem));
-            doc.add(Chunk.NEWLINE);
-
-            Paragraph obligatorio = new Paragraph(
-                "ES OBLIGATORIO QUE SE EXHIBA EN UN LUGAR VISIBLE DEL ESTABLECIMIENTO", fProhib);
-            obligatorio.setAlignment(Element.ALIGN_CENTER);
-            doc.add(obligatorio);
-
-            // ── Vigencia ──────────────────────────────────────────────────────
-            doc.add(Chunk.NEWLINE);
-            Font fVigencia = new Font(Font.FontFamily.HELVETICA, 9, Font.ITALIC, BaseColor.DARK_GRAY);
-            Paragraph vigencia = new Paragraph(
-                "Licencia válida hasta: " + licencia.getFechaVencimiento().format(FMT_CORTO) +
-                " · N.° " + licencia.getNumeroLicencia(), fVigencia);
-            vigencia.setAlignment(Element.ALIGN_CENTER);
-            doc.add(vigencia);
+            // Obligatorio
+            Paragraph oblig = new Paragraph(
+                "ES OBLIGATORIO QUE SE EXHIBA EN UN LUGAR VISIBLE DEL ESTABLECIMIENTO", fOblig);
+            oblig.setAlignment(Element.ALIGN_CENTER);
+            doc.add(oblig);
 
             doc.close();
             return out.toByteArray();
@@ -210,20 +220,21 @@ public class PdfLicenciaUtil {
         }
     }
 
-    private static void agregarFilaDatos(PdfPTable tabla, String label, String valor,
-                                          Font fLabel, Font fValor) {
-        PdfPCell cLabel = new PdfPCell(new Phrase(label, fLabel));
-        cLabel.setBorder(Rectangle.BOTTOM);
-        cLabel.setBorderColor(new BaseColor(220, 220, 220));
-        cLabel.setPadding(6);
-        cLabel.setBackgroundColor(new BaseColor(245, 248, 252));
+    private static void agregarFila(PdfPTable t, String label, String valor, Font fL, Font fV) {
+        PdfPCell cL = new PdfPCell(new Phrase(label, fL));
+        cL.setBorder(Rectangle.NO_BORDER); cL.setPaddingTop(5); cL.setPaddingBottom(5); cL.setPaddingLeft(2);
+        PdfPCell cV = new PdfPCell(new Phrase(valor != null ? valor : "-", fV));
+        cV.setBorder(Rectangle.NO_BORDER); cV.setPaddingTop(5); cV.setPaddingBottom(5);
+        t.addCell(cL); t.addCell(cV);
+    }
 
-        PdfPCell cValor = new PdfPCell(new Phrase(valor != null ? valor : "-", fValor));
-        cValor.setBorder(Rectangle.BOTTOM);
-        cValor.setBorderColor(new BaseColor(220, 220, 220));
-        cValor.setPadding(6);
+    private static PdfPCell cellNoBorder(Phrase phrase) {
+        PdfPCell cell = new PdfPCell(phrase);
+        cell.setBorder(Rectangle.NO_BORDER); cell.setPadding(2);
+        return cell;
+    }
 
-        tabla.addCell(cLabel);
-        tabla.addCell(cValor);
+    private static String safe(String val) {
+        return val != null && !val.isBlank() ? val : "-";
     }
 }
