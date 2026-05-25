@@ -88,16 +88,19 @@ class SolicitudController {
     private final LicenciaService  licenciaService;
     private final UsuarioRepository usuarioRepo;
     private final com.municipalidad.licencias.service.FlowService flowService;
+    private final com.municipalidad.licencias.service.MultaService multaServiceDet;
 
     SolicitudController(SolicitudService solicitudService,
                         LicenciaService licenciaService,
                         UsuarioRepository usuarioRepo,
-                        com.municipalidad.licencias.service.FlowService flowService) {
+                        com.municipalidad.licencias.service.FlowService flowService,
+                        com.municipalidad.licencias.service.MultaService multaServiceDet) {
         this.solicitudService = solicitudService;
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
         this.flowService      = flowService;
     }
+        this.multaServiceDet  = multaServiceDet;
 
     @GetMapping("/nueva")
     String nuevaForm(Model model) {
