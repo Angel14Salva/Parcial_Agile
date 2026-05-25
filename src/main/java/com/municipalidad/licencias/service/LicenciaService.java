@@ -99,7 +99,18 @@ public class LicenciaService {
 
         List<Licencia> porVencer = licenciaRepo.findLicenciasProximasAVencer(hoy.plusDays(alertaDias1));
         porVencer.stream().filter(l -> l.getEstado() == Enums.EstadoLicencia.VIGENTE)
-            .forEach(l -> l.setEstado(Enums.EstadoLicencia.POR_VENCER));
+            .forEach(l -> {
+                l.setEstado(Enums.EstadoLicencia.POR_VENCER);
+                // Notificar al negocio sobre vencimiento próximo
+                notificacionService.crear(
+                    l.getSolicitud().getUsuario(),
+                    "Tu licencia está por vencer",
+                    "La licencia " + l.getNumeroLicencia() + " vence el " +
+                    l.getFechaVencimiento().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                    ". Renuévala para continuar operando.",
+                    "/solicitud/" + l.getSolicitud().getId() + "/detalle"
+                );
+            });
         licenciaRepo.saveAll(porVencer);
     }
 
