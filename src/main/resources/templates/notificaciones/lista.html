@@ -61,13 +61,13 @@
       </div>
       <p class="mb-0 text-secondary small" th:text="${n.mensaje}"></p>
       <!-- Link contextual -->
-      <div class="mt-2" th:if="${n.enlace != null}">
-        <a th:href="${n.enlace}" class="btn btn-outline-primary btn-sm">
+      <div class="mt-2">
+        <a th:if="${n.getEnlace() != null}"
+           th:href="${n.getEnlace()}" class="btn btn-outline-primary btn-sm">
           <i class="bi bi-arrow-right-circle me-1"></i>Ver detalle
         </a>
-      </div>
-      <div class="mt-2" th:if="${n.enlace == null}">
-        <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+        <a th:if="${n.getEnlace() == null}"
+           href="/dashboard" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-house me-1"></i>Ir al dashboard
         </a>
       </div>
