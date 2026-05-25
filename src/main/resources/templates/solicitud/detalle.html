@@ -89,12 +89,15 @@
                 th:text="${m.estado.name()}"></span>
             </td>
             <td>
-              <a th:if="${m.estado.name() == 'PENDIENTE'}"
-                 sec:authorize="hasRole('NEGOCIO')"
-                 th:href="@{/multas/{id}/detalle(id=${m.id})}"
-                 class="btn btn-success btn-sm">
-                <i class="bi bi-credit-card me-1"></i>Pagar
-              </a>
+              <form th:if="${m.estado.name() == 'PENDIENTE'}"
+                    sec:authorize="hasRole('NEGOCIO')"
+                    th:action="@{/multas/{id}/pagar(id=${m.id})}" method="post"
+                    style="display:inline">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn btn-success btn-sm">
+                  <i class="bi bi-credit-card me-1"></i>Pagar
+                </button>
+              </form>
             </td>
           </tr>
         </tbody>
