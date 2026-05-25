@@ -695,6 +695,116 @@ class MultaController {
 
 }
 
+// ── Gestión de inspectores (admin) ───────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/admin/inspectores")
+class InspectorAdminController {
+
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+    private final org.springframework.security.crypto.password.PasswordEncoder encoder;
+
+    InspectorAdminController(com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo,
+                              org.springframework.security.crypto.password.PasswordEncoder encoder) {
+        this.usuarioRepo = usuarioRepo;
+        this.encoder     = encoder;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping
+    String listar(org.springframework.ui.Model model) {
+        model.addAttribute("inspectores",
+            usuarioRepo.findByRol(com.municipalidad.licencias.model.Enums.Rol.INSPECTOR));
+        return "admin/inspectores";
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/nuevo")
+    String nuevoForm(org.springframework.ui.Model model) {
+        model.addAttribute("dto", new com.municipalidad.licencias.dto.InspectorDto());
+        return "admin/inspector-form";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/nuevo")
+    String crear(@jakarta.validation.Valid @org.springframework.web.bind.annotation.ModelAttribute("dto")
+                     com.municipalidad.licencias.dto.InspectorDto dto,
+                 org.springframework.validation.BindingResult errors,
+                 org.springframework.web.servlet.mvc.support.RedirectAttributes ra,
+                 org.springframework.ui.Model model) {
+        if (errors.hasErrors()) return "admin/inspector-form";
+        if (usuarioRepo.findByUsername(dto.getUsername()).isPresent()) {
+            model.addAttribute("errorUsername", "El usuario ya existe.");
+            return "admin/inspector-form";
+        }
+        com.municipalidad.licencias.model.Usuario inspector =
+            com.municipalidad.licencias.model.Usuario.builder()
+                .username(dto.getUsername())
+                .password(encoder.encode(dto.getPassword()))
+                .email(dto.getEmail())
+                .nombreCompleto(dto.getNombreCompleto())
+                .rol(com.municipalidad.licencias.model.Enums.Rol.INSPECTOR)
+                .activo(true)
+                .build();
+        inspector.setDni(dto.getDni());
+        inspector.setTelefono(dto.getTelefono());
+        inspector.setCargo(dto.getCargo());
+        inspector.setNumeroColegiatura(dto.getNumeroColegiatura());
+        inspector.setFechaNombramiento(dto.getFechaNombramiento());
+        usuarioRepo.save(inspector);
+        ra.addFlashAttribute("exito", "Inspector " + dto.getNombreCompleto() + " creado correctamente.");
+        return "redirect:/admin/inspectores";
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/{id}/editar")
+    String editarForm(@org.springframework.web.bind.annotation.PathVariable Long id,
+                      org.springframework.ui.Model model) {
+        com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Inspector no encontrado"));
+        com.municipalidad.licencias.dto.InspectorDto dto = new com.municipalidad.licencias.dto.InspectorDto();
+        dto.setNombreCompleto(inspector.getNombreCompleto());
+        dto.setDni(inspector.getDni());
+        dto.setEmail(inspector.getEmail());
+        dto.setUsername(inspector.getUsername());
+        dto.setPassword(""); // no mostrar password
+        dto.setTelefono(inspector.getTelefono());
+        dto.setCargo(inspector.getCargo());
+        dto.setNumeroColegiatura(inspector.getNumeroColegiatura());
+        dto.setFechaNombramiento(inspector.getFechaNombramiento());
+        model.addAttribute("dto", dto);
+        model.addAttribute("inspectorId", id);
+        return "admin/inspector-form";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/editar")
+    String actualizar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                      @org.springframework.web.bind.annotation.ModelAttribute("dto")
+                          com.municipalidad.licencias.dto.InspectorDto dto,
+                      org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Inspector no encontrado"));
+        inspector.setNombreCompleto(dto.getNombreCompleto());
+        inspector.setDni(dto.getDni());
+        inspector.setEmail(dto.getEmail());
+        inspector.setTelefono(dto.getTelefono());
+        inspector.setCargo(dto.getCargo());
+        inspector.setNumeroColegiatura(dto.getNumeroColegiatura());
+        inspector.setFechaNombramiento(dto.getFechaNombramiento());
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            inspector.setPassword(encoder.encode(dto.getPassword()));
+        }
+        usuarioRepo.save(inspector);
+        ra.addFlashAttribute("exito", "Inspector actualizado correctamente.");
+        return "redirect:/admin/inspectores";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/desactivar")
+    String desactivar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                      org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(id).orElseThrow();
+        inspector.setActivo(!inspector.isActivo());
+        usuarioRepo.save(inspector);
+        ra.addFlashAttribute("exito", inspector.isActivo() ? "Inspector activado." : "Inspector desactivado.");
+        return "redirect:/admin/inspectores";
+    }
+}
+
 // ── Buscador de licencias (inspector) ────────────────────────────────────────
 @org.springframework.stereotype.Controller
 @org.springframework.web.bind.annotation.RequestMapping("/inspector")

@@ -25,6 +25,11 @@ public class Usuario {
     private Enums.Rol rol;
 
     private String nombreCompleto;
+    private String dni;
+    private String telefono;
+    private String cargo;
+    private String numeroColegiatura;
+    private java.time.LocalDate fechaNombramiento;
 
     @Column(nullable = false)
     private boolean activo = true;
@@ -76,5 +81,15 @@ public class Usuario {
     public void setEmail(String v)       { this.email = v; }
     public void setRol(Enums.Rol v)      { this.rol = v; }
     public void setNombreCompleto(String v){ this.nombreCompleto = v; }
+    public String getDni()                   { return dni; }
+    public String getTelefono()              { return telefono; }
+    public String getCargo()                 { return cargo; }
+    public String getNumeroColegiatura()     { return numeroColegiatura; }
+    public java.time.LocalDate getFechaNombramiento() { return fechaNombramiento; }
+    public void setDni(String v)             { this.dni = v; }
+    public void setTelefono(String v)        { this.telefono = v; }
+    public void setCargo(String v)           { this.cargo = v; }
+    public void setNumeroColegiatura(String v){ this.numeroColegiatura = v; }
+    public void setFechaNombramiento(java.time.LocalDate v) { this.fechaNombramiento = v; }
     public void setActivo(boolean v)     { this.activo = v; }
 }
