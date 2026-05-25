@@ -569,13 +569,15 @@ class MultaController {
     private final com.municipalidad.licencias.service.MultaService multaService;
     private final com.municipalidad.licencias.service.LicenciaService licenciaService;
     private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
-
+    private final com.municipalidad.licencias.service.FlowService flowService;
     MultaController(com.municipalidad.licencias.service.MultaService multaService,
                     com.municipalidad.licencias.service.LicenciaService licenciaService,
-                    com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
+                    com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo,
+                    com.municipalidad.licencias.service.FlowService flowService) {
         this.multaService    = multaService;
         this.licenciaService = licenciaService;
         this.usuarioRepo     = usuarioRepo;
+        this.flowService      = flowService;
     }
 
     // Ver historial de multas de una licencia
