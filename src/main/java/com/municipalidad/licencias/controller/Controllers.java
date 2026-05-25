@@ -456,7 +456,6 @@ class RootController {
 
 // ── Subsanación de observaciones ──────────────────────────────────────────────
 @org.springframework.stereotype.Controller
-@org.springframework.web.bind.annotation.RequestMapping("/solicitud")
 class ObservacionController {
 
     private final com.municipalidad.licencias.repository.ObservacionRepository observacionRepo;
@@ -472,7 +471,7 @@ class ObservacionController {
         this.inspeccionRepo = inspeccionRepo;
     }
 
-    @org.springframework.web.bind.annotation.GetMapping("/{id}/observaciones")
+    @org.springframework.web.bind.annotation.GetMapping("/solicitud/{id}/observaciones")
     String verObservaciones(@org.springframework.web.bind.annotation.PathVariable Long id,
                             org.springframework.ui.Model model) {
         com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id)
@@ -506,7 +505,7 @@ class ObservacionController {
         return "solicitud/observaciones";
     }
 
-    @org.springframework.web.bind.annotation.PostMapping("/{solicitudId}/observacion/{obsId}/subsanar")
+    @org.springframework.web.bind.annotation.PostMapping("/solicitud/{solicitudId}/observacion/{obsId}/subsanar")
     String subsanarObservacion(
         @org.springframework.web.bind.annotation.PathVariable Long solicitudId,
         @org.springframework.web.bind.annotation.PathVariable Long obsId,
