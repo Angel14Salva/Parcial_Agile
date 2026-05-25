@@ -41,8 +41,38 @@
       <dl class="row mb-0">
         <dt class="col-sm-4 text-muted">Razón social</dt>
         <dd class="col-sm-8 fw-bold" th:text="${solicitud.razonSocial}"></dd>
+        <dt class="col-sm-4 text-muted">Nombre comercial</dt>
+        <dd class="col-sm-8" th:text="${solicitud.nombreComercial ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">RUC</dt>
+        <dd class="col-sm-8" th:text="${solicitud.ruc}"></dd>
         <dt class="col-sm-4 text-muted">Domicilio fiscal</dt>
         <dd class="col-sm-8" th:text="${solicitud.domicilioFiscal}"></dd>
+        <dt class="col-sm-4 text-muted">Dirección establecimiento</dt>
+        <dd class="col-sm-8" th:text="${solicitud.direccionEstablecimiento ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">Horario de atención</dt>
+        <dd class="col-sm-8" th:text="${solicitud.horarioAtencion ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">Área total</dt>
+        <dd class="col-sm-8" th:text="${solicitud.areaTotalM2 != null ? solicitud.areaTotalM2 + ' m²' : '-'}"></dd>
+        <dt class="col-sm-4 text-muted">N.° estacionamientos</dt>
+        <dd class="col-sm-8" th:text="${solicitud.numEstacionamientos ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">Partida SUNARP</dt>
+        <dd class="col-sm-8" th:text="${solicitud.partidaSunarp ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">Representante legal</dt>
+        <dd class="col-sm-8" th:text="${solicitud.nombreRepresentante ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">DNI representante</dt>
+        <dd class="col-sm-8" th:text="${solicitud.dniRepresentante ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">Teléfono</dt>
+        <dd class="col-sm-8" th:text="${solicitud.telefono ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">Correo</dt>
+        <dd class="col-sm-8" th:text="${solicitud.correoElectronico ?: '-'}"></dd>
+        <dt class="col-sm-4 text-muted">Plano</dt>
+        <dd class="col-sm-8">
+          <a th:if="${solicitud.planoUrl != null}" th:href="${solicitud.planoUrl}"
+             target="_blank" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-file-earmark me-1"></i>Ver plano
+          </a>
+          <span th:unless="${solicitud.planoUrl != null}" class="text-muted">No cargado</span>
+        </dd>
         <dt class="col-sm-4 text-muted">Rubro</dt>
         <dd class="col-sm-8" th:text="${solicitud.rubro}"></dd>
         <dt class="col-sm-4 text-muted">Validado SUNAT</dt>
