@@ -534,7 +534,23 @@ class ObservacionController {
         obs.setFechaSubsanacion(java.time.LocalDateTime.now());
         observacionRepo.save(obs);
 
-        ra.addFlashAttribute("exito", "Observación marcada como subsanada.");
+        // Verificar si todas las observaciones están subsanadas
+        com.municipalidad.licencias.model.Solicitud sol = solicitudRepo.findById(solicitudId).orElse(null);
+        if (sol != null) {
+            java.util.List<com.municipalidad.licencias.model.Observacion> pendientes =
+                observacionRepo.findObservacionesPendientes(sol);
+            if (pendientes.isEmpty()) {
+                // Todas subsanadas - quitar la alerta del dashboard
+                if (sol.getEstado() == com.municipalidad.licencias.model.Enums.EstadoTramite.OBSERVADO ||
+                    sol.getEstado() == com.municipalidad.licencias.model.Enums.EstadoTramite.SEGUNDA_INSPECCION_PROGRAMADA) {
+                    sol.setEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.SEGUNDA_INSPECCION_PROGRAMADA);
+                    solicitudRepo.save(sol);
+                }
+                ra.addFlashAttribute("exito", "¡Todas las observaciones subsanadas! Espera la segunda inspección.");
+            } else {
+                ra.addFlashAttribute("exito", "Observación marcada como subsanada. Quedan " + pendientes.size() + " pendientes.");
+            }
+        }
         return "redirect:/solicitud/" + solicitudId + "/observaciones";
     }
 }
