@@ -61,36 +61,6 @@
     </div>
   </div>
 
-  <!-- Licencia emitida -->
-  <div th:if="${licencia != null}" class="card shadow-sm mb-3 border-success">
-    <div class="card-header bg-success text-white fw-semibold">
-      <i class="bi bi-award me-2"></i>Licencia de funcionamiento
-    </div>
-    <div class="card-body">
-      <dl class="row mb-0">
-        <dt class="col-sm-4 text-muted">N.º licencia</dt>
-        <dd class="col-sm-8 fw-bold" th:text="${licencia.numeroLicencia}"></dd>
-        <dt class="col-sm-4 text-muted">Emitida</dt>
-        <dd class="col-sm-8" th:text="${#temporals.format(licencia.fechaEmision,'dd/MM/yyyy')}"></dd>
-        <dt class="col-sm-4 text-muted">Válida hasta</dt>
-        <dd class="col-sm-8" th:text="${#temporals.format(licencia.fechaVencimiento,'dd/MM/yyyy')}"></dd>
-        <dt class="col-sm-4 text-muted">Estado</dt>
-        <dd class="col-sm-8" th:text="${licencia.estado.name()}"></dd>
-      </dl>
-      <div class="mt-3 d-flex gap-2">
-        <a th:href="@{/licencia/{id}/descargar(id=${licencia.id})}"
-           class="btn btn-success btn-sm"
-           th:if="${licencia.estado.name() != 'EXPIRADA' and licencia.estado.name() != 'REVOCADA'}">
-          <i class="bi bi-download me-1"></i>Descargar PDF
-        </a>
-        <a th:href="@{/licencia/{id}/renovar(id=${licencia.id})}"
-           class="btn btn-warning btn-sm"
-           th:if="${licencia.estado.name() == 'POR_VENCER'}">
-          <i class="bi bi-arrow-clockwise me-1"></i>Renovar
-        </a>
-      </div>
-    </div>
-  </div>
   <!-- Multas -->
   <div th:if="${multasLicencia != null and not #lists.isEmpty(multasLicencia)}" class="card shadow-sm mb-3 border-danger">
     <div class="card-header bg-danger text-white fw-semibold">
@@ -132,6 +102,37 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Licencia emitida -->
+  <div th:if="${licencia != null}" class="card shadow-sm mb-3 border-success">
+    <div class="card-header bg-success text-white fw-semibold">
+      <i class="bi bi-award me-2"></i>Licencia de funcionamiento
+    </div>
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">N.º licencia</dt>
+        <dd class="col-sm-8 fw-bold" th:text="${licencia.numeroLicencia}"></dd>
+        <dt class="col-sm-4 text-muted">Emitida</dt>
+        <dd class="col-sm-8" th:text="${#temporals.format(licencia.fechaEmision,'dd/MM/yyyy')}"></dd>
+        <dt class="col-sm-4 text-muted">Válida hasta</dt>
+        <dd class="col-sm-8" th:text="${#temporals.format(licencia.fechaVencimiento,'dd/MM/yyyy')}"></dd>
+        <dt class="col-sm-4 text-muted">Estado</dt>
+        <dd class="col-sm-8" th:text="${licencia.estado.name()}"></dd>
+      </dl>
+      <div class="mt-3 d-flex gap-2">
+        <a th:href="@{/licencia/{id}/descargar(id=${licencia.id})}"
+           class="btn btn-success btn-sm"
+           th:if="${licencia.estado.name() != 'EXPIRADA' and licencia.estado.name() != 'REVOCADA'}">
+          <i class="bi bi-download me-1"></i>Descargar PDF
+        </a>
+        <a th:href="@{/licencia/{id}/renovar(id=${licencia.id})}"
+           class="btn btn-warning btn-sm"
+           th:if="${licencia.estado.name() == 'POR_VENCER'}">
+          <i class="bi bi-arrow-clockwise me-1"></i>Renovar
+        </a>
+      </div>
     </div>
   </div>
 </div>
