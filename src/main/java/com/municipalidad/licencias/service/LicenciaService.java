@@ -22,6 +22,7 @@ public class LicenciaService {
     private final SolicitudRepository solicitudRepo;
     private final RenovacionRepository renovacionRepo;
     private final com.municipalidad.licencias.repository.MultaRepository multaRepo;
+    private final NotificacionService notificacionService;
 
     @Value("${app.licencia.vigencia-dias}")   private int vigenciaDias;
     @Value("${app.pago.renovacion}")          private BigDecimal montoPagoRenovacion;
@@ -31,11 +32,13 @@ public class LicenciaService {
     public LicenciaService(LicenciaRepository licenciaRepo,
                            SolicitudRepository solicitudRepo,
                            RenovacionRepository renovacionRepo,
-                           com.municipalidad.licencias.repository.MultaRepository multaRepo) {
-        this.licenciaRepo   = licenciaRepo;
-        this.solicitudRepo  = solicitudRepo;
-        this.renovacionRepo = renovacionRepo;
-        this.multaRepo      = multaRepo;
+                           com.municipalidad.licencias.repository.MultaRepository multaRepo,
+                           NotificacionService notificacionService) {
+        this.licenciaRepo        = licenciaRepo;
+        this.solicitudRepo       = solicitudRepo;
+        this.renovacionRepo      = renovacionRepo;
+        this.multaRepo           = multaRepo;
+        this.notificacionService = notificacionService;
     }
 
     @Transactional
