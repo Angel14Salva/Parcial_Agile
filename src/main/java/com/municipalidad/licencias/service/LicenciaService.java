@@ -21,6 +21,7 @@ public class LicenciaService {
     private final LicenciaRepository  licenciaRepo;
     private final SolicitudRepository solicitudRepo;
     private final RenovacionRepository renovacionRepo;
+    private final com.municipalidad.licencias.repository.MultaRepository multaRepo;
 
     @Value("${app.licencia.vigencia-dias}")   private int vigenciaDias;
     @Value("${app.pago.renovacion}")          private BigDecimal montoPagoRenovacion;
@@ -29,10 +30,12 @@ public class LicenciaService {
 
     public LicenciaService(LicenciaRepository licenciaRepo,
                            SolicitudRepository solicitudRepo,
-                           RenovacionRepository renovacionRepo) {
+                           RenovacionRepository renovacionRepo,
+                           com.municipalidad.licencias.repository.MultaRepository multaRepo) {
         this.licenciaRepo   = licenciaRepo;
         this.solicitudRepo  = solicitudRepo;
         this.renovacionRepo = renovacionRepo;
+        this.multaRepo      = multaRepo;
     }
 
     @Transactional
@@ -104,6 +107,15 @@ public class LicenciaService {
 
     public Licencia obtenerPorSolicitud(Solicitud solicitud) {
         return licenciaRepo.findBySolicitud(solicitud).orElse(null);
+    }
+
+    public long contarMultasPendientes(Long licenciaId) {
+        try {
+            return multaRepo.findByLicenciaOrderByCreadoEnDesc(obtenerPorId(licenciaId))
+                .stream()
+                .filter(m -> m.getEstado() == com.municipalidad.licencias.model.Multa.EstadoMulta.PENDIENTE)
+                .count();
+        } catch (Exception e) { return 0; }
     }
 
     public java.util.List<Licencia> obtenerLicenciasVigentes() {
