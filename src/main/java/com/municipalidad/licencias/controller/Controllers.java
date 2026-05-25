@@ -698,6 +698,60 @@ class MultaController {
 
 }
 
+// ── Registro de nuevos negocios ──────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+class RegistroController {
+
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+    private final org.springframework.security.crypto.password.PasswordEncoder encoder;
+
+    RegistroController(com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo,
+                       org.springframework.security.crypto.password.PasswordEncoder encoder) {
+        this.usuarioRepo = usuarioRepo;
+        this.encoder     = encoder;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/auth/registro")
+    String registroForm() {
+        return "auth/registro";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/auth/registro")
+    String registrar(
+            @org.springframework.web.bind.annotation.RequestParam String nombreCompleto,
+            @org.springframework.web.bind.annotation.RequestParam String username,
+            @org.springframework.web.bind.annotation.RequestParam String email,
+            @org.springframework.web.bind.annotation.RequestParam String password,
+            @org.springframework.web.bind.annotation.RequestParam String confirmar,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+
+        if (!password.equals(confirmar)) {
+            ra.addFlashAttribute("error", "Las contraseñas no coinciden.");
+            return "redirect:/auth/registro";
+        }
+        if (password.length() < 6) {
+            ra.addFlashAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
+            return "redirect:/auth/registro";
+        }
+        if (usuarioRepo.findByUsername(username).isPresent()) {
+            ra.addFlashAttribute("error", "El usuario '" + username + "' ya existe.");
+            return "redirect:/auth/registro";
+        }
+        com.municipalidad.licencias.model.Usuario usuario =
+            com.municipalidad.licencias.model.Usuario.builder()
+                .username(username)
+                .password(encoder.encode(password))
+                .email(email)
+                .nombreCompleto(nombreCompleto)
+                .rol(com.municipalidad.licencias.model.Enums.Rol.NEGOCIO)
+                .activo(true)
+                .build();
+        usuarioRepo.save(usuario);
+        ra.addFlashAttribute("exito", "Cuenta creada correctamente. Ya puedes iniciar sesión.");
+        return "redirect:/auth/login";
+    }
+}
+
 // ── Gestión de inspectores (admin) ───────────────────────────────────────────
 @org.springframework.stereotype.Controller
 @org.springframework.web.bind.annotation.RequestMapping("/admin/inspectores")
