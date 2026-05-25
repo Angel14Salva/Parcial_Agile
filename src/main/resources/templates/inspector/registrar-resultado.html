@@ -16,16 +16,88 @@
 
   <!-- Datos del expediente -->
   <div class="card shadow-sm mb-4">
-    <div class="card-header fw-semibold">Expediente</div>
+    <div class="card-header fw-semibold" style="background:#1D3557;color:#fff">
+      <i class="bi bi-clipboard-data me-2"></i>Expediente del trámite
+    </div>
     <div class="card-body">
-      <dl class="row mb-0 small">
-        <dt class="col-sm-4 text-muted">Tipo inspección</dt>
-        <dd class="col-sm-8" th:text="${inspeccion.tipo.name()}"></dd>
-        <dt class="col-sm-4 text-muted">Fecha programada</dt>
-        <dd class="col-sm-8" th:text="${#temporals.format(inspeccion.fechaProgramada,'dd/MM/yyyy')}"></dd>
-        <dt class="col-sm-4 text-muted">Rubro</dt>
-        <dd class="col-sm-8" th:text="${inspeccion.solicitud.rubro}"></dd>
-        <dt class="col-sm-4 text-muted">Plano cargado</dt>
+      <div class="row g-3 small">
+        <!-- Datos de la inspección -->
+        <div class="col-md-6">
+          <div class="fw-semibold text-muted mb-2 text-uppercase" style="font-size:0.7rem;letter-spacing:1px">Inspección</div>
+          <dl class="row mb-0">
+            <dt class="col-sm-5 text-muted">Tipo</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.tipo.name()}"></dd>
+            <dt class="col-sm-5 text-muted">Fecha programada</dt>
+            <dd class="col-sm-7" th:text="${#temporals.format(inspeccion.fechaProgramada,'dd/MM/yyyy')}"></dd>
+          </dl>
+        </div>
+        <!-- Datos del negocio -->
+        <div class="col-md-6">
+          <div class="fw-semibold text-muted mb-2 text-uppercase" style="font-size:0.7rem;letter-spacing:1px">Negocio</div>
+          <dl class="row mb-0">
+            <dt class="col-sm-5 text-muted">Razón social</dt>
+            <dd class="col-sm-7 fw-bold" th:text="${inspeccion.solicitud.razonSocial}"></dd>
+            <dt class="col-sm-5 text-muted">RUC</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.solicitud.ruc}"></dd>
+            <dt class="col-sm-5 text-muted">Rubro</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.solicitud.rubro}"></dd>
+            <dt class="col-sm-5 text-muted">Nombre comercial</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.solicitud.nombreComercial ?: '-'}"></dd>
+          </dl>
+        </div>
+        <!-- Datos del local -->
+        <div class="col-12">
+          <div class="fw-semibold text-muted mb-2 text-uppercase" style="font-size:0.7rem;letter-spacing:1px">Local</div>
+          <dl class="row mb-0">
+            <dt class="col-sm-3 text-muted">Dirección</dt>
+            <dd class="col-sm-9" th:text="${inspeccion.solicitud.direccionEstablecimiento}"></dd>
+            <dt class="col-sm-3 text-muted">Domicilio fiscal</dt>
+            <dd class="col-sm-9" th:text="${inspeccion.solicitud.domicilioFiscal}"></dd>
+            <dt class="col-sm-3 text-muted">Área total</dt>
+            <dd class="col-sm-9" th:text="${inspeccion.solicitud.areaTotalM2 != null ? inspeccion.solicitud.areaTotalM2 + ' m²' : '-'}"></dd>
+            <dt class="col-sm-3 text-muted">Horario</dt>
+            <dd class="col-sm-9" th:text="${inspeccion.solicitud.horarioAtencion ?: '-'}"></dd>
+            <dt class="col-sm-3 text-muted">N.° estacionamientos</dt>
+            <dd class="col-sm-9" th:text="${inspeccion.solicitud.numEstacionamientos ?: '-'}"></dd>
+          </dl>
+        </div>
+        <!-- Representante legal -->
+        <div class="col-md-6">
+          <div class="fw-semibold text-muted mb-2 text-uppercase" style="font-size:0.7rem;letter-spacing:1px">Representante legal</div>
+          <dl class="row mb-0">
+            <dt class="col-sm-5 text-muted">Nombre</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.solicitud.nombreRepresentante ?: '-'}"></dd>
+            <dt class="col-sm-5 text-muted">DNI</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.solicitud.dniRepresentante ?: '-'}"></dd>
+            <dt class="col-sm-5 text-muted">Teléfono</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.solicitud.telefono ?: '-'}"></dd>
+          </dl>
+        </div>
+        <!-- Documentos -->
+        <div class="col-md-6">
+          <div class="fw-semibold text-muted mb-2 text-uppercase" style="font-size:0.7rem;letter-spacing:1px">Documentos</div>
+          <dl class="row mb-0">
+            <dt class="col-sm-5 text-muted">Plano</dt>
+            <dd class="col-sm-7">
+              <a th:if="${inspeccion.solicitud.planoUrl != null}" th:href="${inspeccion.solicitud.planoUrl}"
+                 target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Ver plano
+              </a>
+              <span th:unless="${inspeccion.solicitud.planoUrl != null}" class="text-muted">No cargado</span>
+            </dd>
+            <dt class="col-sm-5 text-muted">Partida SUNARP</dt>
+            <dd class="col-sm-7" th:text="${inspeccion.solicitud.partidaSunarp ?: '-'}"></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer text-muted small" th:if="${inspeccion.solicitud.observacionesSolicitante != null}">
+      <i class="bi bi-chat-text me-1"></i>
+      <strong>Observaciones del solicitante:</strong>
+      <span th:text="${inspeccion.solicitud.observacionesSolicitante}"></span>
+    </div>
+    <!-- Card header fake para reemplazar el viejo -->
+    <div style="display:none">Plano cargado
         <dd class="col-sm-8">
           <span th:if="${inspeccion.solicitud.planoUrl != null}" class="text-success">
             <i class="bi bi-check-circle me-1"></i>Disponible
