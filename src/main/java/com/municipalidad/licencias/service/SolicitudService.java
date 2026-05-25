@@ -24,6 +24,7 @@ public class SolicitudService {
     private final UsuarioRepository usuarioRepo;
     private final SunatService sunatService;
     private final InspeccionService inspeccionService;
+    private final com.municipalidad.licencias.service.CloudinaryService cloudinaryService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -34,11 +35,13 @@ public class SolicitudService {
     public SolicitudService(SolicitudRepository solicitudRepo,
                             UsuarioRepository usuarioRepo,
                             SunatService sunatService,
-                            InspeccionService inspeccionService) {
+                            InspeccionService inspeccionService,
+                            com.municipalidad.licencias.service.CloudinaryService cloudinaryService) {
         this.solicitudRepo     = solicitudRepo;
         this.usuarioRepo       = usuarioRepo;
         this.sunatService      = sunatService;
         this.inspeccionService = inspeccionService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @Transactional
@@ -94,11 +97,8 @@ public class SolicitudService {
     public void cargarFirma(Long solicitudId, MultipartFile archivo) throws IOException {
         Solicitud s = obtenerPorId(solicitudId);
         if (archivo == null || archivo.isEmpty()) return;
-        String nombre = UUID.randomUUID() + "_firma_" + archivo.getOriginalFilename();
-        Path destino = Paths.get(uploadDir).resolve(nombre);
-        Files.createDirectories(destino.getParent());
-        Files.copy(archivo.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
-        s.setFirmaUrl(nombre);
+        String url = cloudinaryService.subirArchivo(archivo, "firmas");
+        s.setFirmaUrl(url);
         solicitudRepo.save(s);
     }
 
@@ -106,11 +106,8 @@ public class SolicitudService {
     public void cargarPlano(Long solicitudId, MultipartFile archivo) throws IOException {
         Solicitud s = obtenerPorId(solicitudId);
         validarArchivo(archivo);
-        String nombre = UUID.randomUUID() + "_" + archivo.getOriginalFilename();
-        Path destino = Paths.get(uploadDir).resolve(nombre);
-        Files.createDirectories(destino.getParent());
-        Files.copy(archivo.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
-        s.setPlanoUrl(nombre);
+        String url = cloudinaryService.subirArchivo(archivo, "planos");
+        s.setPlanoUrl(url);
         solicitudRepo.save(s);
     }
 

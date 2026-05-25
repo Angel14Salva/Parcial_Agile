@@ -466,13 +466,16 @@ class ObservacionController {
     private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
     private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
 
+    private final com.municipalidad.licencias.service.CloudinaryService cloudinaryService;
     ObservacionController(
         com.municipalidad.licencias.repository.ObservacionRepository observacionRepo,
         com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
-        com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo) {
+        com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
+        com.municipalidad.licencias.service.CloudinaryService cloudinaryService) {
         this.observacionRepo = observacionRepo;
         this.solicitudRepo = solicitudRepo;
         this.inspeccionRepo = inspeccionRepo;
+        this.cloudinaryService = cloudinaryService;
     }
     @org.springframework.web.bind.annotation.GetMapping("/solicitud/{id}/observaciones")
     String verObservaciones(@org.springframework.web.bind.annotation.PathVariable Long id,
@@ -522,12 +525,8 @@ class ObservacionController {
         if (obs.getTipo() == com.municipalidad.licencias.model.Enums.TipoObservacion.DOCUMENTAL
             && archivo != null && !archivo.isEmpty()) {
             try {
-                String nombre = java.util.UUID.randomUUID() + "_" + archivo.getOriginalFilename();
-                java.nio.file.Path destino = java.nio.file.Paths.get("uploads/").resolve(nombre);
-                java.nio.file.Files.createDirectories(destino.getParent());
-                java.nio.file.Files.copy(archivo.getInputStream(), destino,
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                obs.setDocumentoCorregidoUrl(nombre);
+                String url = cloudinaryService.subirArchivo(archivo, "observaciones");
+                obs.setDocumentoCorregidoUrl(url);
             } catch (Exception e) {
                 ra.addFlashAttribute("error", "Error al subir archivo: " + e.getMessage());
                 return "redirect:/solicitud/" + solicitudId + "/observaciones";
