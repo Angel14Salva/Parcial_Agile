@@ -108,11 +108,29 @@
               <span th:if="${inspectorId == null}" class="text-danger">*</span>
               <span th:if="${inspectorId != null}" class="text-muted small">(dejar vacío para no cambiar)</span>
             </label>
-            <input type="password" th:field="*{password}" class="form-control"
-                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
-                   placeholder="Mínimo 6 caracteres"
-                   th:required="${inspectorId == null}"/>
+            <div class="input-group">
+              <input type="password" id="inputPassword" th:field="*{password}" class="form-control"
+                     th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                     placeholder="Mínimo 6 caracteres"
+                     th:required="${inspectorId == null}"/>
+              <button type="button" class="btn btn-outline-secondary" onclick="togglePass('inputPassword', this)">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
             <div class="invalid-feedback" th:errors="*{password}"></div>
+          </div>
+
+          <!-- Confirmar contraseña -->
+          <div class="col-md-6" th:if="${inspectorId == null}">
+            <label class="form-label fw-semibold">Confirmar contraseña <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="password" id="inputConfirm" class="form-control"
+                     placeholder="Repite la contraseña" required/>
+              <button type="button" class="btn btn-outline-secondary" onclick="togglePass('inputConfirm', this)">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            <div id="confirmError" class="text-danger small mt-1 d-none">Las contraseñas no coinciden.</div>
           </div>
         </div>
 
@@ -128,5 +146,71 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Ver/ocultar contraseña
+  function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.className = 'bi bi-eye-slash';
+    } else {
+      input.type = 'password';
+      icon.className = 'bi bi-eye';
+    }
+  }
+
+  // Validar que contraseñas coincidan antes de enviar
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      const pass = document.getElementById('inputPassword');
+      const confirm = document.getElementById('inputConfirm');
+      if (confirm && pass && pass.value !== confirm.value) {
+        e.preventDefault();
+        document.getElementById('confirmError').classList.remove('d-none');
+        confirm.focus();
+      }
+    });
+    const confirm = document.getElementById('inputConfirm');
+    if (confirm) {
+      confirm.addEventListener('input', () => {
+        const pass = document.getElementById('inputPassword');
+        const err = document.getElementById('confirmError');
+        if (pass.value === confirm.value) {
+          err.classList.add('d-none');
+          confirm.classList.remove('is-invalid');
+        } else {
+          err.classList.remove('d-none');
+        }
+      });
+    }
+  }
+
+  // Autorellenar con DNI via RENIEC
+  const inputDni = document.querySelector('input[name="dni"]');
+  if (inputDni) {
+    inputDni.addEventListener('blur', async () => {
+      const dni = inputDni.value.trim();
+      if (!/^\d{8}$/.test(dni)) return;
+      try {
+        const res = await fetch('/api/validar/dni/' + dni);
+        if (res.ok) {
+          const data = await res.json();
+          const nombre = document.querySelector('input[name="nombreCompleto"]');
+          if (nombre && !nombre.value) {
+            nombre.value = data.nombreCompleto || '';
+          }
+          // Sugerir username
+          const username = document.querySelector('input[name="username"]');
+          if (username && !username.value && data.nombreCompleto) {
+            const partes = data.nombreCompleto.toLowerCase().split(' ');
+            username.value = 'inspector.' + (partes[0] || dni);
+          }
+        }
+      } catch(e) {}
+    });
+  }
+</script>
 </body>
 </html>
