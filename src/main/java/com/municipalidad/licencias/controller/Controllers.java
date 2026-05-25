@@ -83,16 +83,20 @@ class DashboardController {
 @RequestMapping("/solicitud")
 class SolicitudController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SolicitudController.class);
     private final SolicitudService solicitudService;
     private final LicenciaService  licenciaService;
     private final UsuarioRepository usuarioRepo;
+    private final com.municipalidad.licencias.service.FlowService flowService;
 
     SolicitudController(SolicitudService solicitudService,
                         LicenciaService licenciaService,
-                        UsuarioRepository usuarioRepo) {
+                        UsuarioRepository usuarioRepo,
+                        com.municipalidad.licencias.service.FlowService flowService) {
         this.solicitudService = solicitudService;
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
+        this.flowService      = flowService;
     }
 
     @GetMapping("/nueva")
@@ -162,6 +166,80 @@ class SolicitudController {
         model.addAttribute("solicitud", solicitudService.obtenerPorId(id));
         return "solicitud/pago";
     }
+
+    @PostMapping("/{id}/pago/flow")
+    String iniciarPagoFlow(@PathVariable Long id,
+                           @AuthenticationPrincipal UserDetails ud,
+                           jakarta.servlet.http.HttpServletRequest request,
+                           RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Solicitud s = solicitudService.obtenerPorId(id);
+            com.municipalidad.licencias.model.Usuario usuario =
+                usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+            String scheme = request.getHeader("X-Forwarded-Proto") != null ?
+                request.getHeader("X-Forwarded-Proto") : request.getScheme();
+            String host = request.getHeader("X-Forwarded-Host") != null ?
+                request.getHeader("X-Forwarded-Host") : request.getServerName();
+            String baseUrl = scheme + "://" + host;
+            String urlRetorno      = baseUrl + "/solicitud/" + id + "/pago/retorno";
+            String urlConfirmacion = baseUrl + "/solicitud/" + id + "/pago/confirmar";
+            String email = s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank() ?
+                s.getCorreoElectronico() : usuario.getUsername() + "@licencias.gob.pe";
+            String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : usuario.getNombreCompleto();
+            com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
+                flowService.crearOrden(id, email, nombre, 180.0, urlRetorno, urlConfirmacion);
+            solicitudService.guardarReferencia(id, orden.token());
+            return "redirect:" + orden.url();
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al conectar con Flow: " + e.getMessage());
+            return "redirect:/solicitud/" + id + "/pago";
+        }
+    }
+
+    @GetMapping("/{id}/pago/retorno")
+    String retornoPago(@PathVariable Long id,
+                       @RequestParam(required = false) String token,
+                       RedirectAttributes ra) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null) {
+                    int statusCode = estado.path("status").asInt();
+                    if (statusCode == 2) {
+                        solicitudService.enviarConPago(id, token);
+                        ra.addFlashAttribute("exito", "Pago confirmado. Se programó la inspección técnica.");
+                        return "redirect:/dashboard";
+                    } else if (statusCode == 3) {
+                        ra.addFlashAttribute("error", "El pago fue rechazado. Intenta nuevamente.");
+                    } else {
+                        ra.addFlashAttribute("error", "El pago está pendiente de confirmación.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error verificando el pago: " + e.getMessage());
+        }
+        return "redirect:/solicitud/" + id + "/pago";
+    }
+
+    @PostMapping("/{id}/pago/confirmar")
+    @org.springframework.web.bind.annotation.ResponseBody
+    String confirmarPagoWebhook(@PathVariable Long id,
+                                 @RequestParam(required = false) String token) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    solicitudService.enviarConPago(id, token);
+                    log.info("Pago confirmado via webhook para solicitud {}", id);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error en webhook Flow solicitud {}: {}", id, e.getMessage());
+        }
+        return "OK";
+    }
+
 
     @PostMapping("/{id}/pago")
     String procesarPago(@PathVariable Long id,

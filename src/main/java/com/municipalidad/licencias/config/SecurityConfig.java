@@ -48,6 +48,7 @@ public class SecurityConfig {
             );
         http.csrf(csrf -> csrf
             .ignoringRequestMatchers("/api/validar/**")
+            .ignoringRequestMatchers("/solicitud/*/pago/confirmar")
         );
         return http.build();
     }
