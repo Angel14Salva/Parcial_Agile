@@ -187,7 +187,9 @@
         <div class="col-12">
           <label class="form-label fw-semibold">N° Partida electrónica SUNARP (opcional)</label>
           <input type="text" th:field="*{partidaSunarp}" class="form-control"
-                 placeholder="Ej: 12345678"/>
+                 placeholder="Ej: 12345678" pattern="[0-9]*" maxlength="20"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                 title="Solo números"/>
           <div class="field-hint">Solo para personas jurídicas con inscripción en SUNARP.</div>
         </div>
       </div>
