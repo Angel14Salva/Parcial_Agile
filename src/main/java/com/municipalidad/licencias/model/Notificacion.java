@@ -23,6 +23,7 @@ public class Notificacion {
 
     @Column(nullable = false)
     private boolean leida = false;
+    private String enlace;
 
     private LocalDateTime creadoEn;
 
@@ -35,17 +36,19 @@ public class Notificacion {
 
     public static class Builder {
         private Usuario usuario;
-        private String titulo, mensaje;
+        private String titulo, mensaje, enlace;
 
         public Builder usuario(Usuario v) { this.usuario = v; return this; }
         public Builder titulo(String v)   { this.titulo = v; return this; }
         public Builder mensaje(String v)  { this.mensaje = v; return this; }
+        public Builder enlace(String v)   { this.enlace = v; return this; }
 
         public Notificacion build() {
             Notificacion n = new Notificacion();
             n.usuario = this.usuario;
             n.titulo  = this.titulo;
             n.mensaje = this.mensaje;
+            n.enlace  = this.enlace;
             return n;
         }
     }

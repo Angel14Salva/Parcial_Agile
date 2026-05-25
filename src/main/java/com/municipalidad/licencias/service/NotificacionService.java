@@ -18,8 +18,12 @@ public class NotificacionService {
 
     @Transactional
     public void crear(Usuario usuario, String titulo, String mensaje) {
+        crear(usuario, titulo, mensaje, null);
+    }
+
+    public void crear(Usuario usuario, String titulo, String mensaje, String enlace) {
         repo.save(Notificacion.builder()
-            .usuario(usuario).titulo(titulo).mensaje(mensaje).build());
+            .usuario(usuario).titulo(titulo).mensaje(mensaje).enlace(enlace).build());
     }
 
     public List<Notificacion> obtenerPorUsuario(Usuario usuario) {

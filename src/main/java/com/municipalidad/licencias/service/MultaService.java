@@ -48,8 +48,8 @@ public class MultaService {
                     "Se registró una multa en tu establecimiento",
                     "El inspector " + inspector.getNombreCompleto() +
                     " registró una multa de S/ " + monto +
-                    ". Descripción: " + descripcion +
-                    ". Revisa el historial de tu licencia.");
+                    ". Descripción: " + descripcion,
+                    "/multas/" + multa.getId() + "/detalle");
             }
         } catch (Exception e) {
             // log pero no fallar el registro de la multa
