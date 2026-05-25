@@ -503,7 +503,6 @@ class ObservacionController {
         }
         return "solicitud/observaciones";
     }
-    }
 
     @org.springframework.web.bind.annotation.PostMapping("/solicitud/{solicitudId}/observacion/{obsId}/subsanar")
     String subsanarObservacion(
