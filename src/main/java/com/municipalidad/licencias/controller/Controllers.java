@@ -620,6 +620,51 @@ class MultaController {
         model.addAttribute("multas", multaService.obtenerTodas());
         return "multas/todas";
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/{id}/detalle")
+    String detalle(@org.springframework.web.bind.annotation.PathVariable Long id,
+                   org.springframework.ui.Model model) {
+        model.addAttribute("multa", multaService.obtenerPorId(id));
+        return "multas/detalle";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/pagar")
+    String iniciarPago(@org.springframework.web.bind.annotation.PathVariable Long id,
+                       @org.springframework.security.core.annotation.AuthenticationPrincipal
+                           org.springframework.security.core.userdetails.UserDetails ud,
+                       jakarta.servlet.http.HttpServletRequest request,
+                       org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Multa multa = multaService.obtenerPorId(id);
+            com.municipalidad.licencias.model.Usuario usuario =
+                usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+
+            String scheme = request.getHeader("X-Forwarded-Proto") != null ?
+                request.getHeader("X-Forwarded-Proto") : request.getScheme();
+            String host   = request.getHeader("X-Forwarded-Host") != null ?
+                request.getHeader("X-Forwarded-Host") : request.getServerName();
+            String baseUrl = scheme + "://" + host;
+
+            String email  = multa.getLicencia().getSolicitud().getCorreoElectronico() != null ?
+                multa.getLicencia().getSolicitud().getCorreoElectronico() :
+                usuario.getUsername() + "@licencias.gob.pe";
+
+            String urlRetorno = baseUrl + "/pago/multa/retorno/" + id +
+                "?u=" + java.net.URLEncoder.encode(usuario.getUsername(), java.nio.charset.StandardCharsets.UTF_8) +
+                "&lid=" + multa.getLicencia().getId();
+            String urlConfirmar = baseUrl + "/pago/multa/confirmar/" + id;
+
+            com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
+                flowService.crearOrden(id, email, usuario.getNombreCompleto(),
+                    multa.getMonto().doubleValue(), urlRetorno, urlConfirmar);
+
+            return "redirect:" + orden.url();
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al iniciar pago: " + e.getMessage());
+            return "redirect:/multas/" + id + "/detalle";
+        }
+    }
+
 }
 
 // ── API de validación SUNAT/RENIEC (llamadas AJAX desde el formulario) ────────
@@ -822,62 +867,3 @@ class FlowRetornoController {
 
 // ── Pago de multas ────────────────────────────────────────────────────────────
 @org.springframework.stereotype.Controller
-@org.springframework.web.bind.annotation.RequestMapping("/multas")
-class MultaPagoController {
-
-    private final com.municipalidad.licencias.service.MultaService multaService;
-    private final com.municipalidad.licencias.service.FlowService flowService;
-    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
-
-    MultaPagoController(com.municipalidad.licencias.service.MultaService multaService,
-                        com.municipalidad.licencias.service.FlowService flowService,
-                        com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
-        this.multaService = multaService;
-        this.flowService  = flowService;
-        this.usuarioRepo  = usuarioRepo;
-    }
-
-    @org.springframework.web.bind.annotation.GetMapping("/{id}/detalle")
-    String detalle(@org.springframework.web.bind.annotation.PathVariable Long id,
-                   org.springframework.ui.Model model) {
-        model.addAttribute("multa", multaService.obtenerPorId(id));
-        return "multas/detalle";
-    }
-
-    @org.springframework.web.bind.annotation.PostMapping("/{id}/pagar")
-    String iniciarPago(@org.springframework.web.bind.annotation.PathVariable Long id,
-                       @org.springframework.security.core.annotation.AuthenticationPrincipal
-                           org.springframework.security.core.userdetails.UserDetails ud,
-                       jakarta.servlet.http.HttpServletRequest request,
-                       org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        try {
-            com.municipalidad.licencias.model.Multa multa = multaService.obtenerPorId(id);
-            com.municipalidad.licencias.model.Usuario usuario =
-                usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
-
-            String scheme = request.getHeader("X-Forwarded-Proto") != null ?
-                request.getHeader("X-Forwarded-Proto") : request.getScheme();
-            String host   = request.getHeader("X-Forwarded-Host") != null ?
-                request.getHeader("X-Forwarded-Host") : request.getServerName();
-            String baseUrl = scheme + "://" + host;
-
-            String email  = multa.getLicencia().getSolicitud().getCorreoElectronico() != null ?
-                multa.getLicencia().getSolicitud().getCorreoElectronico() :
-                usuario.getUsername() + "@licencias.gob.pe";
-
-            String urlRetorno = baseUrl + "/pago/multa/retorno/" + id +
-                "?u=" + java.net.URLEncoder.encode(usuario.getUsername(), java.nio.charset.StandardCharsets.UTF_8) +
-                "&lid=" + multa.getLicencia().getId();
-            String urlConfirmar = baseUrl + "/pago/multa/confirmar/" + id;
-
-            com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
-                flowService.crearOrden(id, email, usuario.getNombreCompleto(),
-                    multa.getMonto().doubleValue(), urlRetorno, urlConfirmar);
-
-            return "redirect:" + orden.url();
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", "Error al iniciar pago: " + e.getMessage());
-            return "redirect:/multas/" + id + "/detalle";
-        }
-    }
-}
