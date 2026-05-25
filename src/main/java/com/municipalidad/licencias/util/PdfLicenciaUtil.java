@@ -190,7 +190,11 @@ public class PdfLicenciaUtil {
             lineaFirma.setSpacingBefore(18f);
             fc.addElement(lineaFirma);
 
-            Paragraph pCargoFirma = new Paragraph("Sub Gerente de Licencias", fSmall);
+            Paragraph pNombreFuncionario = new Paragraph("Abog. Manuel Ernesto Garcia Blas", fSmall);
+            pNombreFuncionario.setAlignment(Element.ALIGN_CENTER);
+            fc.addElement(pNombreFuncionario);
+
+            Paragraph pCargoFirma = new Paragraph("Sub Gerente", fSmall);
             pCargoFirma.setAlignment(Element.ALIGN_CENTER);
             fc.addElement(pCargoFirma);
 
