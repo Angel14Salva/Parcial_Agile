@@ -19,6 +19,7 @@
 
   <!-- Alerta si está OBSERVADO -->
   <div th:if="${solicitud.estado.name() == 'OBSERVADO' or solicitud.estado.name() == 'SEGUNDA_INSPECCION_PROGRAMADA'}"
+       sec:authorize="hasRole('NEGOCIO')"
        class="alert alert-warning d-flex align-items-center gap-3 mb-3">
     <i class="bi bi-exclamation-triangle-fill fs-4"></i>
     <div>
