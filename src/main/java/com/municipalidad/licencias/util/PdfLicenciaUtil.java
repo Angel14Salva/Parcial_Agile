@@ -33,8 +33,8 @@ public class PdfLicenciaUtil {
             canvas.setColorFill(AZUL_OSCURO);
             canvas.moveTo(0, H);
             canvas.lineTo(W, H);
-            canvas.lineTo(W, H - 200);
-            canvas.curveTo(W * 0.7f, H - 165, W * 0.3f, H - 220, 0, H - 190);
+            canvas.lineTo(W, H - 130);
+            canvas.curveTo(W * 0.7f, H - 100, W * 0.3f, H - 145, 0, H - 120);
             canvas.closePath();
             canvas.fill();
 
@@ -50,8 +50,8 @@ public class PdfLicenciaUtil {
             // Linea curva azul medio superior
             canvas.setColorStroke(AZUL_MEDIO);
             canvas.setLineWidth(8);
-            canvas.moveTo(0, H - 193);
-            canvas.curveTo(W * 0.3f, H - 223, W * 0.7f, H - 168, W, H - 203);
+            canvas.moveTo(0, H - 123);
+            canvas.curveTo(W * 0.3f, H - 148, W * 0.7f, H - 103, W, H - 133);
             canvas.stroke();
 
             // Linea curva azul medio inferior
@@ -79,8 +79,8 @@ public class PdfLicenciaUtil {
                     .getResourceAsStream("/static/img/escudo_trujillo.png");
                 if (escudoStream != null) {
                     Image escudo = Image.getInstance(escudoStream.readAllBytes());
-                    escudo.scaleToFit(85, 95);
-                    escudo.setAbsolutePosition(48, H - 188);
+                    escudo.scaleToFit(90, 105);
+                    escudo.setAbsolutePosition(40, H - 118);
                     writer.getDirectContent().addImage(escudo);
                 }
             } catch (Exception ignored) {}
@@ -106,10 +106,10 @@ public class PdfLicenciaUtil {
             c4.setHorizontalAlignment(Element.ALIGN_CENTER);
             headerTxt.addCell(c4);
 
-            headerTxt.writeSelectedRows(0, -1, 155, H - 12, writer.getDirectContent());
+            headerTxt.writeSelectedRows(0, -1, 148, H - 10, writer.getDirectContent());
 
             // Espacio para saltar zona azul
-            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 78)));
+            doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 50)));
             doc.add(new Paragraph(" ", new Font(Font.FontFamily.TIMES_ROMAN, 5)));
 
             // Texto facultades
