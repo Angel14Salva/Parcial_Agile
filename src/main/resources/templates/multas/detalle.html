@@ -69,8 +69,8 @@
     </div>
   </div>
 
-  <!-- Botón pagar si está pendiente -->
-  <div th:if="${multa.estado.name() == 'PENDIENTE'}" class="card shadow-sm border-success">
+  <!-- Botón pagar: solo para rol NEGOCIO -->
+  <div th:if="${multa.estado.name() == 'PENDIENTE'}" sec:authorize="hasRole('NEGOCIO')" class="card shadow-sm border-success">
     <div class="card-body text-center p-4">
       <p class="text-muted small mb-3">
         Paga tu multa de forma segura a través de <strong>Flow</strong>.

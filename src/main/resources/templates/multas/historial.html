@@ -66,6 +66,7 @@
             <i class="bi bi-eye me-1"></i>Ver detalle
           </a>
           <a th:if="${m.estado.name() == 'PENDIENTE'}"
+             sec:authorize="hasRole('NEGOCIO')"
              th:href="@{/multas/{id}/detalle(id=${m.id})}"
              class="btn btn-success btn-sm">
             <i class="bi bi-credit-card me-1"></i>Pagar
