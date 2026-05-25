@@ -258,8 +258,15 @@ class SolicitudController {
     @GetMapping("/{id}/detalle")
     String detalle(@PathVariable Long id, Model model) {
         Solicitud s = solicitudService.obtenerPorId(id);
+        com.municipalidad.licencias.model.Licencia lic = licenciaService.obtenerPorSolicitud(s);
         model.addAttribute("solicitud", s);
-        model.addAttribute("licencia", licenciaService.obtenerPorSolicitud(s));
+        model.addAttribute("licencia", lic);
+        if (lic != null) {
+            model.addAttribute("multasLicencia",
+                multaServiceDet.obtenerPorLicencia(lic.getId()));
+        } else {
+            model.addAttribute("multasLicencia", java.util.List.of());
+        }
         return "solicitud/detalle";
     }
 }

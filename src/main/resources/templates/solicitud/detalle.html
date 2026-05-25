@@ -92,7 +92,7 @@
     </div>
   </div>
   <!-- Multas -->
-  <div th:if="${licencia != null and not #lists.isEmpty(licencia.multas)}" class="card shadow-sm mb-3 border-danger">
+  <div th:if="${multasLicencia != null and not #lists.isEmpty(multasLicencia)}" class="card shadow-sm mb-3 border-danger">
     <div class="card-header bg-danger text-white fw-semibold">
       <i class="bi bi-exclamation-octagon me-2"></i>Multas registradas
     </div>
@@ -108,7 +108,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr th:each="m : ${licencia.multas}">
+          <tr th:each="m : ${multasLicencia}">
             <td th:text="${#temporals.format(m.creadoEn,'dd/MM/yyyy')}"></td>
             <td th:text="${m.descripcion}"></td>
             <td class="fw-bold text-danger" th:text="'S/ ' + ${m.monto}"></td>
