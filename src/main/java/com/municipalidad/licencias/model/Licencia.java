@@ -17,7 +17,7 @@ public class Licencia {
     @Column(nullable = false, unique = true)
     private String numeroLicencia;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "solicitud_id", nullable = false)
     private Solicitud solicitud;
 

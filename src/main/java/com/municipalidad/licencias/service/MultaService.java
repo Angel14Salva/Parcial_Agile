@@ -40,13 +40,20 @@ public class MultaService {
             .build();
         multaRepo.save(multa);
 
-        // Notificar al negocio
-        notificacionService.crear(licencia.getSolicitud().getUsuario(),
-            "Se registró una multa en tu establecimiento",
-            "El inspector " + inspector.getNombreCompleto() +
-            " registró una multa de S/ " + monto +
-            ". Descripción: " + descripcion +
-            ". Revisa el historial de tu licencia.");
+        // Notificar al negocio (verificar que la solicitud y usuario estén cargados)
+        try {
+            com.municipalidad.licencias.model.Solicitud sol = licencia.getSolicitud();
+            if (sol != null && sol.getUsuario() != null) {
+                notificacionService.crear(sol.getUsuario(),
+                    "Se registró una multa en tu establecimiento",
+                    "El inspector " + inspector.getNombreCompleto() +
+                    " registró una multa de S/ " + monto +
+                    ". Descripción: " + descripcion +
+                    ". Revisa el historial de tu licencia.");
+            }
+        } catch (Exception e) {
+            // log pero no fallar el registro de la multa
+        }
 
         return multa;
     }
