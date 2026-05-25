@@ -99,8 +99,8 @@ class SolicitudController {
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
         this.flowService      = flowService;
-    }
         this.multaServiceDet  = multaServiceDet;
+    }
 
     @GetMapping("/nueva")
     String nuevaForm(Model model) {
