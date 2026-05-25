@@ -181,7 +181,7 @@ class SolicitudController {
             String host = request.getHeader("X-Forwarded-Host") != null ?
                 request.getHeader("X-Forwarded-Host") : request.getServerName();
             String baseUrl = scheme + "://" + host;
-            String urlRetorno      = baseUrl + "/pago/retorno/" + id;
+            String urlRetorno      = baseUrl + "/pago/retorno/" + id + "?u=" + java.net.URLEncoder.encode(usuario.getUsername(), java.nio.charset.StandardCharsets.UTF_8);
             String urlConfirmacion = baseUrl + "/pago/confirmar/" + id;
             String email = s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank() ?
                 s.getCorreoElectronico() : usuario.getUsername() + "@licencias.gob.pe";
@@ -661,10 +661,14 @@ class FlowRetornoController {
     private final com.municipalidad.licencias.service.FlowService flowService;
     private final com.municipalidad.licencias.service.SolicitudService solicitudService;
 
+    private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
     FlowRetornoController(com.municipalidad.licencias.service.FlowService flowService,
-                          com.municipalidad.licencias.service.SolicitudService solicitudService) {
-        this.flowService      = flowService;
-        this.solicitudService = solicitudService;
+                          com.municipalidad.licencias.service.SolicitudService solicitudService,
+                          org.springframework.security.core.userdetails.UserDetailsService userDetailsService) {
+        this.flowService         = flowService;
+        this.solicitudService    = solicitudService;
+        this.userDetailsService  = userDetailsService;
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/pago/exito/{id}")
@@ -681,16 +685,36 @@ class FlowRetornoController {
     @org.springframework.web.bind.annotation.RequestMapping(value = "/pago/retorno/{id}", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     String retorno(@org.springframework.web.bind.annotation.PathVariable Long id,
                    @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
+                   @org.springframework.web.bind.annotation.RequestParam(required = false) String u,
+                   jakarta.servlet.http.HttpServletRequest request,
                    org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
         try {
             if (token != null) {
                 com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
                 if (estado != null && estado.path("status").asInt() == 2) {
                     solicitudService.enviarConPago(id, token);
+                    // Auto-autenticar al usuario si viene el username
+                    if (u != null && !u.isBlank()) {
+                        try {
+                            org.springframework.security.core.userdetails.UserDetails userDetails =
+                                userDetailsService.loadUserByUsername(u);
+                            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                    userDetails, null, userDetails.getAuthorities());
+                            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+                            // Guardar en sesión
+                            request.getSession(true).setAttribute(
+                                org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                                org.springframework.security.core.context.SecurityContextHolder.getContext());
+                            ra.addFlashAttribute("exito", "¡Pago confirmado! Tu trámite fue admitido.");
+                            return "redirect:/dashboard";
+                        } catch (Exception ex) {
+                            log.warn("No se pudo restaurar sesión: {}", ex.getMessage());
+                        }
+                    }
                     return "redirect:/pago/exito/" + id;
                 } else {
-                    ra.addFlashAttribute("error", "El pago no fue confirmado. Estado: " +
-                        (estado != null ? estado.path("status").asText() : "desconocido"));
+                    ra.addFlashAttribute("error", "El pago no fue confirmado.");
                 }
             }
         } catch (Exception e) {
