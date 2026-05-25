@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/auth/**", "/error").permitAll()
                 .requestMatchers("/pago/**").permitAll()
+                .requestMatchers("/multas/*/detalle").authenticated()
                 .requestMatchers("/api/validar/**").authenticated()
                 .requestMatchers("/inspector/**").hasRole("INSPECTOR")
                 .requestMatchers("/fiscalizacion/**").hasAnyRole("INSPECTOR", "ADMIN")
@@ -49,6 +50,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/validar/**")
                 .ignoringRequestMatchers("/pago/**")
+            .ignoringRequestMatchers("/multas/*/pagar")
             );
         return http.build();
     }

@@ -58,6 +58,31 @@ public class MultaService {
         return multa;
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public Multa pagarMulta(Long multaId) {
+        Multa multa = multaRepo.findById(multaId)
+            .orElseThrow(() -> new IllegalArgumentException("Multa no encontrada"));
+        if (multa.getEstado() == Multa.EstadoMulta.PAGADA)
+            throw new IllegalStateException("Esta multa ya fue pagada.");
+        multa.setEstado(Multa.EstadoMulta.PAGADA);
+        multaRepo.save(multa);
+        // Notificar al negocio
+        try {
+            com.municipalidad.licencias.model.Solicitud sol = multa.getLicencia().getSolicitud();
+            if (sol != null && sol.getUsuario() != null) {
+                notificacionService.crear(sol.getUsuario(),
+                    "Multa pagada",
+                    "Tu multa de S/ " + multa.getMonto() + " ha sido registrada como pagada.");
+            }
+        } catch (Exception ignored) {}
+        return multa;
+    }
+
+    public Multa obtenerPorId(Long id) {
+        return multaRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Multa no encontrada"));
+    }
+
     public List<Multa> obtenerPorLicencia(Long licenciaId) {
         Licencia licencia = licenciaService.obtenerPorId(licenciaId);
         return multaRepo.findByLicenciaOrderByCreadoEnDesc(licencia);

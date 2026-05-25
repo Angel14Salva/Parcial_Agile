@@ -671,6 +671,49 @@ class FlowRetornoController {
         this.userDetailsService  = userDetailsService;
     }
 
+    @org.springframework.web.bind.annotation.RequestMapping(value = "/pago/multa/retorno/{id}",
+        method = {org.springframework.web.bind.annotation.RequestMethod.GET,
+                  org.springframework.web.bind.annotation.RequestMethod.POST})
+    String retornoMulta(@org.springframework.web.bind.annotation.PathVariable Long id,
+                        @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
+                        org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    solicitudService.getClass(); // solo para verificar contexto
+                    // Marcar multa como pagada
+                    com.municipalidad.licencias.model.Multa multa =
+                        multaServiceRef.obtenerPorId(id);
+                    multa.setEstado(com.municipalidad.licencias.model.Multa.EstadoMulta.PAGADA);
+                    ra.addFlashAttribute("exito", "Multa pagada correctamente.");
+                    return "redirect:/multas/" + multa.getLicencia().getId() + "/licencia/" + multa.getLicencia().getId();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error retorno pago multa: {}", e.getMessage());
+        }
+        return "redirect:/dashboard";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/pago/multa/confirmar/{id}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    String confirmarMulta(@org.springframework.web.bind.annotation.PathVariable Long id,
+                          @org.springframework.web.bind.annotation.RequestParam(required = false) String token) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    multaServiceRef.pagarMulta(id);
+                    log.info("Multa {} pagada via webhook", id);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error webhook multa {}: {}", id, e.getMessage());
+        }
+        return "OK";
+    }
+
     @org.springframework.web.bind.annotation.GetMapping("/pago/exito/{id}")
     String exitoPago(@org.springframework.web.bind.annotation.PathVariable Long id,
                      org.springframework.ui.Model model) {
@@ -743,4 +786,63 @@ class FlowRetornoController {
     }
 }
 
+}
+
+// ── Pago de multas ────────────────────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/multas")
+class MultaPagoController {
+
+    private final com.municipalidad.licencias.service.MultaService multaService;
+    private final com.municipalidad.licencias.service.FlowService flowService;
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+
+    MultaPagoController(com.municipalidad.licencias.service.MultaService multaService,
+                        com.municipalidad.licencias.service.FlowService flowService,
+                        com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
+        this.multaService = multaService;
+        this.flowService  = flowService;
+        this.usuarioRepo  = usuarioRepo;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/{id}/detalle")
+    String detalle(@org.springframework.web.bind.annotation.PathVariable Long id,
+                   org.springframework.ui.Model model) {
+        model.addAttribute("multa", multaService.obtenerPorId(id));
+        return "multas/detalle";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/pagar")
+    String iniciarPago(@org.springframework.web.bind.annotation.PathVariable Long id,
+                       @org.springframework.security.core.annotation.AuthenticationPrincipal
+                           org.springframework.security.core.userdetails.UserDetails ud,
+                       jakarta.servlet.http.HttpServletRequest request,
+                       org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Multa multa = multaService.obtenerPorId(id);
+            com.municipalidad.licencias.model.Usuario usuario =
+                usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+
+            String scheme = request.getHeader("X-Forwarded-Proto") != null ?
+                request.getHeader("X-Forwarded-Proto") : request.getScheme();
+            String host   = request.getHeader("X-Forwarded-Host") != null ?
+                request.getHeader("X-Forwarded-Host") : request.getServerName();
+            String baseUrl = scheme + "://" + host;
+
+            String email  = multa.getLicencia().getSolicitud().getCorreoElectronico() != null ?
+                multa.getLicencia().getSolicitud().getCorreoElectronico() :
+                usuario.getUsername() + "@licencias.gob.pe";
+
+            com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
+                flowService.crearOrden(id, email, usuario.getNombreCompleto(),
+                    multa.getMonto().doubleValue(),
+                    baseUrl + "/pago/multa/retorno/" + id,
+                    baseUrl + "/pago/multa/confirmar/" + id);
+
+            return "redirect:" + orden.url();
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al iniciar pago: " + e.getMessage());
+            return "redirect:/multas/" + id + "/detalle";
+        }
+    }
 }

@@ -60,6 +60,25 @@
                th:text="${#temporals.format(n.creadoEn,'dd/MM/yyyy HH:mm')}"></small>
       </div>
       <p class="mb-0 text-secondary small" th:text="${n.mensaje}"></p>
+      <!-- Link segun tipo de notificacion -->
+      <div class="mt-2">
+        <a th:if="${n.titulo.contains('multa') or n.titulo.contains('Multa')}"
+           href="/multas" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-exclamation-octagon me-1"></i>Ver multas
+        </a>
+        <a th:if="${n.titulo.contains('Inspección') or n.titulo.contains('inspección')}"
+           href="/dashboard" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-clipboard-check me-1"></i>Ver trámite
+        </a>
+        <a th:if="${n.titulo.contains('licencia') or n.titulo.contains('Pago')}"
+           href="/dashboard" class="btn btn-outline-success btn-sm">
+          <i class="bi bi-award me-1"></i>Ver licencia
+        </a>
+        <a th:if="${n.titulo.contains('Segunda') or n.titulo.contains('observaciones')}"
+           href="/dashboard" class="btn btn-outline-warning btn-sm">
+          <i class="bi bi-eye me-1"></i>Ver detalle
+        </a>
+      </div>
     </div>
   </div>
 </div>
