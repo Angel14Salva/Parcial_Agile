@@ -687,7 +687,7 @@ class FlowRetornoController {
                     solicitudService.getClass(); // solo para verificar contexto
                     // Marcar multa como pagada
                     com.municipalidad.licencias.model.Multa multa =
-                        multaServiceRef.obtenerPorId(id);
+                        multaService.obtenerPorId(id);
                     multa.setEstado(com.municipalidad.licencias.model.Multa.EstadoMulta.PAGADA);
                     ra.addFlashAttribute("exito", "Multa pagada correctamente.");
                     return "redirect:/multas/" + multa.getLicencia().getId() + "/licencia/" + multa.getLicencia().getId();
@@ -707,7 +707,7 @@ class FlowRetornoController {
             if (token != null) {
                 com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
                 if (estado != null && estado.path("status").asInt() == 2) {
-                    multaServiceRef.pagarMulta(id);
+                    multaService.pagarMulta(id);
                     log.info("Multa {} pagada via webhook", id);
                 }
             }
