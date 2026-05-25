@@ -667,7 +667,7 @@ class FlowRetornoController {
         this.solicitudService = solicitudService;
     }
 
-    @org.springframework.web.bind.annotation.GetMapping("/pago/retorno/{id}")
+    @org.springframework.web.bind.annotation.RequestMapping(value = "/pago/retorno/{id}", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     String retorno(@org.springframework.web.bind.annotation.PathVariable Long id,
                    @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
                    org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
