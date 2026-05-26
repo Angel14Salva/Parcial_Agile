@@ -841,6 +841,9 @@ class GerenteMunicipalController {
             info.put("numFiscalizadores",
                 usuarioRepo.findByRolAndDistrito(
                     com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR, d).size());
+            info.put("numInspectores",
+                usuarioRepo.findByRolAndDistrito(
+                    com.municipalidad.licencias.model.Enums.Rol.INSPECTOR, d).size());
             info.put("gerente", usuarioRepo.findByRolAndDistrito(
                 com.municipalidad.licencias.model.Enums.Rol.GERENTE_DISTRITAL, d)
                 .stream().findFirst().map(u -> u.getNombreCompleto()).orElse(null));

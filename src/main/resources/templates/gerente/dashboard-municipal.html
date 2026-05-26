@@ -92,6 +92,12 @@
             <span class="text-muted">Fiscalizadores:</span>
             <span th:text="${d.numFiscalizadores}" class="badge bg-info text-dark"></span>
           </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Inspectores:</span>
+            <a th:href="@{/admin/inspectores(distrito=${d.nombre.replace(' ','_')})}"
+               class="badge bg-warning text-dark text-decoration-none"
+               th:text="${d.numInspectores}"></a>
+          </div>
           <div class="d-flex justify-content-between">
             <span class="text-muted">Solicitudes:</span>
             <span th:text="${d.numSolicitudes}" class="badge bg-primary"></span>
