@@ -21,6 +21,9 @@ public class Solicitud {
     @Column(nullable = false)
     private String domicilioFiscal;
 
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    private Enums.Distrito distrito;
+    private String codigoSeguimiento;
     private String ruc;
     private String dni;
     private String telefono;

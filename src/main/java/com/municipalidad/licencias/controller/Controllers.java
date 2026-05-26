@@ -698,6 +698,62 @@ class MultaController {
 
 }
 
+// ── Portal público (seguimiento sin login) ───────────────────────────────────
+@org.springframework.stereotype.Controller
+class PublicoController {
+
+    private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
+    private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
+    private final com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo;
+
+    PublicoController(com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
+                      com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
+                      com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo) {
+        this.solicitudRepo  = solicitudRepo;
+        this.inspeccionRepo = inspeccionRepo;
+        this.licenciaRepo   = licenciaRepo;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/seguimiento")
+    String seguimiento(
+            @org.springframework.web.bind.annotation.RequestParam(required=false) String codigo,
+            @org.springframework.web.bind.annotation.RequestParam(required=false) String dni,
+            org.springframework.ui.Model model) {
+        if (codigo != null && dni != null) {
+            var sol = solicitudRepo.findByCodigoSeguimientoAndDni(
+                codigo.trim().toUpperCase(), dni.trim());
+            if (sol.isPresent()) {
+                var s = sol.get();
+                model.addAttribute("solicitud", s);
+                inspeccionRepo.findBySolicitud(s).stream()
+                    .filter(i -> i.getResultado() != com.municipalidad.licencias.model.Enums.ResultadoInspeccion.PENDIENTE)
+                    .reduce((a,b) -> b)
+                    .ifPresent(i -> model.addAttribute("inspeccion", i));
+                licenciaRepo.findBySolicitud(s)
+                    .ifPresent(l -> model.addAttribute("licencia", l));
+            } else {
+                model.addAttribute("error", "No se encontró ningún trámite con ese código y DNI. Verifica los datos.");
+            }
+        }
+        return "publico/seguimiento";
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/publico/licencia/{id}/descargar")
+    org.springframework.http.ResponseEntity<byte[]> descargarPublico(
+            @org.springframework.web.bind.annotation.PathVariable Long id) {
+        try {
+            com.municipalidad.licencias.model.Licencia licencia = licenciaRepo.findById(id).orElseThrow();
+            byte[] pdf = com.municipalidad.licencias.util.PdfLicenciaUtil.generar(licencia);
+            return org.springframework.http.ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename="licencia-" + licencia.getNumeroLicencia() + ".pdf"")
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .body(pdf);
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().build();
+        }
+    }
+}
+
 // ── Registro de nuevos negocios ──────────────────────────────────────────────
 @org.springframework.stereotype.Controller
 class RegistroController {

@@ -16,4 +16,6 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
     @Query("SELECT s FROM Solicitud s WHERE s.estado NOT IN " +
            "('BORRADOR','DENEGADO','APROBADO') ORDER BY s.creadoEn ASC")
     List<Solicitud> findTramitesActivos();
+    java.util.List<Solicitud> findByDistrito(com.municipalidad.licencias.model.Enums.Distrito distrito);
+    java.util.Optional<Solicitud> findByCodigoSeguimientoAndDni(String codigo, String dni);
 }

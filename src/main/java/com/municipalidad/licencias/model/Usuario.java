@@ -28,6 +28,8 @@ public class Usuario {
     private String dni;
     private String telefono;
     private String cargo;
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    private Enums.Distrito distrito;
     private String numeroColegiatura;
     private java.time.LocalDate fechaNombramiento;
 
@@ -83,6 +85,8 @@ public class Usuario {
     public void setNombreCompleto(String v){ this.nombreCompleto = v; }
     public String getDni()                   { return dni; }
     public String getTelefono()              { return telefono; }
+    public Enums.Distrito getDistrito()      { return distrito; }
+    public void setDistrito(Enums.Distrito v){ this.distrito = v; }
     public String getCargo()                 { return cargo; }
     public String getNumeroColegiatura()     { return numeroColegiatura; }
     public java.time.LocalDate getFechaNombramiento() { return fechaNombramiento; }
