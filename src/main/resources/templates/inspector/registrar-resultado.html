@@ -130,6 +130,7 @@
     <div class="card-body p-4">
       <form th:action="@{/inspector/inspeccion/{id}/resultado(id=${inspeccion.id})}"
             method="post" th:object="${dto}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Resultado <span class="text-danger">*</span></label>
