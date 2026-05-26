@@ -869,13 +869,19 @@ class PublicoController {
     private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
     private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
     private final com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo;
+    private final com.municipalidad.licencias.service.FlowService flowService;
+    private final com.municipalidad.licencias.service.EmailService emailService;
 
     PublicoController(com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
                       com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
-                      com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo) {
+                      com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
+                      com.municipalidad.licencias.service.FlowService flowService,
+                      com.municipalidad.licencias.service.EmailService emailService) {
         this.solicitudRepo  = solicitudRepo;
         this.inspeccionRepo = inspeccionRepo;
         this.licenciaRepo   = licenciaRepo;
+        this.flowService    = flowService;
+        this.emailService   = emailService;
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/publico")
@@ -910,6 +916,84 @@ class PublicoController {
             }
         }
         return "publico/seguimiento";
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/publico/licencia/{id}/renovar")
+    String renovarForm(@org.springframework.web.bind.annotation.PathVariable Long id,
+                       org.springframework.ui.Model model,
+                       jakarta.servlet.http.HttpServletRequest request) {
+        com.municipalidad.licencias.model.Licencia licencia = licenciaRepo.findById(id).orElseThrow();
+        model.addAttribute("licencia", licencia);
+        return "publico/renovar-pago";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/publico/licencia/{id}/renovar/flow")
+    String renovarFlow(@org.springframework.web.bind.annotation.PathVariable Long id,
+                       jakarta.servlet.http.HttpServletRequest request,
+                       org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Licencia licencia = licenciaRepo.findById(id).orElseThrow();
+            com.municipalidad.licencias.model.Solicitud s = licencia.getSolicitud();
+            String scheme = request.getHeader("X-Forwarded-Proto") != null ? request.getHeader("X-Forwarded-Proto") : request.getScheme();
+            String host = request.getHeader("X-Forwarded-Host") != null ? request.getHeader("X-Forwarded-Host") : request.getServerName();
+            String baseUrl = scheme + "://" + host;
+            String urlRetorno = baseUrl + "/publico/licencia/" + id + "/renovar/retorno";
+            String urlConfirmacion = baseUrl + "/publico/licencia/" + id + "/renovar/confirmar";
+            String email = s.getCorreoElectronico() != null ? s.getCorreoElectronico() : "publico@licencias.gob.pe";
+            String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : "Ciudadano";
+            com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
+                flowService.crearOrden(id + 10000L, email, nombre, 2.0, urlRetorno, urlConfirmacion);
+            return "redirect:" + orden.url();
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al conectar con el sistema de pago: " + e.getMessage());
+            return "redirect:/publico/licencia/" + id + "/renovar";
+        }
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/publico/licencia/{id}/renovar/retorno")
+    String renovarRetorno(@org.springframework.web.bind.annotation.PathVariable Long id,
+                          @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
+                          org.springframework.ui.Model model,
+                          org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            if (token != null) {
+                com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    com.municipalidad.licencias.model.Licencia licencia = licenciaRepo.findById(id).orElseThrow();
+                    // Renovar: extender vencimiento 1 año
+                    java.time.LocalDate nuevaFecha = (licencia.getFechaVencimiento() != null &&
+                        licencia.getFechaVencimiento().isAfter(java.time.LocalDate.now()))
+                        ? licencia.getFechaVencimiento().plusYears(1)
+                        : java.time.LocalDate.now().plusYears(1);
+                    licencia.setFechaVencimiento(nuevaFecha);
+                    licencia.setEstado(com.municipalidad.licencias.model.Enums.EstadoLicencia.VIGENTE);
+                    licenciaRepo.save(licencia);
+                    // Enviar correo
+                    com.municipalidad.licencias.model.Solicitud s = licencia.getSolicitud();
+                    if (s.getCorreoElectronico() != null) {
+                        emailService.enviarCodigoSeguimiento(
+                            s.getCorreoElectronico(), s.getRazonSocial(),
+                            "RENOVACION-" + licencia.getNumeroLicencia(),
+                            s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO");
+                    }
+                    model.addAttribute("licencia", licencia);
+                    model.addAttribute("nuevaFecha", nuevaFecha);
+                    return "publico/comprobante-renovacion";
+                } else {
+                    ra.addFlashAttribute("error", "El pago no fue confirmado.");
+                }
+            }
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al verificar el pago.");
+        }
+        return "redirect:/publico/licencia/" + id + "/renovar";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/publico/licencia/{id}/renovar/confirmar")
+    @org.springframework.web.bind.annotation.ResponseBody
+    String renovarConfirmar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                            @org.springframework.web.bind.annotation.RequestParam(required = false) String token) {
+        return "OK";
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/publico/licencia/{id}/descargar")

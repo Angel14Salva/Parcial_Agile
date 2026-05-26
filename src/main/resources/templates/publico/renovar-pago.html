@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><title>Renovar Licencia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>body{background:linear-gradient(135deg,#1D3557 0%,#457B9D 100%);min-height:100vh}</style>
+</head>
+<body class="py-5">
+<div class="container" style="max-width:600px">
+  <div class="text-center text-white mb-4">
+    <i class="bi bi-building fs-1"></i>
+    <h4 class="fw-bold mt-2">Renovación de Licencia</h4>
+    <p class="opacity-75">Municipalidad Provincial de Trujillo</p>
+  </div>
+  <div class="card shadow-sm">
+    <div class="card-header fw-bold" style="background:#1D3557;color:#fff">
+      <i class="bi bi-arrow-repeat me-2"></i>Renovar Licencia de Funcionamiento
+    </div>
+    <div class="card-body p-4">
+      <div th:if="${error}" class="alert alert-danger mb-3" th:text="${error}"></div>
+      <table class="table table-sm mb-4">
+        <tr><td class="text-muted">N° Licencia</td><td class="fw-bold" th:text="${licencia.numeroLicencia}"></td></tr>
+        <tr><td class="text-muted">Razón Social</td><td th:text="${licencia.solicitud.razonSocial}"></td></tr>
+        <tr><td class="text-muted">Dirección</td><td th:text="${licencia.solicitud.direccionEstablecimiento}"></td></tr>
+        <tr><td class="text-muted">Vencimiento actual</td>
+            <td><span class="badge bg-danger" th:text="${#temporals.format(licencia.fechaVencimiento,'dd/MM/yyyy')}"></span></td></tr>
+        <tr><td class="text-muted">Nueva vigencia</td>
+            <td><span class="badge bg-success">1 año adicional</span></td></tr>
+      </table>
+      <div class="alert alert-warning small mb-4">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        El derecho de renovación es de <strong>S/ 180.00</strong> y no es reembolsable.
+      </div>
+      <form th:action="@{/publico/licencia/{id}/renovar/flow(id=${licencia.id})}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-success btn-lg w-100 fw-semibold">
+          <i class="bi bi-credit-card me-2"></i>Pagar renovación S/ 180.00
+        </button>
+      </form>
+      <a href="/seguimiento" class="btn btn-outline-secondary w-100 mt-2">Volver</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

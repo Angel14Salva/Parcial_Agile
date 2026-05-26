@@ -121,6 +121,11 @@
                  class="btn btn-success btn-sm ms-2">
                 <i class="bi bi-download me-1"></i>Descargar PDF
               </a>
+              <a th:if="${licencia.estado.name() == 'EXPIRADA' or licencia.estado.name() == 'POR_VENCER'}"
+                 th:href="@{/publico/licencia/{id}/renovar(id=${licencia.id})}"
+                 class="btn btn-warning btn-sm ms-2">
+                <i class="bi bi-arrow-repeat me-1"></i>Renovar licencia
+              </a>
             </div>
           </div>
         </div>
