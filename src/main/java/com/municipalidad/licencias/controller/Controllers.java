@@ -284,6 +284,11 @@ class SolicitudController {
         } else {
             model.addAttribute("multasLicencia", java.util.List.of());
         }
+        // Inspectores del distrito para asignación manual
+        if (s.getDistrito() != null) {
+            model.addAttribute("inspectoresDisponibles",
+                usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, s.getDistrito()));
+        }
         return "solicitud/detalle";
     }
 }
@@ -742,11 +747,39 @@ class SubgerenteController {
             com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(inspectorId).orElseThrow();
             s.setInspector(inspector);
             solicitudRepo.save(s);
-            ra.addFlashAttribute("exito", "Fiscalizador " + inspector.getNombreCompleto() + " asignado correctamente.");
+            ra.addFlashAttribute("exito", "Inspector " + inspector.getNombreCompleto() + " asignado correctamente.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Error al asignar: " + e.getMessage());
         }
-        return "redirect:/subgerente/dashboard";
+        return "redirect:/solicitud/" + id + "/detalle";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/solicitud/{id}/aprobar")
+    String aprobarSolicitud(@org.springframework.web.bind.annotation.PathVariable Long id,
+                            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id).orElseThrow();
+            s.setEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.APROBADO);
+            solicitudRepo.save(s);
+            ra.addFlashAttribute("exito", "Solicitud aprobada correctamente.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al aprobar: " + e.getMessage());
+        }
+        return "redirect:/solicitud/" + id + "/detalle";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/solicitud/{id}/denegar")
+    String denegarSolicitud(@org.springframework.web.bind.annotation.PathVariable Long id,
+                            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id).orElseThrow();
+            s.setEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.DENEGADO);
+            solicitudRepo.save(s);
+            ra.addFlashAttribute("exito", "Solicitud denegada.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al denegar: " + e.getMessage());
+        }
+        return "redirect:/solicitud/" + id + "/detalle";
     }
 }
 

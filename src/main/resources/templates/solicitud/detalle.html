@@ -92,6 +92,51 @@
     </div>
   </div>
 
+  <!-- Acciones del Subgerente -->
+  <div sec:authorize="hasAnyRole('SUBGERENTE','ADMIN','GERENTE_MUNICIPAL','GERENTE_DISTRITAL')"
+       class="card shadow-sm mb-3 border-primary">
+    <div class="card-header fw-semibold" style="background:#1D3557;color:#fff">
+      <i class="bi bi-gear me-2"></i>Acciones del Subgerente
+    </div>
+    <div class="card-body">
+      <!-- Asignar inspector -->
+      <div th:if="${solicitud.inspector == null and solicitud.estado.name() != 'BORRADOR'}" class="mb-3">
+        <label class="form-label fw-semibold small">Asignar inspector manualmente</label>
+        <form th:action="@{/subgerente/solicitud/{id}/asignar(id=${solicitud.id})}" method="post" class="d-flex gap-2">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <select name="inspectorId" class="form-select form-select-sm" required>
+            <option value="">-- Seleccionar inspector --</option>
+            <option th:each="ins : ${inspectoresDisponibles}"
+                    th:value="${ins.id}"
+                    th:text="${ins.nombreCompleto}"></option>
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm">Asignar</button>
+        </form>
+      </div>
+      <div th:if="${solicitud.inspector != null}" class="mb-3">
+        <span class="text-muted small">Inspector asignado:</span>
+        <span class="fw-semibold ms-1" th:text="${solicitud.inspector.nombreCompleto}"></span>
+      </div>
+      <!-- Aprobar / Denegar -->
+      <div th:if="${solicitud.estado.name() == 'INSPECCION_PROGRAMADA' or solicitud.estado.name() == 'ADMITIDO'}"
+           class="d-flex gap-2">
+        <form th:action="@{/subgerente/solicitud/{id}/aprobar(id=${solicitud.id})}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-circle me-1"></i>Aprobar solicitud
+          </button>
+        </form>
+        <form th:action="@{/subgerente/solicitud/{id}/denegar(id=${solicitud.id})}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="btn btn-danger btn-sm"
+                  onclick="return confirm('¿Está seguro de denegar esta solicitud?')">
+            <i class="bi bi-x-circle me-1"></i>Denegar solicitud
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Multas -->
   <div th:if="${multasLicencia != null and not #lists.isEmpty(multasLicencia)}" class="card shadow-sm mb-3 border-danger">
     <div class="card-header bg-danger text-white fw-semibold">
