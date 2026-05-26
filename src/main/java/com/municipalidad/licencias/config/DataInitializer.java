@@ -31,6 +31,22 @@ public class DataInitializer implements CommandLineRunner {
         solicitudRepo.findByEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.BORRADOR)
             .forEach(solicitudRepo::delete);
         log.info("Borradores huérfanos eliminados al arrancar.");
+        // Intercambiar roles INSPECTOR <-> FISCALIZADOR en TRUJILLO una sola vez
+        java.util.List<com.municipalidad.licencias.model.Usuario> trujillo =
+            usuarioRepo.findByDistrito(com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        boolean haySwap = trujillo.stream().anyMatch(u ->
+            u.getRol() == com.municipalidad.licencias.model.Enums.Rol.INSPECTOR &&
+            u.getUsername().startsWith("f"));
+        if (haySwap) {
+            trujillo.forEach(u -> {
+                if (u.getRol() == com.municipalidad.licencias.model.Enums.Rol.INSPECTOR)
+                    u.setRol(com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR);
+                else if (u.getRol() == com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR)
+                    u.setRol(com.municipalidad.licencias.model.Enums.Rol.INSPECTOR);
+            });
+            usuarioRepo.saveAll(trujillo);
+            log.info("Roles INSPECTOR/FISCALIZADOR intercambiados en TRUJILLO.");
+        }
         // Eliminar usuarios de distritos que ya no existen
         usuarioRepo.findAll().stream()
             .filter(u -> u.getDistrito() != null && u.getDistrito() != com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO)
