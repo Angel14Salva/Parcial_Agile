@@ -65,7 +65,22 @@ public class LicenciaService {
             .fechaVencimiento(hoy.plusDays(vigenciaDias))
             .estado(Enums.EstadoLicencia.VIGENTE)
             .build();
-        return licenciaRepo.save(licencia);
+        licenciaRepo.save(licencia);
+        // Enviar email con licencia
+        try {
+            if (solicitud.getCorreoElectronico() != null) {
+                emailService.enviarLicencia(
+                    solicitud.getCorreoElectronico(),
+                    solicitud.getRazonSocial(),
+                    licencia.getNumeroLicencia(),
+                    licencia.getFechaVencimiento().toString(),
+                    solicitud.getCodigoSeguimiento()
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Error enviando email licencia: " + e.getMessage());
+        }
+        return licencia;
     }
 
     @Transactional
