@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**", "/error", "/seguimiento", "/publico/**", "/").permitAll()
                 .requestMatchers("/pago/**").permitAll()
                 .requestMatchers("/multas/*/detalle").authenticated()
-                .requestMatchers("/api/validar/**").authenticated()
+                .requestMatchers("/api/validar/**").permitAll()
                 .requestMatchers("/inspector/**").hasRole("INSPECTOR")
                 .requestMatchers("/subgerente/**").hasAnyRole("SUBGERENTE", "ADMIN", "GERENTE_MUNICIPAL")
                 .requestMatchers("/gerente/**").hasAnyRole("GERENTE_DISTRITAL", "ADMIN", "GERENTE_MUNICIPAL")
