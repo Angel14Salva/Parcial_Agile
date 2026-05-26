@@ -1275,6 +1275,7 @@ class InspectorAdminController {
 
     @org.springframework.web.bind.annotation.PostMapping("/{id}/eliminar")
     String eliminar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                    @org.springframework.web.bind.annotation.RequestHeader(value="Referer", required=false) String referer,
                     org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
         try {
             com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(id).orElseThrow();
@@ -1284,7 +1285,7 @@ class InspectorAdminController {
         } catch (Exception e) {
             ra.addFlashAttribute("error", "No se puede eliminar: el inspector tiene inspecciones o registros asociados.");
         }
-        return "redirect:/admin/inspectores";
+        return referer != null ? "redirect:" + referer : "redirect:/admin/inspectores";
     }
 }
 
