@@ -44,9 +44,16 @@ public class InspeccionService {
     @Transactional
     public Inspeccion programarPrimeraInspeccion(Solicitud solicitud) {
         LocalDate fecha = diasHabiles.siguienteDiaHabil(LocalDate.now().plusDays(1));
-        Usuario inspector = usuarioRepo.findByRol(Enums.Rol.INSPECTOR)
-            .stream().findFirst()
-            .orElseThrow(() -> new IllegalStateException("No hay inspectores registrados."));
+        // Asignar inspector del mismo distrito, con menos inspecciones pendientes
+        java.util.List<Usuario> candidatos = solicitud.getDistrito() != null
+            ? usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, solicitud.getDistrito())
+            : usuarioRepo.findByRol(Enums.Rol.INSPECTOR);
+        if (candidatos.isEmpty()) candidatos = usuarioRepo.findByRol(Enums.Rol.INSPECTOR);
+        Usuario inspector = candidatos.stream()
+            .filter(Usuario::isActivo)
+            .min(java.util.Comparator.comparingInt(u ->
+                inspeccionRepo.findPendientesByInspector(u).size()))
+            .orElseThrow(() -> new IllegalStateException("No hay inspectores disponibles."));
 
         Inspeccion inspeccion = Inspeccion.builder()
             .solicitud(solicitud).inspector(inspector)
