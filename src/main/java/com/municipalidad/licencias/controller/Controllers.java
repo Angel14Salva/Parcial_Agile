@@ -887,6 +887,24 @@ class PublicoController {
     @org.springframework.web.bind.annotation.GetMapping("/publico")
     String inicio() { return "publico/inicio"; }
 
+    @org.springframework.web.bind.annotation.GetMapping("/publico/verificar-licencia")
+    String verificarLicencia(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String ruc,
+            org.springframework.ui.Model model) {
+        if (ruc != null && !ruc.isBlank()) {
+            solicitudRepo.findAll().stream()
+                .filter(s -> ruc.trim().equals(s.getRuc()))
+                .flatMap(s -> licenciaRepo.findBySolicitud(s).stream())
+                .findFirst()
+                .ifPresentOrElse(
+                    l -> { model.addAttribute("licencia", l); model.addAttribute("ruc", ruc); },
+                    () -> model.addAttribute("error", "No se encontró ninguna licencia para el RUC " + ruc + ".")
+                );
+            model.addAttribute("ruc", ruc);
+        }
+        return "publico/verificar-licencia";
+    }
+
     @org.springframework.web.bind.annotation.GetMapping("/publico/nueva-solicitud")
     String nuevaSolicitudPublica(org.springframework.ui.Model model) {
         model.addAttribute("solicitudDto", new com.municipalidad.licencias.dto.SolicitudDto());

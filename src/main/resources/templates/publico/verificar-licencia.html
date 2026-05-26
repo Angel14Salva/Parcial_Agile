@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><title>Verificar Licencia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>body{background:linear-gradient(135deg,#1D3557 0%,#457B9D 100%);min-height:100vh}</style>
+</head>
+<body class="py-5">
+<div class="container" style="max-width:620px">
+  <div class="text-center text-white mb-4">
+    <i class="bi bi-shield-check display-4 mb-2"></i>
+    <h4 class="fw-bold">Verificador de Licencias</h4>
+    <p class="opacity-75">Municipalidad Provincial de Trujillo</p>
+  </div>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <form th:action="@{/publico/verificar-licencia}" method="get" class="d-flex gap-2">
+        <input type="text" name="ruc" class="form-control" th:value="${ruc}"
+               placeholder="Ingresa el RUC (11 dígitos)" maxlength="11" required/>
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-search"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div th:if="${error}" class="alert alert-warning text-center">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+  </div>
+
+  <div th:if="${licencia != null}" class="card shadow-sm">
+    <div class="card-header fw-bold d-flex align-items-center gap-2"
+         th:style="${licencia.estado.name() == 'VIGENTE'} ? 'background:#198754;color:#fff' : 'background:#dc3545;color:#fff'">
+      <i th:class="${licencia.estado.name() == 'VIGENTE'} ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
+      <span th:text="${licencia.estado.name() == 'VIGENTE'} ? 'Licencia VIGENTE' : 'Licencia ' + ${licencia.estado.name()}"></span>
+    </div>
+    <div class="card-body p-4">
+      <table class="table table-sm mb-0">
+        <tr><td class="text-muted">N° Licencia</td><td class="fw-bold" th:text="${licencia.numeroLicencia}"></td></tr>
+        <tr><td class="text-muted">Razón Social</td><td th:text="${licencia.solicitud.razonSocial}"></td></tr>
+        <tr><td class="text-muted">RUC</td><td th:text="${licencia.solicitud.ruc}"></td></tr>
+        <tr><td class="text-muted">Dirección</td><td th:text="${licencia.solicitud.direccionEstablecimiento}"></td></tr>
+        <tr><td class="text-muted">Rubro</td><td th:text="${licencia.solicitud.rubro}"></td></tr>
+        <tr><td class="text-muted">Fecha de emisión</td>
+            <td th:text="${#temporals.format(licencia.fechaEmision,'dd/MM/yyyy')}"></td></tr>
+        <tr><td class="text-muted">Vencimiento</td>
+            <td th:text="${licencia.fechaVencimiento != null} ? ${#temporals.format(licencia.fechaVencimiento,'dd/MM/yyyy')} : 'Indefinida'"></td></tr>
+        <tr><td class="text-muted">Estado</td>
+            <td>
+              <span class="badge" th:classappend="${licencia.estado.name() == 'VIGENTE'} ? 'bg-success' : 'bg-danger'"
+                    th:text="${licencia.estado.name()}"></span>
+            </td></tr>
+      </table>
+      <div th:if="${licencia.estado.name() == 'EXPIRADA' or licencia.estado.name() == 'POR_VENCER'}"
+           class="alert alert-warning mt-3 mb-0">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Esta licencia requiere renovación.
+        <a th:href="@{/publico/licencia/{id}/renovar(id=${licencia.id})}"
+           class="btn btn-warning btn-sm ms-2">
+          <i class="bi bi-arrow-repeat me-1"></i>Renovar ahora
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="/publico" class="btn btn-outline-light">
+      <i class="bi bi-house me-1"></i>Volver al inicio
+    </a>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
