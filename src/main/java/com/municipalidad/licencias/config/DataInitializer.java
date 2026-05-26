@@ -36,6 +36,14 @@ public class DataInitializer implements CommandLineRunner {
             .filter(u -> u.getDistrito() != null && u.getDistrito() != com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO)
             .forEach(usuarioRepo::delete);
         log.info("Usuarios de distritos eliminados.");
+        // Reasignar roles: los i0x.trujillo pasan a FISCALIZADOR, los f0x.trujillo pasan a INSPECTOR
+        usuarioRepo.findAll().stream()
+            .filter(u -> u.getUsername() != null && u.getUsername().matches("i\\d+\\.trujillo"))
+            .forEach(u -> { u.setRol(Enums.Rol.FISCALIZADOR); usuarioRepo.save(u); });
+        usuarioRepo.findAll().stream()
+            .filter(u -> u.getUsername() != null && u.getUsername().matches("f\\d+\\.trujillo"))
+            .forEach(u -> { u.setRol(Enums.Rol.INSPECTOR); usuarioRepo.save(u); });
+        log.info("Roles de funcionarios reasignados.");
         crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
         crearUsuarioSiNoExiste("inspector1", "inspector123", "inspector1@municipalidad.gob.pe",
