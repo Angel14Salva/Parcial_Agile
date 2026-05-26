@@ -31,6 +31,32 @@ public class DataInitializer implements CommandLineRunner {
         solicitudRepo.findByEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.BORRADOR)
             .forEach(solicitudRepo::delete);
         log.info("Borradores huérfanos eliminados al arrancar.");
+        // Actualizar usernames a formato nombreapellidorol
+        for (com.municipalidad.licencias.model.Usuario u : usuarioRepo.findAll()) {
+            if (u.getRol() == com.municipalidad.licencias.model.Enums.Rol.INSPECTOR ||
+                u.getRol() == com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR) {
+                if (u.getNombreCompleto() == null || u.getNombreCompleto().isBlank()) continue;
+                // Formato: APELLIDO NOMBRE -> nombreapellido
+                String[] partes = u.getNombreCompleto().trim().split("[,\s]+");
+                String nuevoUsername;
+                if (partes.length >= 2) {
+                    // Si es "APELLIDO, NOMBRE" o "APELLIDO NOMBRE"
+                    String apellido = partes[0].toLowerCase().replaceAll("[^a-z0-9]", "");
+                    String nombre = partes[partes.length - 1].toLowerCase().replaceAll("[^a-z0-9]", "");
+                    String rol = u.getRol() == com.municipalidad.licencias.model.Enums.Rol.INSPECTOR
+                        ? "inspector" : "fiscalizador";
+                    nuevoUsername = nombre + apellido + rol;
+                } else {
+                    continue;
+                }
+                // Solo actualizar si el username actual es el formato viejo (f1.trujillo, i01.trujillo, etc)
+                if (u.getUsername().matches("(f|i)\d+\..*") || u.getUsername().equals("inspector1")) {
+                    u.setUsername(nuevoUsername);
+                    usuarioRepo.save(u);
+                    log.info("Username actualizado: {} -> {}", u.getNombreCompleto(), nuevoUsername);
+                }
+            }
+        }
         // Eliminar todo lo que no sea distrito TRUJILLO
         for (com.municipalidad.licencias.model.Enums.Distrito d :
              com.municipalidad.licencias.model.Enums.Distrito.values()) {
