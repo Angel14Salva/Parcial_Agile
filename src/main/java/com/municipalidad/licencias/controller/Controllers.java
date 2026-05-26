@@ -989,17 +989,28 @@ class InspectorAdminController {
     }
 
     @org.springframework.web.bind.annotation.GetMapping
-    String listar(org.springframework.ui.Model model) {
+    String listar(@org.springframework.web.bind.annotation.RequestParam(required = false) String distrito,
+                  org.springframework.ui.Model model) {
         java.util.List<com.municipalidad.licencias.model.Usuario> todos = new java.util.ArrayList<>();
+        com.municipalidad.licencias.model.Enums.Distrito distritoEnum = null;
+        if (distrito != null && !distrito.isBlank()) {
+            try { distritoEnum = com.municipalidad.licencias.model.Enums.Distrito.valueOf(distrito); } catch (Exception ignored) {}
+        }
         for (com.municipalidad.licencias.model.Enums.Rol rol : new com.municipalidad.licencias.model.Enums.Rol[]{
             com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR,
             com.municipalidad.licencias.model.Enums.Rol.INSPECTOR,
             com.municipalidad.licencias.model.Enums.Rol.SUBGERENTE,
             com.municipalidad.licencias.model.Enums.Rol.GERENTE_DISTRITAL
         }) {
-            todos.addAll(usuarioRepo.findByRol(rol));
+            if (distritoEnum != null) {
+                todos.addAll(usuarioRepo.findByRolAndDistrito(rol, distritoEnum));
+            } else {
+                todos.addAll(usuarioRepo.findByRol(rol));
+            }
         }
         model.addAttribute("inspectores", todos);
+        model.addAttribute("distritoFiltro", distrito);
+        model.addAttribute("distritos", com.municipalidad.licencias.model.Enums.Distrito.values());
         return "admin/inspectores";
     }
 
