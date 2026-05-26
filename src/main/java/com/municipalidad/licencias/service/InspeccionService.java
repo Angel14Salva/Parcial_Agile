@@ -44,11 +44,15 @@ public class InspeccionService {
     @Transactional
     public Inspeccion programarPrimeraInspeccion(Solicitud solicitud) {
         LocalDate fecha = diasHabiles.siguienteDiaHabil(LocalDate.now().plusDays(1));
-        // Asignar inspector del mismo distrito, con menos inspecciones pendientes
-        java.util.List<Usuario> candidatos = solicitud.getDistrito() != null
-            ? usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, solicitud.getDistrito())
-            : usuarioRepo.findByRol(Enums.Rol.INSPECTOR);
-        if (candidatos.isEmpty()) candidatos = usuarioRepo.findByRol(Enums.Rol.INSPECTOR);
+        // Asignar fiscalizador del mismo distrito, con menos inspecciones pendientes
+        java.util.List<Usuario> candidatos = new java.util.ArrayList<>();
+        if (solicitud.getDistrito() != null) {
+            candidatos.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.FISCALIZADOR, solicitud.getDistrito()));
+            if (candidatos.isEmpty())
+                candidatos.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, solicitud.getDistrito()));
+        }
+        if (candidatos.isEmpty()) candidatos.addAll(usuarioRepo.findByRol(Enums.Rol.FISCALIZADOR));
+        if (candidatos.isEmpty()) candidatos.addAll(usuarioRepo.findByRol(Enums.Rol.INSPECTOR));
         Usuario inspector = candidatos.stream()
             .filter(Usuario::isActivo)
             .min(java.util.Comparator.comparingInt(u ->
