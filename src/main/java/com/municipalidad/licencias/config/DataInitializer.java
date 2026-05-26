@@ -17,16 +17,33 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepo;
     private final PasswordEncoder encoder;
     private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
+    private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
+    private final com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo;
 
     public DataInitializer(UsuarioRepository usuarioRepo, PasswordEncoder encoder,
-                           com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo) {
+                           com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
+                           com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
+                           com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo) {
         this.usuarioRepo = usuarioRepo;
         this.encoder = encoder;
         this.solicitudRepo = solicitudRepo;
+        this.inspeccionRepo = inspeccionRepo;
+        this.licenciaRepo = licenciaRepo;
     }
 
     @Override
     public void run(String... args) {
+        // Eliminar usuario negocio1 y todo lo suyo
+        usuarioRepo.findByUsername("negocio1").ifPresent(u -> {
+            solicitudRepo.findByUsuario(u).forEach(s -> {
+                inspeccionRepo.findBySolicitud(s).forEach(inspeccionRepo::delete);
+                licenciaRepo.findBySolicitud(s).ifPresent(licenciaRepo::delete);
+                solicitudRepo.delete(s);
+            });
+            usuarioRepo.delete(u);
+            log.info("Usuario negocio1 y sus datos eliminados.");
+        });
+
         // Limpiar borradores huérfanos al arrancar
         solicitudRepo.findByEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.BORRADOR)
             .forEach(solicitudRepo::delete);
@@ -101,8 +118,7 @@ public class DataInitializer implements CommandLineRunner {
             "Administrador",    Enums.Rol.ADMIN);
         crearUsuarioSiNoExiste("inspector1", "inspector123", "inspector1@municipalidad.gob.pe",
             "Inspector García", Enums.Rol.INSPECTOR);
-        crearUsuarioSiNoExiste("negocio1",   "negocio123",   "negocio1@empresa.com",
-            "Empresa Demo SAC", Enums.Rol.NEGOCIO);
+
         crearUsuarioSiNoExiste("publico", java.util.UUID.randomUUID().toString(),
             "publico@licencias.gob.pe", "Ciudadano Público", Enums.Rol.NEGOCIO);
 
