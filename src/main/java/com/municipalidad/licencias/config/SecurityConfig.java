@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .requestMatchers("/solicitud/nueva", "/solicitud/*/pago", "/solicitud/*/pago/flow", "/solicitud/*/pago/retorno", "/solicitud/*/plano").permitAll()
                 .requestMatchers("/multas/*/detalle").authenticated()
                 .requestMatchers("/api/validar/**").permitAll()
-                .requestMatchers("/inspector/**").hasRole("INSPECTOR")
+                .requestMatchers("/inspector/**").hasAnyRole("INSPECTOR","FISCALIZADOR")
                 .requestMatchers("/subgerente/**").hasAnyRole("SUBGERENTE", "ADMIN", "GERENTE_MUNICIPAL")
                 .requestMatchers("/solicitud/*/detalle").hasAnyRole("SUBGERENTE", "ADMIN", "GERENTE_MUNICIPAL", "GERENTE_DISTRITAL", "INSPECTOR", "FISCALIZADOR")
                 .requestMatchers("/gerente/**").hasAnyRole("GERENTE_DISTRITAL", "ADMIN", "GERENTE_MUNICIPAL")
