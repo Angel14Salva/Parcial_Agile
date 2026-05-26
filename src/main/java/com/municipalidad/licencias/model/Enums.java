@@ -3,17 +3,7 @@ package com.municipalidad.licencias.model;
 public class Enums {
 
     public enum Distrito {
-        TRUJILLO,
-        EL_PORVENIR,
-        LA_ESPERANZA,
-        FLORENCIA_DE_MORA,
-        VICTOR_LARCO,
-        HUANCHACO,
-        MOCHE,
-        LAREDO,
-        SALAVERRY,
-        SIMBAL,
-        POROTO
+        TRUJILLO
     }
 
     public enum Rol {

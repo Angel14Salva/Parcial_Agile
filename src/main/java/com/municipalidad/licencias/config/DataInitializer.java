@@ -31,6 +31,11 @@ public class DataInitializer implements CommandLineRunner {
         solicitudRepo.findByEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.BORRADOR)
             .forEach(solicitudRepo::delete);
         log.info("Borradores huérfanos eliminados al arrancar.");
+        // Eliminar usuarios de distritos que ya no existen
+        usuarioRepo.findAll().stream()
+            .filter(u -> u.getDistrito() != null && u.getDistrito() != com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO)
+            .forEach(usuarioRepo::delete);
+        log.info("Usuarios de distritos eliminados.");
         crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
         crearUsuarioSiNoExiste("inspector1", "inspector123", "inspector1@municipalidad.gob.pe",
