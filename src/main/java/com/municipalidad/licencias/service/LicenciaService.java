@@ -21,6 +21,7 @@ public class LicenciaService {
     private final LicenciaRepository  licenciaRepo;
     private final SolicitudRepository solicitudRepo;
     private final RenovacionRepository renovacionRepo;
+    private final EmailService emailService;
     private final com.municipalidad.licencias.repository.MultaRepository multaRepo;
     private final NotificacionService notificacionService;
 
@@ -33,12 +34,14 @@ public class LicenciaService {
                            SolicitudRepository solicitudRepo,
                            RenovacionRepository renovacionRepo,
                            com.municipalidad.licencias.repository.MultaRepository multaRepo,
-                           NotificacionService notificacionService) {
+                           NotificacionService notificacionService,
+                           EmailService emailService) {
         this.licenciaRepo        = licenciaRepo;
         this.solicitudRepo       = solicitudRepo;
         this.renovacionRepo      = renovacionRepo;
         this.multaRepo           = multaRepo;
         this.notificacionService = notificacionService;
+        this.emailService        = emailService;
     }
 
     @Transactional
