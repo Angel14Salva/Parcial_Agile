@@ -154,6 +154,10 @@ public class Solicitud {
     public String getRazonSocial()               { return razonSocial; }
     public String getDomicilioFiscal()           { return domicilioFiscal; }
     public String getRubro()                     { return rubro; }
+    public com.municipalidad.licencias.model.Enums.Distrito getDistrito() { return distrito; }
+    public void setDistrito(com.municipalidad.licencias.model.Enums.Distrito v) { this.distrito = v; }
+    public String getCodigoSeguimiento() { return codigoSeguimiento; }
+    public void setCodigoSeguimiento(String v) { this.codigoSeguimiento = v; }
     public String getRuc()                       { return ruc; }
     public String getDni()                       { return dni; }
     public String getTelefono()                  { return telefono; }
