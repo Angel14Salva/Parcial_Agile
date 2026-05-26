@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/validar/**").permitAll()
                 .requestMatchers("/inspector/**").hasRole("INSPECTOR")
                 .requestMatchers("/subgerente/**").hasAnyRole("SUBGERENTE", "ADMIN", "GERENTE_MUNICIPAL")
+                .requestMatchers("/solicitud/*/detalle").hasAnyRole("SUBGERENTE", "ADMIN", "GERENTE_MUNICIPAL", "GERENTE_DISTRITAL", "INSPECTOR", "FISCALIZADOR")
                 .requestMatchers("/gerente/**").hasAnyRole("GERENTE_DISTRITAL", "ADMIN", "GERENTE_MUNICIPAL")
                 .requestMatchers("/gerente-municipal/**").hasAnyRole("GERENTE_MUNICIPAL", "ADMIN")
                 .requestMatchers("/fiscalizacion/**").hasAnyRole("INSPECTOR", "FISCALIZADOR", "SUBGERENTE", "ADMIN")
