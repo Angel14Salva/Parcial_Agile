@@ -889,7 +889,7 @@ class PublicoController {
     @org.springframework.web.bind.annotation.GetMapping("/publico/nueva-solicitud")
     String nuevaSolicitudPublica(org.springframework.ui.Model model) {
         model.addAttribute("solicitudDto", new com.municipalidad.licencias.dto.SolicitudDto());
-        model.addAttribute("rubros", com.municipalidad.licencias.model.Rubros.LISTA);
+        model.addAttribute("rubros", Rubros.LISTA);
         return "solicitud/nueva";
     }
 
