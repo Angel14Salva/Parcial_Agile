@@ -27,10 +27,7 @@
     </a>
   </div>
 
-  <div th:if="${distritoFiltro != null and !#strings.isEmpty(distritoFiltro)}" class="alert alert-info d-flex align-items-center justify-content-between py-2 mb-3">
-    <span><i class="bi bi-funnel-fill me-2"></i>Filtrando por distrito: <strong th:text="${distritoFiltro.replace('_',' ')}"></strong></span>
-    <a href="/admin/inspectores" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Ver todos</a>
-  </div>
+
 
   <div th:if="${exito}" class="alert alert-success alert-dismissible fade show">
     <i class="bi bi-check-circle me-2"></i><span th:text="${exito}"></span>
