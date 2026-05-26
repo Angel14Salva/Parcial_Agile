@@ -106,7 +106,7 @@
             <a th:href="@{/admin/inspectores/nuevo}" class="btn btn-primary btn-sm w-100">
               <i class="bi bi-person-plus me-1"></i>Agregar funcionario
             </a>
-            <a href="/admin/inspectores" class="btn btn-outline-secondary btn-sm">
+            <a th:href="@{/admin/inspectores(distrito=${d.nombreEnum})}" class="btn btn-outline-secondary btn-sm">
               <i class="bi bi-people"></i>
             </a>
           </div>
