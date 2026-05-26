@@ -1328,41 +1328,25 @@ class FlowRetornoController {
                    @org.springframework.web.bind.annotation.RequestParam(required = false) String token,
                    @org.springframework.web.bind.annotation.RequestParam(required = false) String u,
                    jakarta.servlet.http.HttpServletRequest request,
+                   org.springframework.ui.Model model,
                    org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
         try {
             if (token != null) {
                 com.fasterxml.jackson.databind.JsonNode estado = flowService.verificarPago(token);
                 if (estado != null && estado.path("status").asInt() == 2) {
-                    solicitudService.enviarConPago(id, token);
-                    // Auto-autenticar al usuario si viene el username
-                    if (u != null && !u.isBlank()) {
-                        try {
-                            org.springframework.security.core.userdetails.UserDetails userDetails =
-                                userDetailsService.loadUserByUsername(u);
-                            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
-                                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                                    userDetails, null, userDetails.getAuthorities());
-                            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
-                            // Guardar en sesión
-                            request.getSession(true).setAttribute(
-                                org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                                org.springframework.security.core.context.SecurityContextHolder.getContext());
-                            ra.addFlashAttribute("exito", "¡Pago confirmado! Tu trámite fue admitido.");
-                            return "redirect:/dashboard";
-                        } catch (Exception ex) {
-                            log.warn("No se pudo restaurar sesión: {}", ex.getMessage());
-                        }
-                    }
-                    return "redirect:/pago/exito/" + id;
+                    com.municipalidad.licencias.model.Solicitud s = solicitudService.enviarConPago(id, token);
+                    model.addAttribute("solicitud", s);
+                    model.addAttribute("codigoSeguimiento", s.getCodigoSeguimiento());
+                    return "solicitud/comprobante";
                 } else {
-                    ra.addFlashAttribute("error", "El pago no fue confirmado.");
+                    ra.addFlashAttribute("error", "El pago no fue confirmado. Intenta nuevamente.");
                 }
             }
         } catch (Exception e) {
             log.error("Error procesando retorno Flow solicitud {}: {}", id, e.getMessage());
             ra.addFlashAttribute("error", "Error al verificar el pago.");
         }
-        return "redirect:/auth/login?error=pago";
+        return "redirect:/solicitud/" + id + "/pago";
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/pago/confirmar/{id}")
