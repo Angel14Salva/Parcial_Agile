@@ -38,6 +38,8 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         // Limpieza via SQL directo para evitar problemas de cascada
         try {
+            // Eliminar usuarios viejos con formato nombreapellidorol
+            jdbc.execute("DELETE FROM usuario WHERE rol IN ('INSPECTOR','FISCALIZADOR') AND username NOT IN ('inspector.garcia','inspector.torres','inspector.ramirez','fiscal.rios','fiscal.vargas','fiscal.herrera','inspector1')");
             jdbc.execute("DELETE FROM notificacion WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')");
             jdbc.execute("DELETE FROM multa WHERE licencia_id IN (SELECT id FROM licencia WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')))");
             jdbc.execute("DELETE FROM observacion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
