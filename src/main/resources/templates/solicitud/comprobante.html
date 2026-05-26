@@ -68,6 +68,9 @@
       <a href="/seguimiento" class="btn btn-primary w-100">
         <i class="bi bi-search me-1"></i>Consultar estado del trámite
       </a>
+      <a th:href="@{/solicitud/{id}/observaciones(id=${solicitud.id})}" class="btn btn-outline-warning w-100">
+        <i class="bi bi-clipboard-check me-1"></i>Ver observaciones
+      </a>
       <a href="/" class="btn btn-outline-secondary w-100">
         <i class="bi bi-house me-1"></i>Volver al inicio
       </a>

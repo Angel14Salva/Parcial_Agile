@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**", "/error", "/seguimiento", "/publico/**", "/").permitAll()
                 .requestMatchers("/pago/**").permitAll()
                 .requestMatchers("/publico/licencia/*/renovar", "/publico/licencia/*/renovar/flow", "/publico/licencia/*/renovar/retorno", "/publico/licencia/*/renovar/confirmar").permitAll()
-                .requestMatchers("/solicitud/nueva", "/solicitud/*/pago", "/solicitud/*/pago/flow", "/solicitud/*/pago/retorno", "/solicitud/*/plano").permitAll()
+                .requestMatchers("/solicitud/nueva", "/solicitud/*/pago", "/solicitud/*/pago/flow", "/solicitud/*/pago/retorno", "/solicitud/*/plano", "/solicitud/*/observaciones", "/solicitud/*/observaciones/subsanar").permitAll()
                 .requestMatchers("/multas/*/detalle").authenticated()
                 .requestMatchers("/api/validar/**").permitAll()
                 .requestMatchers("/inspector/**").hasAnyRole("INSPECTOR","FISCALIZADOR")
