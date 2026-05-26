@@ -61,7 +61,17 @@
   </div>
 
   <!-- Panel por distrito -->
-  <h5 class="fw-semibold mb-3"><i class="bi bi-map me-2"></i>Gestión por distrito</h5>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-semibold mb-0"><i class="bi bi-map me-2"></i>Gestión por distrito</h5>
+    <div class="d-flex gap-2">
+      <a href="/admin/inspectores" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-people me-1"></i>Ver todos los funcionarios
+      </a>
+      <a href="/admin/inspectores/nuevo" class="btn btn-primary btn-sm">
+        <i class="bi bi-person-plus me-1"></i>Nuevo funcionario
+      </a>
+    </div>
+  </div>
   <div class="row g-3 mb-4">
     <div class="col-md-4" th:each="d : ${distritos}">
       <div class="card shadow-sm distrito-card">
@@ -85,6 +95,14 @@
           <div class="d-flex justify-content-between">
             <span class="text-muted">Solicitudes:</span>
             <span th:text="${d.numSolicitudes}" class="badge bg-primary"></span>
+          </div>
+          <div class="mt-3 d-flex gap-1">
+            <a th:href="@{/admin/inspectores/nuevo}" class="btn btn-primary btn-sm w-100">
+              <i class="bi bi-person-plus me-1"></i>Agregar funcionario
+            </a>
+            <a href="/admin/inspectores" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-people"></i>
+            </a>
           </div>
         </div>
       </div>
