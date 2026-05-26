@@ -853,6 +853,11 @@ class GerenteMunicipalController {
             distritos.add(info);
         }
         model.addAttribute("distritos", distritos);
+        com.municipalidad.licencias.model.Enums.Distrito trujillo = com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO;
+        model.addAttribute("gerentes", usuarioRepo.findByRolAndDistrito(com.municipalidad.licencias.model.Enums.Rol.GERENTE_DISTRITAL, trujillo));
+        model.addAttribute("subgerentes", usuarioRepo.findByRolAndDistrito(com.municipalidad.licencias.model.Enums.Rol.SUBGERENTE, trujillo));
+        model.addAttribute("fiscalizadores", usuarioRepo.findByRolAndDistrito(com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR, trujillo));
+        model.addAttribute("inspectores", usuarioRepo.findByRolAndDistrito(com.municipalidad.licencias.model.Enums.Rol.INSPECTOR, trujillo));
         return "gerente/dashboard-municipal";
     }
 }
