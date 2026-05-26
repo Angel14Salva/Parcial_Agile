@@ -69,20 +69,7 @@ class DashboardController {
         if (usuario.getRol() == Enums.Rol.FISCALIZADOR) {
             return "redirect:/inspector/dashboard";
         }
-        if (usuario.getRol() == Enums.Rol.NEGOCIO) {
-            java.util.List<com.municipalidad.licencias.model.Solicitud> solicitudes =
-                solicitudService.obtenerPorUsuario(usuario);
-            java.util.Map<Long, Long> multasPendientes = new java.util.HashMap<>();
-            for (com.municipalidad.licencias.model.Solicitud sol : solicitudes) {
-                if (sol.getLicencia() != null) {
-                    long pendientes = licenciaService.contarMultasPendientes(sol.getLicencia().getId());
-                    if (pendientes > 0) multasPendientes.put(sol.getId(), pendientes);
-                }
-            }
-            model.addAttribute("solicitudes", solicitudes);
-            model.addAttribute("multasPendientes", multasPendientes);
-            return "solicitud/dashboard-negocio";
-        } else if (usuario.getRol() == Enums.Rol.INSPECTOR) {
+        // Rol NEGOCIO ya no usa login - accede via /seguimiento else if (usuario.getRol() == Enums.Rol.INSPECTOR) {
             model.addAttribute("inspeccionesPendientes",
                 inspeccionService.obtenerPendientesPorInspector(usuario));
             model.addAttribute("licenciasVigentes",
