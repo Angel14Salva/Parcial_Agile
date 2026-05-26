@@ -137,6 +137,13 @@
                           (${solicitud.estado.name() == 'OBSERVADO'} ? 'alert-warning' : 'alert-info'))">
       Estado actual: <span th:text="${solicitud.estado.name().replace('_',' ')}"></span>
     </div>
+    <div th:if="${solicitud.estado.name() == 'OBSERVADO' or solicitud.estado.name() == 'SEGUNDA_INSPECCION_PROGRAMADA'}"
+         class="text-center mt-2">
+      <a th:href="@{/solicitud/{id}/observaciones(id=${solicitud.id})}"
+         class="btn btn-warning fw-semibold">
+        <i class="bi bi-clipboard-check me-2"></i>Ver y subsanar observaciones
+      </a>
+    </div>
   </div>
   <div class="text-center mt-3">
     <a href="/publico/nueva-solicitud" class="btn btn-outline-light me-2">
