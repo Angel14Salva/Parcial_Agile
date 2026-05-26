@@ -19,38 +19,33 @@ public class DataInitializer implements CommandLineRunner {
     private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
     private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
     private final com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     public DataInitializer(UsuarioRepository usuarioRepo, PasswordEncoder encoder,
                            com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
                            com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
-                           com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo) {
+                           com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
+                           org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.usuarioRepo = usuarioRepo;
         this.encoder = encoder;
         this.solicitudRepo = solicitudRepo;
         this.inspeccionRepo = inspeccionRepo;
         this.licenciaRepo = licenciaRepo;
+        this.jdbc = jdbc;
     }
 
     @Override
     public void run(String... args) {
-        // Eliminar usuario negocio1 y todo lo suyo
-        usuarioRepo.findByUsername("negocio1").ifPresent(u -> {
-            try {
-                solicitudRepo.findByUsuario(u).forEach(s -> {
-                    try {
-                        inspeccionRepo.findBySolicitud(s).forEach(i -> {
-                            try { inspeccionRepo.delete(i); } catch (Exception ex) { log.warn("No se pudo eliminar inspeccion {}: {}", i.getId(), ex.getMessage()); }
-                        });
-                        licenciaRepo.findBySolicitud(s).ifPresent(l -> {
-                            try { licenciaRepo.delete(l); } catch (Exception ex) { log.warn("No se pudo eliminar licencia: {}", ex.getMessage()); }
-                        });
-                        try { solicitudRepo.delete(s); } catch (Exception ex) { log.warn("No se pudo eliminar solicitud {}: {}", s.getId(), ex.getMessage()); }
-                    } catch (Exception ex) { log.warn("Error procesando solicitud {}: {}", s.getId(), ex.getMessage()); }
-                });
-                usuarioRepo.delete(u);
-                log.info("Usuario negocio1 eliminado.");
-            } catch (Exception ex) { log.warn("No se pudo eliminar negocio1: {}", ex.getMessage()); }
-        });
+        // Eliminar usuario negocio1 via JdbcTemplate
+        try {
+            jdbc.execute("DELETE FROM notificacion WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')");
+            jdbc.execute("DELETE FROM observacion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
+            jdbc.execute("DELETE FROM inspeccion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
+            jdbc.execute("DELETE FROM licencia WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
+            jdbc.execute("DELETE FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')");
+            jdbc.execute("DELETE FROM usuario WHERE username = 'negocio1'");
+            log.info("Usuario negocio1 y todos sus datos eliminados.");
+        } catch (Exception ex) { log.warn("No se pudo limpiar negocio1: {}", ex.getMessage()); }
 
         // Limpiar borradores huérfanos al arrancar
         solicitudRepo.findByEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.BORRADOR)
