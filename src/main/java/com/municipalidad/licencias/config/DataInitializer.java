@@ -56,7 +56,15 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Limpieza inicial completada.");
         } catch (Exception ex) { log.warn("Limpieza inicial: {}", ex.getMessage()); }
 
-                crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
+                // Inspectores
+        crearUsuarioSiNoExiste("inspector.garcia",  "insp1234", "inspector.garcia@municipalidad.gob.pe",  "GARCIA LOPEZ, CARLOS",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        crearUsuarioSiNoExiste("inspector.torres",  "insp1234", "inspector.torres@municipalidad.gob.pe",  "TORRES MENDEZ, PEDRO",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        crearUsuarioSiNoExiste("inspector.ramirez", "insp1234", "inspector.ramirez@municipalidad.gob.pe", "RAMIREZ SILVA, JUAN",    Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        // Fiscalizadores
+        crearUsuarioSiNoExiste("fiscal.rios",    "fisc1234", "fiscal.rios@municipalidad.gob.pe",    "RIOS CASTILLO, MARIA",   Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        crearUsuarioSiNoExiste("fiscal.vargas",  "fisc1234", "fiscal.vargas@municipalidad.gob.pe",  "VARGAS NUNEZ, LUIS",     Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        crearUsuarioSiNoExiste("fiscal.herrera", "fisc1234", "fiscal.herrera@municipalidad.gob.pe", "HERRERA CAMPOS, ANA",    Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
         crearUsuarioSiNoExiste("inspector1", "inspector123", "inspector1@municipalidad.gob.pe",
             "Inspector García", Enums.Rol.INSPECTOR);
@@ -71,15 +79,23 @@ public class DataInitializer implements CommandLineRunner {
 
     private void crearUsuarioSiNoExiste(String username, String password,
                                          String email, String nombre, Enums.Rol rol) {
+        crearUsuarioSiNoExiste(username, password, email, nombre, rol, null);
+    }
+
+    private void crearUsuarioSiNoExiste(String username, String password,
+                                         String email, String nombre, Enums.Rol rol,
+                                         com.municipalidad.licencias.model.Enums.Distrito distrito) {
         if (usuarioRepo.findByUsername(username).isEmpty()) {
-            usuarioRepo.save(Usuario.builder()
+            Usuario u = Usuario.builder()
                 .username(username)
                 .password(encoder.encode(password))
                 .email(email)
                 .nombreCompleto(nombre)
                 .rol(rol)
                 .activo(true)
-                .build());
+                .build();
+            if (distrito != null) u.setDistrito(distrito);
+            usuarioRepo.save(u);
         }
     }
 }
