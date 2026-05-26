@@ -92,7 +92,7 @@
                 <div class="d-flex gap-1">
                   <button class="btn btn-outline-primary btn-sm"
                           data-bs-toggle="modal" data-bs-target="#modalPlano"
-                          th:onclick="'document.getElementById(\'imgPlanoGrande\').src=\'' + ${inspeccion.solicitud.planoUrl} + '\''">
+                          th:attr="onclick='document.getElementById(&quot;imgPlanoGrande&quot;).src=&quot;' + ${inspeccion.solicitud.planoUrl} + '&quot;'">
                     <i class="bi bi-arrows-fullscreen me-1"></i>Ver
                   </button>
                   <a th:href="${inspeccion.solicitud.planoUrl}" target="_blank"
