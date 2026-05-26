@@ -32,6 +32,14 @@ public class Usuario {
     private Enums.Distrito distrito;
     private String numeroColegiatura;
     private java.time.LocalDate fechaNombramiento;
+    // Campos legales adicionales
+    private String regimentLaboral;          // CAS, 276, 728, Servicio Civil
+    private String resolucionDesignacion;    // N° resolución de designación
+    private java.time.LocalDate fechaResolucion;
+    private String codigoPlaza;             // Código de plaza presupuestal
+    private String especialidad;            // Derecho Administrativo, Gestión Pública, etc.
+    private String codigoFiscalizador;      // Solo para fiscalizadores
+    private String certificacionFiscalizacion; // Certificación de capacitación
 
     @Column(nullable = false)
     private boolean activo = true;
@@ -95,5 +103,19 @@ public class Usuario {
     public void setCargo(String v)           { this.cargo = v; }
     public void setNumeroColegiatura(String v){ this.numeroColegiatura = v; }
     public void setFechaNombramiento(java.time.LocalDate v) { this.fechaNombramiento = v; }
+    public String getRegimentLaboral()          { return regimentLaboral; }
+    public void setRegimentLaboral(String v)    { this.regimentLaboral = v; }
+    public String getResolucionDesignacion()    { return resolucionDesignacion; }
+    public void setResolucionDesignacion(String v) { this.resolucionDesignacion = v; }
+    public java.time.LocalDate getFechaResolucion() { return fechaResolucion; }
+    public void setFechaResolucion(java.time.LocalDate v) { this.fechaResolucion = v; }
+    public String getCodigoPlaza()              { return codigoPlaza; }
+    public void setCodigoPlaza(String v)        { this.codigoPlaza = v; }
+    public String getEspecialidad()             { return especialidad; }
+    public void setEspecialidad(String v)       { this.especialidad = v; }
+    public String getCodigoFiscalizador()       { return codigoFiscalizador; }
+    public void setCodigoFiscalizador(String v) { this.codigoFiscalizador = v; }
+    public String getCertificacionFiscalizacion() { return certificacionFiscalizacion; }
+    public void setCertificacionFiscalizacion(String v) { this.certificacionFiscalizacion = v; }
     public void setActivo(boolean v)     { this.activo = v; }
 }

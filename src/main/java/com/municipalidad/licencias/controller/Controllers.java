@@ -1015,13 +1015,20 @@ class InspectorAdminController {
             model.addAttribute("errorUsername", "El usuario ya existe.");
             return "admin/inspector-form";
         }
+        // Determinar rol desde dto
+        com.municipalidad.licencias.model.Enums.Rol rolFinal = com.municipalidad.licencias.model.Enums.Rol.INSPECTOR;
+        try {
+            if (dto.getRol() != null && !dto.getRol().isBlank())
+                rolFinal = com.municipalidad.licencias.model.Enums.Rol.valueOf(dto.getRol());
+        } catch (Exception ignored) {}
+
         com.municipalidad.licencias.model.Usuario inspector =
             com.municipalidad.licencias.model.Usuario.builder()
                 .username(dto.getUsername())
                 .password(encoder.encode(dto.getPassword()))
                 .email(dto.getEmail())
                 .nombreCompleto(dto.getNombreCompleto())
-                .rol(com.municipalidad.licencias.model.Enums.Rol.INSPECTOR)
+                .rol(rolFinal)
                 .activo(true)
                 .build();
         inspector.setDni(dto.getDni());
@@ -1029,7 +1036,20 @@ class InspectorAdminController {
         inspector.setCargo(dto.getCargo());
         inspector.setNumeroColegiatura(dto.getNumeroColegiatura());
         inspector.setFechaNombramiento(dto.getFechaNombramiento());
+        inspector.setEspecialidad(dto.getEspecialidad());
+        inspector.setRegimentLaboral(dto.getRegimentLaboral());
+        inspector.setResolucionDesignacion(dto.getResolucionDesignacion());
+        inspector.setFechaResolucion(dto.getFechaResolucion());
+        inspector.setCodigoPlaza(dto.getCodigoPlaza());
+        inspector.setCodigoFiscalizador(dto.getCodigoFiscalizador());
+        inspector.setCertificacionFiscalizacion(dto.getCertificacionFiscalizacion());
+        if (dto.getDistrito() != null && !dto.getDistrito().isBlank()) {
+            try {
+                inspector.setDistrito(com.municipalidad.licencias.model.Enums.Distrito.valueOf(dto.getDistrito()));
+            } catch (Exception ignored) {}
+        }
         usuarioRepo.save(inspector);
+        ra.addFlashAttribute("exito", "Funcionario " + dto.getNombreCompleto() + " creado correctamente.");
         ra.addFlashAttribute("exito", "Inspector " + dto.getNombreCompleto() + " creado correctamente.");
         return "redirect:/admin/inspectores";
     }

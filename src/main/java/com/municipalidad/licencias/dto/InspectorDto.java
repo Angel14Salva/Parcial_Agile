@@ -29,6 +29,16 @@ public class InspectorDto {
     private String cargo = "Inspector Municipal";
     private String numeroColegiatura;
     private java.time.LocalDate fechaNombramiento;
+    // Campos legales
+    private String rol = "INSPECTOR";
+    private String distrito;
+    private String regimentLaboral;
+    private String resolucionDesignacion;
+    private java.time.LocalDate fechaResolucion;
+    private String codigoPlaza;
+    private String especialidad;
+    private String codigoFiscalizador;
+    private String certificacionFiscalizacion;
 
     public InspectorDto() {}
 
@@ -51,4 +61,22 @@ public class InspectorDto {
     public void setCargo(String v)             { this.cargo = v; }
     public void setNumeroColegiatura(String v) { this.numeroColegiatura = v; }
     public void setFechaNombramiento(java.time.LocalDate v) { this.fechaNombramiento = v; }
+    public String getRol()                      { return rol; }
+    public void setRol(String v)                { this.rol = v; }
+    public String getDistrito()                 { return distrito; }
+    public void setDistrito(String v)           { this.distrito = v; }
+    public String getRegimentLaboral()          { return regimentLaboral; }
+    public void setRegimentLaboral(String v)    { this.regimentLaboral = v; }
+    public String getResolucionDesignacion()    { return resolucionDesignacion; }
+    public void setResolucionDesignacion(String v) { this.resolucionDesignacion = v; }
+    public java.time.LocalDate getFechaResolucion() { return fechaResolucion; }
+    public void setFechaResolucion(java.time.LocalDate v) { this.fechaResolucion = v; }
+    public String getCodigoPlaza()              { return codigoPlaza; }
+    public void setCodigoPlaza(String v)        { this.codigoPlaza = v; }
+    public String getEspecialidad()             { return especialidad; }
+    public void setEspecialidad(String v)       { this.especialidad = v; }
+    public String getCodigoFiscalizador()       { return codigoFiscalizador; }
+    public void setCodigoFiscalizador(String v) { this.codigoFiscalizador = v; }
+    public String getCertificacionFiscalizacion() { return certificacionFiscalizacion; }
+    public void setCertificacionFiscalizacion(String v) { this.certificacionFiscalizacion = v; }
 }

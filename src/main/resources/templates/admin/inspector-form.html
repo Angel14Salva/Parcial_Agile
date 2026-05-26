@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8"/><title>Inspector</title>
+  <meta charset="UTF-8"/><title>Funcionario Municipal</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
-  <style>body{background:#f0f4f8}</style>
+  <style>
+    body{background:#f0f4f8}
+    .seccion{display:none}
+    .seccion.visible{display:block}
+    .campo-requerido::after{content:" *";color:#dc3545}
+  </style>
 </head>
 <body>
 <nav class="navbar navbar-dark mb-4" style="background:#1D3557">
@@ -12,121 +17,229 @@
     <a class="navbar-brand fw-bold" href="/dashboard"><i class="bi bi-building me-2"></i>Licencias Municipales</a>
   </div>
 </nav>
-<div class="container" style="max-width:700px">
+<div class="container" style="max-width:750px">
   <div class="d-flex align-items-center gap-2 mb-4">
     <a href="/admin/inspectores" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
-    <h4 class="fw-bold mb-0"
-        th:text="${inspectorId != null} ? 'Editar inspector' : 'Nuevo inspector'"></h4>
+    <h4 class="fw-bold mb-0" th:text="${inspectorId != null} ? 'Editar funcionario' : 'Nuevo funcionario municipal'"></h4>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-header fw-semibold" style="background:#1D3557;color:#fff">
-      <i class="bi bi-person-badge me-2"></i>Datos del inspector
+      <i class="bi bi-person-badge me-2"></i>Datos del funcionario
     </div>
     <div class="card-body p-4">
       <form th:action="${inspectorId != null} ? @{/admin/inspectores/{id}/editar(id=${inspectorId})} : @{/admin/inspectores/nuevo}"
-            method="post" th:object="${dto}">
+            method="post" th:object="${dto}" id="formFuncionario">
 
-        <div class="row g-3">
-          <!-- Nombre -->
+        <!-- ROL Y DISTRITO -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold campo-requerido">Rol / Cargo</label>
+            <select th:field="*{rol}" class="form-select" id="selectRol" onchange="actualizarFormulario()" required>
+              <option value="FISCALIZADOR">Fiscalizador</option>
+              <option value="SUBGERENTE">Subgerente</option>
+              <option value="GERENTE_DISTRITAL">Gerente Distrital</option>
+              <option value="GERENTE_MUNICIPAL">Gerente Municipal</option>
+              <option value="INSPECTOR">Inspector</option>
+            </select>
+          </div>
+          <div class="col-md-6" id="campoDistrito">
+            <label class="form-label fw-semibold campo-requerido">Distrito</label>
+            <select th:field="*{distrito}" class="form-select">
+              <option value="">-- Selecciona distrito --</option>
+              <option value="TRUJILLO">Trujillo (Cercado)</option>
+              <option value="EL_PORVENIR">El Porvenir</option>
+              <option value="LA_ESPERANZA">La Esperanza</option>
+              <option value="FLORENCIA_DE_MORA">Florencia de Mora</option>
+              <option value="VICTOR_LARCO">Víctor Larco Herrera</option>
+              <option value="HUANCHACO">Huanchaco</option>
+              <option value="MOCHE">Moche</option>
+              <option value="LAREDO">Laredo</option>
+              <option value="SALAVERRY">Salaverry</option>
+              <option value="SIMBAL">Simbal</option>
+              <option value="POROTO">Poroto</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="my-3"/>
+
+        <!-- DATOS PERSONALES (todos los roles) -->
+        <h6 class="fw-semibold text-muted mb-3 text-uppercase" style="font-size:.75rem;letter-spacing:1px">
+          <i class="bi bi-person me-1"></i>Datos personales
+        </h6>
+        <div class="row g-3 mb-3">
           <div class="col-12">
-            <label class="form-label fw-semibold">Apellidos y nombres <span class="text-danger">*</span></label>
-            <input type="text" th:field="*{nombreCompleto}" class="form-control"
-                   th:classappend="${#fields.hasErrors('nombreCompleto')} ? 'is-invalid'"
-                   placeholder="Ej: García López, Juan Carlos" required/>
-            <div class="invalid-feedback" th:errors="*{nombreCompleto}"></div>
+            <label class="form-label fw-semibold campo-requerido">Apellidos y nombres</label>
+            <input type="text" th:field="*{nombreCompleto}" class="form-control" required
+                   placeholder="Ej: García López, Juan Carlos" id="inputNombre"/>
           </div>
-
-          <!-- DNI -->
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">DNI <span class="text-danger">*</span></label>
-            <input type="text" th:field="*{dni}" class="form-control"
-                   th:classappend="${#fields.hasErrors('dni')} ? 'is-invalid'"
+          <div class="col-md-4">
+            <label class="form-label fw-semibold campo-requerido">DNI</label>
+            <input type="text" th:field="*{dni}" class="form-control" id="inputDni"
                    placeholder="8 dígitos" maxlength="8"
-                   oninput="this.value=this.value.replace(/[^0-9]/g,'')" required/>
-            <div class="invalid-feedback" th:errors="*{dni}"></div>
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                   onblur="autorellenarDni()" required/>
           </div>
-
-          <!-- Teléfono -->
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Teléfono celular <span class="text-danger">*</span></label>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold campo-requerido">Teléfono celular</label>
             <input type="tel" th:field="*{telefono}" class="form-control"
-                   th:classappend="${#fields.hasErrors('telefono')} ? 'is-invalid'"
                    placeholder="9 dígitos" maxlength="9"
                    oninput="this.value=this.value.replace(/[^0-9]/g,'')" required/>
-            <div class="invalid-feedback" th:errors="*{telefono}"></div>
           </div>
-
-          <!-- Correo -->
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold campo-requerido">Correo electrónico</label>
             <input type="email" th:field="*{email}" class="form-control"
-                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"
                    placeholder="correo@municipalidad.gob.pe" required/>
-            <div class="invalid-feedback" th:errors="*{email}"></div>
           </div>
-
-          <!-- Cargo -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Cargo</label>
-            <input type="text" th:field="*{cargo}" class="form-control"
-                   placeholder="Inspector Municipal"/>
+            <label class="form-label fw-semibold">Cargo específico</label>
+            <input type="text" th:field="*{cargo}" class="form-control" id="inputCargo"
+                   placeholder="Ej: Fiscalizador Municipal"/>
           </div>
-
-          <!-- N° Colegiatura -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold">N.° Colegiatura / Registro</label>
+            <label class="form-label fw-semibold">Especialidad / Profesión</label>
+            <input type="text" th:field="*{especialidad}" class="form-control"
+                   placeholder="Ej: Derecho Administrativo, Gestión Pública"/>
+          </div>
+        </div>
+
+        <hr class="my-3"/>
+
+        <!-- DATOS LEGALES / DESIGNACIÓN (todos los roles) -->
+        <h6 class="fw-semibold text-muted mb-3 text-uppercase" style="font-size:.75rem;letter-spacing:1px">
+          <i class="bi bi-file-earmark-text me-1"></i>Datos de designación legal
+        </h6>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Régimen laboral</label>
+            <select th:field="*{regimentLaboral}" class="form-select">
+              <option value="">-- Seleccionar --</option>
+              <option value="CAS">CAS (Contrato Administrativo de Servicios)</option>
+              <option value="276">Régimen 276 (Carrera Administrativa)</option>
+              <option value="728">Régimen 728 (Actividad Privada)</option>
+              <option value="SERVICIO_CIVIL">Ley del Servicio Civil</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Código de plaza presupuestal</label>
+            <input type="text" th:field="*{codigoPlaza}" class="form-control"
+                   placeholder="Ej: 001-MPT-2026"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">N.° Resolución de designación</label>
+            <input type="text" th:field="*{resolucionDesignacion}" class="form-control"
+                   placeholder="Ej: RES-001-2026-MPT"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Fecha de resolución</label>
+            <input type="date" th:field="*{fechaResolucion}" class="form-control"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">N.° Colegiatura / Registro profesional</label>
             <input type="text" th:field="*{numeroColegiatura}" class="form-control"
-                   placeholder="Ej: CAL-12345"/>
+                   placeholder="Ej: CAL-12345 / CIP-67890"/>
           </div>
-
-          <!-- Fecha nombramiento -->
           <div class="col-md-6">
             <label class="form-label fw-semibold">Fecha de nombramiento</label>
             <input type="date" th:field="*{fechaNombramiento}" class="form-control"/>
           </div>
+        </div>
 
-          <hr class="my-2"/>
+        <!-- CAMPOS EXCLUSIVOS FISCALIZADOR -->
+        <div id="secFiscalizador" class="seccion">
+          <hr class="my-3"/>
+          <h6 class="fw-semibold text-muted mb-3 text-uppercase" style="font-size:.75rem;letter-spacing:1px">
+            <i class="bi bi-shield-check me-1"></i>Datos de fiscalización (Ley N° 27444)
+          </h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Código de fiscalizador</label>
+              <input type="text" th:field="*{codigoFiscalizador}" class="form-control"
+                     placeholder="Ej: FISC-001-EPV"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Certificación de capacitación</label>
+              <input type="text" th:field="*{certificacionFiscalizacion}" class="form-control"
+                     placeholder="Ej: CERT-FISC-2026-MPT"/>
+            </div>
+            <div class="col-12">
+              <div class="alert alert-info small py-2 mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                El fiscalizador debe conocer el RAS y CUIS del distrito, los límites de inspección
+                (Art. 244, Ley N° 27444) y las formalidades del Acta de Fiscalización.
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <!-- Usuario -->
+        <!-- CAMPOS EXCLUSIVOS SUBGERENTE -->
+        <div id="secSubgerente" class="seccion">
+          <hr class="my-3"/>
+          <div class="alert alert-warning small py-2">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <strong>Ley N° 28976 y Ley N° 27444:</strong> El Subgerente es la autoridad sancionadora.
+            Sus resoluciones deben estar motivadas jurídicamente. Requiere conocimiento en
+            debido procedimiento sancionador y motivación de actos administrativos.
+          </div>
+        </div>
+
+        <!-- CAMPOS EXCLUSIVOS GERENTE -->
+        <div id="secGerente" class="seccion">
+          <hr class="my-3"/>
+          <div class="alert alert-warning small py-2">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <strong>Segunda instancia administrativa:</strong> El Gerente resuelve Recursos de
+            Reconsideración y Apelación (Ley N° 27444). Debe conocer jurisprudencia del INDECOPI
+            y el Tribunal Constitucional sobre barreras burocráticas.
+          </div>
+        </div>
+
+        <!-- CAMPOS EXCLUSIVOS GERENTE MUNICIPAL -->
+        <div id="secGerenteMunicipal" class="seccion">
+          <hr class="my-3"/>
+          <div class="alert alert-danger small py-2">
+            <i class="bi bi-building me-1"></i>
+            <strong>Máxima autoridad administrativa (Ley N° 27972):</strong> Supervisa todas las
+            gerencias. Responsabilidad en Derecho Administrativo, Laboral, Contrataciones del Estado
+            y Responsabilidad Civil, Penal y Administrativa por omisión de funciones.
+          </div>
+        </div>
+
+        <hr class="my-3"/>
+
+        <!-- CREDENCIALES -->
+        <h6 class="fw-semibold text-muted mb-3 text-uppercase" style="font-size:.75rem;letter-spacing:1px">
+          <i class="bi bi-lock me-1"></i>Credenciales del sistema
+        </h6>
+        <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">
-              Usuario del sistema <span class="text-danger">*</span>
-            </label>
+            <label class="form-label fw-semibold campo-requerido">Usuario del sistema</label>
             <input type="text" th:field="*{username}" class="form-control"
-                   th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'"
                    th:readonly="${inspectorId != null}"
                    placeholder="Ej: inspector.garcia" required/>
-            <div class="invalid-feedback" th:errors="*{username}"></div>
             <div th:if="${errorUsername}" class="text-danger small mt-1" th:text="${errorUsername}"></div>
           </div>
-
-          <!-- Contraseña -->
           <div class="col-md-6">
             <label class="form-label fw-semibold">
               Contraseña
               <span th:if="${inspectorId == null}" class="text-danger">*</span>
-              <span th:if="${inspectorId != null}" class="text-muted small">(dejar vacío para no cambiar)</span>
+              <span th:if="${inspectorId != null}" class="text-muted small">(vacío = no cambiar)</span>
             </label>
             <div class="input-group">
               <input type="password" id="inputPassword" th:field="*{password}" class="form-control"
-                     th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
-                     placeholder="Mínimo 6 caracteres"
-                     th:required="${inspectorId == null}"/>
-              <button type="button" class="btn btn-outline-secondary" onclick="togglePass('inputPassword', this)">
+                     placeholder="Mínimo 6 caracteres" th:required="${inspectorId == null}"/>
+              <button type="button" class="btn btn-outline-secondary" onclick="togglePass('inputPassword',this)">
                 <i class="bi bi-eye"></i>
               </button>
             </div>
-            <div class="invalid-feedback" th:errors="*{password}"></div>
           </div>
-
-          <!-- Confirmar contraseña -->
           <div class="col-md-6" th:if="${inspectorId == null}">
             <label class="form-label fw-semibold">Confirmar contraseña <span class="text-danger">*</span></label>
             <div class="input-group">
               <input type="password" id="inputConfirm" class="form-control"
                      placeholder="Repite la contraseña" required/>
-              <button type="button" class="btn btn-outline-secondary" onclick="togglePass('inputConfirm', this)">
+              <button type="button" class="btn btn-outline-secondary" onclick="togglePass('inputConfirm',this)">
                 <i class="bi bi-eye"></i>
               </button>
             </div>
@@ -138,79 +251,88 @@
           <a href="/admin/inspectores" class="btn btn-outline-secondary">Cancelar</a>
           <button type="submit" class="btn btn-primary fw-semibold">
             <i class="bi bi-save me-2"></i>
-            <span th:text="${inspectorId != null} ? 'Guardar cambios' : 'Crear inspector'"></span>
+            <span th:text="${inspectorId != null} ? 'Guardar cambios' : 'Crear funcionario'"></span>
           </button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Ver/ocultar contraseña
-  function togglePass(id, btn) {
-    const input = document.getElementById(id);
-    const icon = btn.querySelector('i');
-    if (input.type === 'password') {
-      input.type = 'text';
-      icon.className = 'bi bi-eye-slash';
-    } else {
-      input.type = 'password';
-      icon.className = 'bi bi-eye';
-    }
-  }
+function actualizarFormulario() {
+  const rol = document.getElementById('selectRol').value;
+  const distrito = document.getElementById('campoDistrito');
+  const cargo = document.getElementById('inputCargo');
 
-  // Validar que contraseñas coincidan antes de enviar
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      const pass = document.getElementById('inputPassword');
-      const confirm = document.getElementById('inputConfirm');
-      if (confirm && pass && pass.value !== confirm.value) {
-        e.preventDefault();
-        document.getElementById('confirmError').classList.remove('d-none');
-        confirm.focus();
+  // Mostrar/ocultar secciones
+  document.querySelectorAll('.seccion').forEach(s => s.classList.remove('visible'));
+
+  if (rol === 'FISCALIZADOR' || rol === 'INSPECTOR') {
+    document.getElementById('secFiscalizador').classList.add('visible');
+    distrito.style.display = '';
+    cargo.placeholder = 'Fiscalizador Municipal';
+  } else if (rol === 'SUBGERENTE') {
+    document.getElementById('secSubgerente').classList.add('visible');
+    distrito.style.display = '';
+    cargo.placeholder = 'Subgerente de Licencias y Comercialización';
+  } else if (rol === 'GERENTE_DISTRITAL') {
+    document.getElementById('secGerente').classList.add('visible');
+    distrito.style.display = '';
+    cargo.placeholder = 'Gerente de Desarrollo Económico';
+  } else if (rol === 'GERENTE_MUNICIPAL') {
+    document.getElementById('secGerenteMunicipal').classList.add('visible');
+    distrito.style.display = 'none'; // Gerente Municipal no tiene distrito
+    cargo.placeholder = 'Gerente Municipal';
+  }
+}
+
+function togglePass(id, btn) {
+  const input = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  input.type = input.type === 'password' ? 'text' : 'password';
+  icon.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+
+async function autorellenarDni() {
+  const dni = document.getElementById('inputDni').value.trim();
+  if (!/^\d{8}$/.test(dni)) return;
+  try {
+    const res = await fetch('/api/validar/dni/' + dni);
+    if (res.ok) {
+      const data = await res.json();
+      const nombre = document.querySelector('input[name="nombreCompleto"]');
+      if (nombre && !nombre.value) nombre.value = data.nombreCompleto || '';
+      const username = document.querySelector('input[name="username"]');
+      if (username && !username.value && data.nombreCompleto) {
+        const partes = data.nombreCompleto.toLowerCase().split(' ');
+        username.value = 'func.' + (partes[0] || dni);
       }
-    });
-    const confirm = document.getElementById('inputConfirm');
-    if (confirm) {
-      confirm.addEventListener('input', () => {
-        const pass = document.getElementById('inputPassword');
-        const err = document.getElementById('confirmError');
-        if (pass.value === confirm.value) {
-          err.classList.add('d-none');
-          confirm.classList.remove('is-invalid');
-        } else {
-          err.classList.remove('d-none');
-        }
-      });
     }
-  }
+  } catch(e) {}
+}
 
-  // Autorellenar con DNI via RENIEC
-  const inputDni = document.querySelector('input[name="dni"]');
-  if (inputDni) {
-    inputDni.addEventListener('blur', async () => {
-      const dni = inputDni.value.trim();
-      if (!/^\d{8}$/.test(dni)) return;
-      try {
-        const res = await fetch('/api/validar/dni/' + dni);
-        if (res.ok) {
-          const data = await res.json();
-          const nombre = document.querySelector('input[name="nombreCompleto"]');
-          if (nombre && !nombre.value) {
-            nombre.value = data.nombreCompleto || '';
-          }
-          // Sugerir username
-          const username = document.querySelector('input[name="username"]');
-          if (username && !username.value && data.nombreCompleto) {
-            const partes = data.nombreCompleto.toLowerCase().split(' ');
-            username.value = 'inspector.' + (partes[0] || dni);
-          }
-        }
-      } catch(e) {}
-    });
+// Validar contraseñas
+document.getElementById('formFuncionario').addEventListener('submit', e => {
+  const p1 = document.getElementById('inputPassword');
+  const p2 = document.getElementById('inputConfirm');
+  if (p2 && p1 && p1.value !== p2.value) {
+    e.preventDefault();
+    document.getElementById('confirmError').classList.remove('d-none');
+    p2.focus();
   }
+});
+const p2 = document.getElementById('inputConfirm');
+if (p2) {
+  p2.addEventListener('input', () => {
+    const p1 = document.getElementById('inputPassword');
+    document.getElementById('confirmError').classList.toggle('d-none', p1.value === p2.value);
+  });
+}
+
+// Inicializar al cargar
+actualizarFormulario();
 </script>
 </body>
 </html>
