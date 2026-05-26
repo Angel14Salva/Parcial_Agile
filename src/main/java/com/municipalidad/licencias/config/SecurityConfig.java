@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutUrl("/auth/logout")
+                .logoutRequestMatcher(new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/auth/logout"))
                 .logoutSuccessUrl("/auth/login?logout=true")
                 .permitAll()
             )
