@@ -99,9 +99,13 @@
       <i class="bi bi-gear me-2"></i>Acciones del Subgerente
     </div>
     <div class="card-body">
-      <!-- Asignar inspector -->
-      <div th:if="${solicitud.inspector == null and solicitud.estado.name() != 'BORRADOR'}" class="mb-3">
-        <label class="form-label fw-semibold small">Asignar inspector manualmente</label>
+      <!-- Asignar/Reasignar inspector -->
+      <div th:if="${solicitud.estado.name() != 'BORRADOR'}" class="mb-3">
+        <div th:if="${solicitud.inspector != null}" class="mb-2">
+          <span class="text-muted small">Inspector asignado:</span>
+          <span class="fw-semibold ms-1" th:text="${solicitud.inspector.nombreCompleto}"></span>
+        </div>
+        <label class="form-label fw-semibold small" th:text="${solicitud.inspector == null} ? 'Asignar inspector' : 'Reasignar inspector'"></label>
         <form th:action="@{/subgerente/solicitud/{id}/asignar(id=${solicitud.id})}" method="post" class="d-flex gap-2">
           <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
           <select name="inspectorId" class="form-select form-select-sm" required>
@@ -112,10 +116,6 @@
           </select>
           <button type="submit" class="btn btn-primary btn-sm">Asignar</button>
         </form>
-      </div>
-      <div th:if="${solicitud.inspector != null}" class="mb-3">
-        <span class="text-muted small">Inspector asignado:</span>
-        <span class="fw-semibold ms-1" th:text="${solicitud.inspector.nombreCompleto}"></span>
       </div>
       <!-- Aprobar / Denegar -->
       <div th:if="${solicitud.estado.name() == 'INSPECCION_PROGRAMADA' or solicitud.estado.name() == 'ADMITIDO'}"
