@@ -16,14 +16,21 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepo;
     private final PasswordEncoder encoder;
+    private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
 
-    public DataInitializer(UsuarioRepository usuarioRepo, PasswordEncoder encoder) {
+    public DataInitializer(UsuarioRepository usuarioRepo, PasswordEncoder encoder,
+                           com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo) {
         this.usuarioRepo = usuarioRepo;
         this.encoder = encoder;
+        this.solicitudRepo = solicitudRepo;
     }
 
     @Override
     public void run(String... args) {
+        // Limpiar borradores huérfanos al arrancar
+        solicitudRepo.findByEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.BORRADOR)
+            .forEach(solicitudRepo::delete);
+        log.info("Borradores huérfanos eliminados al arrancar.");
         crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
         crearUsuarioSiNoExiste("inspector1", "inspector123", "inspector1@municipalidad.gob.pe",

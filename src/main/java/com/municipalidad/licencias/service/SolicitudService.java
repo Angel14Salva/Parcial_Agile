@@ -49,6 +49,10 @@ public class SolicitudService {
 
     @Transactional
     public Solicitud crearBorrador(SolicitudDto dto, Usuario usuario) {
+        // Eliminar borradores previos del usuario publico (sin pago completado)
+        solicitudRepo.findByUsuario(usuario).stream()
+            .filter(s -> s.getEstado() == Enums.EstadoTramite.BORRADOR)
+            .forEach(solicitudRepo::delete);
         // RF15: Si tiene licencia vigente con misma dirección → bloquear, pedir renovación
         String direccionNueva = dto.getDireccionEstablecimiento() != null ?
             dto.getDireccionEstablecimiento().trim().toLowerCase() : "";
