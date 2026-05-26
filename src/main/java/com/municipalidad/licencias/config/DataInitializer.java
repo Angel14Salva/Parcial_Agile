@@ -31,6 +31,17 @@ public class DataInitializer implements CommandLineRunner {
         solicitudRepo.findByEstado(com.municipalidad.licencias.model.Enums.EstadoTramite.BORRADOR)
             .forEach(solicitudRepo::delete);
         log.info("Borradores huérfanos eliminados al arrancar.");
+        // Eliminar todo lo que no sea distrito TRUJILLO
+        for (com.municipalidad.licencias.model.Enums.Distrito d :
+             com.municipalidad.licencias.model.Enums.Distrito.values()) {
+            if (d != com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO) {
+                // Eliminar solicitudes del distrito
+                solicitudRepo.findByDistrito(d).forEach(solicitudRepo::delete);
+                // Eliminar usuarios del distrito
+                usuarioRepo.findByDistrito(d).forEach(usuarioRepo::delete);
+            }
+        }
+        log.info("Datos de distritos distintos a TRUJILLO eliminados.");
         // Intercambiar roles INSPECTOR <-> FISCALIZADOR en TRUJILLO una sola vez
         java.util.List<com.municipalidad.licencias.model.Usuario> trujillo =
             usuarioRepo.findByDistrito(com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
