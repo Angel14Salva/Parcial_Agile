@@ -42,10 +42,6 @@ public class InspeccionService {
     }
 
     @Transactional
-    public java.util.List<Inspeccion> obtenerPorSolicitud(Solicitud solicitud) {
-        return inspeccionRepo.findBySolicitud(solicitud);
-    }
-
     public Inspeccion programarPrimeraInspeccionConInspector(Solicitud solicitud, Usuario inspector) {
         java.time.LocalDate fecha = diasHabiles.siguienteDiaHabil(java.time.LocalDate.now().plusDays(1));
         Inspeccion inspeccion = Inspeccion.builder()

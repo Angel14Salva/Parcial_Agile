@@ -705,11 +705,14 @@ class SubgerenteController {
 
     private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
     private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+    private final com.municipalidad.licencias.service.InspeccionService inspeccionService;
 
     SubgerenteController(com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
-                         com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
-        this.solicitudRepo = solicitudRepo;
-        this.usuarioRepo   = usuarioRepo;
+                         com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo,
+                         com.municipalidad.licencias.service.InspeccionService inspeccionService) {
+        this.solicitudRepo    = solicitudRepo;
+        this.usuarioRepo      = usuarioRepo;
+        this.inspeccionService = inspeccionService;
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/dashboard")
