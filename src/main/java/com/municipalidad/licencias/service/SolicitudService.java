@@ -25,6 +25,7 @@ public class SolicitudService {
     private final SunatService sunatService;
     private final InspeccionService inspeccionService;
     private final com.municipalidad.licencias.service.CloudinaryService cloudinaryService;
+    private final com.municipalidad.licencias.service.EmailService emailService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -36,12 +37,14 @@ public class SolicitudService {
                             UsuarioRepository usuarioRepo,
                             SunatService sunatService,
                             InspeccionService inspeccionService,
-                            com.municipalidad.licencias.service.CloudinaryService cloudinaryService) {
+                            com.municipalidad.licencias.service.CloudinaryService cloudinaryService,
+                            com.municipalidad.licencias.service.EmailService emailService) {
         this.solicitudRepo     = solicitudRepo;
         this.usuarioRepo       = usuarioRepo;
         this.sunatService      = sunatService;
         this.inspeccionService = inspeccionService;
         this.cloudinaryService = cloudinaryService;
+        this.emailService      = emailService;
     }
 
     @Transactional
@@ -83,6 +86,12 @@ public class SolicitudService {
             .usuario(usuario)
             .estado(Enums.EstadoTramite.BORRADOR)
             .build();
+        // Generar código de seguimiento único
+        String prefijo = s.getDistrito() != null ?
+            s.getDistrito().name().substring(0,3) : "TRJ";
+        String codigo = prefijo + "-" + java.time.Year.now().getValue() + "-" +
+            java.util.UUID.randomUUID().toString().substring(0,6).toUpperCase();
+        s.setCodigoSeguimiento(codigo);
         return solicitudRepo.save(s);
     }
 
