@@ -27,7 +27,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/img/**").permitAll()
-                .requestMatchers("/auth/**", "/error", "/seguimiento", "/publico/**").permitAll()
+                .requestMatchers("/auth/**", "/error", "/seguimiento", "/publico/**", "/").permitAll()
                 .requestMatchers("/pago/**").permitAll()
                 .requestMatchers("/multas/*/detalle").authenticated()
                 .requestMatchers("/api/validar/**").authenticated()

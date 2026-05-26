@@ -466,7 +466,7 @@ class Rubros {
 class RootController {
     @org.springframework.web.bind.annotation.GetMapping("/")
     String root() {
-        return "redirect:/dashboard";
+        return "redirect:/publico";
     }
 }
 
@@ -882,6 +882,9 @@ class PublicoController {
         this.inspeccionRepo = inspeccionRepo;
         this.licenciaRepo   = licenciaRepo;
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/publico")
+    String inicio() { return "publico/inicio"; }
 
     @org.springframework.web.bind.annotation.GetMapping("/seguimiento")
     String seguimiento(
