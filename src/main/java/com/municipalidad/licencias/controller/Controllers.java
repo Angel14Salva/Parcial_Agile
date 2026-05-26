@@ -66,10 +66,7 @@ class DashboardController {
         if (usuario.getRol() == Enums.Rol.GERENTE_MUNICIPAL) {
             return "redirect:/gerente-municipal/dashboard";
         }
-        if (usuario.getRol() == Enums.Rol.FISCALIZADOR) {
-            return "redirect:/inspector/dashboard";
-        }
-        if (usuario.getRol() == Enums.Rol.INSPECTOR) {
+        if (usuario.getRol() == Enums.Rol.FISCALIZADOR || usuario.getRol() == Enums.Rol.INSPECTOR) {
             model.addAttribute("inspeccionesPendientes",
                 inspeccionService.obtenerPendientesPorInspector(usuario));
             model.addAttribute("licenciasVigentes",
