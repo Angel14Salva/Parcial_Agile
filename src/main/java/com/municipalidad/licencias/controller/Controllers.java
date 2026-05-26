@@ -69,7 +69,7 @@ class DashboardController {
         if (usuario.getRol() == Enums.Rol.FISCALIZADOR) {
             return "redirect:/inspector/dashboard";
         }
-        // Rol NEGOCIO ya no usa login - accede via /seguimiento else if (usuario.getRol() == Enums.Rol.INSPECTOR) {
+        if (usuario.getRol() == Enums.Rol.INSPECTOR) {
             model.addAttribute("inspeccionesPendientes",
                 inspeccionService.obtenerPendientesPorInspector(usuario));
             model.addAttribute("licenciasVigentes",
