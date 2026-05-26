@@ -142,7 +142,7 @@ class SolicitudController {
             return "solicitud/nueva";
         }
         try {
-            Usuario usuario = usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+            Usuario usuario = usuarioRepo.findByUsername("publico").orElseThrow();
             Solicitud s = solicitudService.crearBorrador(dto, usuario);
             // Guardar plano
             solicitudService.cargarPlano(s.getId(), plano);
@@ -187,23 +187,20 @@ class SolicitudController {
 
     @PostMapping("/{id}/pago/flow")
     String iniciarPagoFlow(@PathVariable Long id,
-                           @AuthenticationPrincipal UserDetails ud,
                            jakarta.servlet.http.HttpServletRequest request,
                            RedirectAttributes ra) {
         try {
             com.municipalidad.licencias.model.Solicitud s = solicitudService.obtenerPorId(id);
-            com.municipalidad.licencias.model.Usuario usuario =
-                usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
             String scheme = request.getHeader("X-Forwarded-Proto") != null ?
                 request.getHeader("X-Forwarded-Proto") : request.getScheme();
             String host = request.getHeader("X-Forwarded-Host") != null ?
                 request.getHeader("X-Forwarded-Host") : request.getServerName();
             String baseUrl = scheme + "://" + host;
-            String urlRetorno      = baseUrl + "/pago/retorno/" + id + "?u=" + java.net.URLEncoder.encode(usuario.getUsername(), java.nio.charset.StandardCharsets.UTF_8);
+            String urlRetorno      = baseUrl + "/pago/retorno/" + id;
             String urlConfirmacion = baseUrl + "/pago/confirmar/" + id;
             String email = s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank() ?
-                s.getCorreoElectronico() : usuario.getUsername() + "@licencias.gob.pe";
-            String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : usuario.getNombreCompleto();
+                s.getCorreoElectronico() : "publico@licencias.gob.pe";
+            String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : "Ciudadano";
             com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
                 flowService.crearOrden(id, email, nombre, 2.0, urlRetorno, urlConfirmacion);
             solicitudService.guardarReferencia(id, orden.token());
@@ -217,6 +214,7 @@ class SolicitudController {
     @GetMapping("/{id}/pago/retorno")
     String retornoPago(@PathVariable Long id,
                        @RequestParam(required = false) String token,
+                       org.springframework.ui.Model model,
                        RedirectAttributes ra) {
         try {
             if (token != null) {
@@ -224,9 +222,10 @@ class SolicitudController {
                 if (estado != null) {
                     int statusCode = estado.path("status").asInt();
                     if (statusCode == 2) {
-                        solicitudService.enviarConPago(id, token);
-                        ra.addFlashAttribute("exito", "Pago confirmado. Se programó la inspección técnica.");
-                        return "redirect:/dashboard";
+                        com.municipalidad.licencias.model.Solicitud s = solicitudService.enviarConPago(id, token);
+                        model.addAttribute("solicitud", s);
+                        model.addAttribute("codigoSeguimiento", s.getCodigoSeguimiento());
+                        return "solicitud/comprobante";
                     } else if (statusCode == 3) {
                         ra.addFlashAttribute("error", "El pago fue rechazado. Intenta nuevamente.");
                     } else {

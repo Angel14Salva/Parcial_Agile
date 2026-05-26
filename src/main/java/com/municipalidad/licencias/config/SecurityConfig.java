@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/auth/**", "/error", "/seguimiento", "/publico/**", "/").permitAll()
                 .requestMatchers("/pago/**").permitAll()
+                .requestMatchers("/solicitud/nueva", "/solicitud/*/pago", "/solicitud/*/pago/flow", "/solicitud/*/pago/retorno", "/solicitud/*/plano").permitAll()
                 .requestMatchers("/multas/*/detalle").authenticated()
                 .requestMatchers("/api/validar/**").permitAll()
                 .requestMatchers("/inspector/**").hasRole("INSPECTOR")

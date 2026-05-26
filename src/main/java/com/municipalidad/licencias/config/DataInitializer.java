@@ -30,6 +30,8 @@ public class DataInitializer implements CommandLineRunner {
             "Inspector García", Enums.Rol.INSPECTOR);
         crearUsuarioSiNoExiste("negocio1",   "negocio123",   "negocio1@empresa.com",
             "Empresa Demo SAC", Enums.Rol.NEGOCIO);
+        crearUsuarioSiNoExiste("publico", java.util.UUID.randomUUID().toString(),
+            "publico@licencias.gob.pe", "Ciudadano Público", Enums.Rol.NEGOCIO);
 
         log.info("=======================================================");
         log.info("  Usuarios demo: admin/admin123  inspector1/inspector123  negocio1/negocio123");
