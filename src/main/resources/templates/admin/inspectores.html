@@ -35,10 +35,9 @@
           <th>Nombre completo</th>
           <th>DNI</th>
           <th>Usuario</th>
+          <th>Rol</th>
+          <th>Distrito</th>
           <th>Teléfono</th>
-          <th>Cargo</th>
-          <th>N.° Colegiatura</th>
-          <th>Nombramiento</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
@@ -46,13 +45,12 @@
       <tbody>
         <tr th:each="i : ${inspectores}"
             th:classappend="${!i.activo} ? 'table-secondary opacity-75'">
-          <td class="fw-semibold" th:text="${i.nombreCompleto}"></td>
+          <td class="fw-semibold small" th:text="${i.nombreCompleto}"></td>
           <td th:text="${i.dni ?: '-'}"></td>
           <td class="text-muted small" th:text="${i.username}"></td>
+          <td><span class="badge bg-secondary small" th:text="${i.rol.name().replace('_','')}"></span></td>
+          <td class="small" th:text="${i.distrito != null ? i.distrito.name().replace('_',' ') : '-'}"></td>
           <td th:text="${i.telefono ?: '-'}"></td>
-          <td th:text="${i.cargo ?: 'Inspector Municipal'}"></td>
-          <td th:text="${i.numeroColegiatura ?: '-'}"></td>
-          <td th:text="${i.fechaNombramiento != null ? #temporals.format(i.fechaNombramiento,'dd/MM/yyyy') : '-'}"></td>
           <td>
             <span th:if="${i.activo}" class="badge bg-success">Activo</span>
             <span th:unless="${i.activo}" class="badge bg-secondary">Inactivo</span>

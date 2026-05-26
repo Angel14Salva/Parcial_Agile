@@ -990,8 +990,16 @@ class InspectorAdminController {
 
     @org.springframework.web.bind.annotation.GetMapping
     String listar(org.springframework.ui.Model model) {
-        model.addAttribute("inspectores",
-            usuarioRepo.findByRol(com.municipalidad.licencias.model.Enums.Rol.INSPECTOR));
+        java.util.List<com.municipalidad.licencias.model.Usuario> todos = new java.util.ArrayList<>();
+        for (com.municipalidad.licencias.model.Enums.Rol rol : new com.municipalidad.licencias.model.Enums.Rol[]{
+            com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR,
+            com.municipalidad.licencias.model.Enums.Rol.INSPECTOR,
+            com.municipalidad.licencias.model.Enums.Rol.SUBGERENTE,
+            com.municipalidad.licencias.model.Enums.Rol.GERENTE_DISTRITAL
+        }) {
+            todos.addAll(usuarioRepo.findByRol(rol));
+        }
+        model.addAttribute("inspectores", todos);
         return "admin/inspectores";
     }
 
