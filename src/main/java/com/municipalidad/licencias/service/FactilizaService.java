@@ -15,7 +15,7 @@ public class FactilizaService {
     private static final Logger log = LoggerFactory.getLogger(FactilizaService.class);
     private static final String BASE_URL = "https://api.factiliza.com/v1";
 
-    @Value("${factiliza.api.token:MOCK}")
+    @Value("${factiliza.token}")
     private String token;
 
     private final RestTemplate restTemplate = new RestTemplate();
