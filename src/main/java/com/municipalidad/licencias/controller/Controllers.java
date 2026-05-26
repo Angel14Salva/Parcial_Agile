@@ -837,6 +837,7 @@ class GerenteMunicipalController {
              com.municipalidad.licencias.model.Enums.Distrito.values()) {
             java.util.Map<String,Object> info = new java.util.HashMap<>();
             info.put("nombre", d.name().replace("_"," "));
+            info.put("nombreEnum", d.name());
             info.put("numSolicitudes", solicitudRepo.findByDistrito(d).size());
             info.put("numFiscalizadores",
                 usuarioRepo.findByRolAndDistrito(

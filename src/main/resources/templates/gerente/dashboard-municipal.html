@@ -94,7 +94,7 @@
           </div>
           <div class="d-flex justify-content-between mb-1">
             <span class="text-muted">Inspectores:</span>
-            <a th:href="@{/admin/inspectores(distrito=${d.nombre.replace(' ','_')})}"
+            <a th:href="@{/admin/inspectores(distrito=${d.nombreEnum})}"
                class="badge bg-warning text-dark text-decoration-none"
                th:text="${d.numInspectores}"></a>
           </div>
