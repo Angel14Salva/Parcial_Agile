@@ -744,6 +744,12 @@ class SubgerenteController {
             com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(inspectorId).orElseThrow();
             s.setInspector(inspector);
             solicitudRepo.save(s);
+            // Crear inspección si no existe
+            java.util.List<com.municipalidad.licencias.model.Inspeccion> inspecciones =
+                inspeccionService.obtenerPorSolicitud(s);
+            if (inspecciones.isEmpty()) {
+                inspeccionService.programarPrimeraInspeccionConInspector(s, inspector);
+            }
             ra.addFlashAttribute("exito", "Inspector " + inspector.getNombreCompleto() + " asignado correctamente.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Error al asignar: " + e.getMessage());
