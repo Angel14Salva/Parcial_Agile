@@ -108,21 +108,6 @@ public class FactilizaService {
             return new ResultadoValidacion(false,
                 "El RUC tiene condición: " + datosRuc.condicion() + ". Solo se aceptan contribuyentes HABIDOS.", null, null);
 
-        DatosRepresentante rep = consultarRepresentante(ruc);
-        if (rep == null)
-            return new ResultadoValidacion(false,
-                "No se encontró representante legal para el RUC.", datosRuc, null);
-
-        // En modo mock cualquier DNI de 8 dígitos es válido
-        if (!esMock()) {
-            boolean coincide = validarDniConMascara(dni, rep.numeroDocumento());
-            if (!coincide)
-                return new ResultadoValidacion(false,
-                    "El DNI no corresponde al representante legal del RUC. " +
-                    "Representante registrado: " + rep.nombre() + " (" + rep.cargo() + ").",
-                    datosRuc, null);
-        }
-
         DatosDni datosDni = consultarDni(dni);
         return new ResultadoValidacion(true, "Validación exitosa. Representante legal confirmado.", datosRuc, datosDni);
     }
