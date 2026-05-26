@@ -66,6 +66,15 @@ public class DataInitializer implements CommandLineRunner {
         crearUsuarioSiNoExiste("fiscal.rios",    "fisc1234", "fiscal.rios@municipalidad.gob.pe",    "RIOS CASTILLO, MARIA",   Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("fiscal.vargas",  "fisc1234", "fiscal.vargas@municipalidad.gob.pe",  "VARGAS NUNEZ, LUIS",     Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("fiscal.herrera", "fisc1234", "fiscal.herrera@municipalidad.gob.pe", "HERRERA CAMPOS, ANA",    Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        // Gerente municipal
+        crearUsuarioSiNoExiste("gerente.municipal", "ger1234", "gerente@municipalidad.gob.pe",
+            "RODRIGUEZ CASTILLO, CARLOS", Enums.Rol.GERENTE_MUNICIPAL, null);
+        // Gerente distrital Trujillo
+        crearUsuarioSiNoExiste("gerente.trujillo", "ger1234", "gerente.trujillo@municipalidad.gob.pe",
+            "FLORES MEDINA, JORGE", Enums.Rol.GERENTE_DISTRITAL, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        // Subgerente Trujillo
+        crearUsuarioSiNoExiste("subgerente.trujillo", "sub1234", "subgerente.trujillo@municipalidad.gob.pe",
+            "PAREDES LOZANO, ANA MARIA", Enums.Rol.SUBGERENTE, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
         crearUsuarioSiNoExiste("inspector1", "inspector123", "inspector1@municipalidad.gob.pe",
