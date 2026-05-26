@@ -87,6 +87,7 @@ public class SolicitudService {
             .estado(Enums.EstadoTramite.BORRADOR)
             .build();
         s.setDistrito(dto.getDistrito());
+        s.setDistrito(dto.getDistrito());
         // Generar código de seguimiento único
         String prefijo = s.getDistrito() != null ?
             s.getDistrito().name().substring(0,3) : "TRJ";
