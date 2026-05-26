@@ -128,20 +128,27 @@
           <div class="col-md-6">
             <label class="form-label fw-semibold">N.° Resolución de designación</label>
             <input type="text" th:field="*{resolucionDesignacion}" class="form-control"
-                   placeholder="Ej: RES-001-2026-MPT"/>
+                   placeholder="Ej: RES-001-2026-MPT"
+                   pattern="[A-Z]{2,5}-[0-9]{3,4}-[0-9]{4}-[A-Z]{2,5}"
+                   title="Formato: RES-001-2026-MPT"/>
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Fecha de resolución</label>
-            <input type="date" th:field="*{fechaResolucion}" class="form-control"/>
+            <input type="date" th:field="*{fechaResolucion}" class="form-control"
+                   id="fechaResolucion" th:max="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">N.° Colegiatura / Registro profesional</label>
             <input type="text" th:field="*{numeroColegiatura}" class="form-control"
-                   placeholder="Ej: CAL-12345 / CIP-67890"/>
+                   placeholder="Ej: CAL-12345"
+                   pattern="[A-Z]{2,5}-[0-9]{4,6}"
+                   title="Formato: CAL-12345 o CIP-67890"
+                   oninput="this.value=this.value.toUpperCase()"/>
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Fecha de nombramiento</label>
-            <input type="date" th:field="*{fechaNombramiento}" class="form-control"/>
+            <input type="date" th:field="*{fechaNombramiento}" class="form-control"
+                   th:max="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
           </div>
         </div>
 
