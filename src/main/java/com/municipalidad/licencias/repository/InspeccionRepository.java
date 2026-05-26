@@ -19,4 +19,7 @@ public interface InspeccionRepository extends JpaRepository<Inspeccion, Long> {
     @Query("SELECT i FROM Inspeccion i WHERE i.inspector = :inspector " +
            "AND i.resultado = 'PENDIENTE' ORDER BY i.fechaProgramada ASC")
     List<Inspeccion> findPendientesByInspector(Usuario inspector);
+
+    @Query("SELECT i FROM Inspeccion i WHERE i.inspector = :inspector ORDER BY i.fechaProgramada ASC")
+    List<Inspeccion> findAllByInspector(Usuario inspector);
 }

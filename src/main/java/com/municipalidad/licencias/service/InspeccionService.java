@@ -159,7 +159,7 @@ public class InspeccionService {
     }
 
     public List<Inspeccion> obtenerPendientesPorInspector(Usuario inspector) {
-        return inspeccionRepo.findPendientesByInspector(inspector);
+        return inspeccionRepo.findAllByInspector(inspector);
     }
 
     public List<Inspeccion> obtenerPorSolicitud(Solicitud solicitud) {
