@@ -833,7 +833,7 @@ class GerenteMunicipalController {
         // Resumen por distrito
         java.util.List<java.util.Map<String,Object>> distritos = new java.util.ArrayList<>();
         for (com.municipalidad.licencias.model.Enums.Distrito d :
-             com.municipalidad.licencias.model.Enums.Distrito.values()) {
+             new com.municipalidad.licencias.model.Enums.Distrito[]{com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO}) {
             java.util.Map<String,Object> info = new java.util.HashMap<>();
             info.put("nombre", d.name().replace("_"," "));
             info.put("nombreEnum", d.name());
