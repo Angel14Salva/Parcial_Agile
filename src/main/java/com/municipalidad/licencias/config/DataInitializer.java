@@ -38,15 +38,6 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         // Limpieza via SQL directo para evitar problemas de cascada
         try {
-            // Eliminar todas las inspecciones y solicitudes
-            jdbc.execute("DELETE FROM notificacion");
-            jdbc.execute("DELETE FROM observacion");
-            jdbc.execute("DELETE FROM multa");
-            jdbc.execute("DELETE FROM inspeccion");
-            jdbc.execute("DELETE FROM licencia");
-            jdbc.execute("DELETE FROM solicitud");
-            // Eliminar inspectores y fiscalizadores
-            jdbc.execute("DELETE FROM usuario WHERE rol IN ('INSPECTOR','FISCALIZADOR')");
             jdbc.execute("DELETE FROM notificacion WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')");
             jdbc.execute("DELETE FROM multa WHERE licencia_id IN (SELECT id FROM licencia WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')))");
             jdbc.execute("DELETE FROM observacion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
