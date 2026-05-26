@@ -57,6 +57,18 @@ class DashboardController {
     String dashboard(@AuthenticationPrincipal UserDetails ud, Model model) {
         Usuario usuario = getUsuario(ud);
         model.addAttribute("usuario", usuario);
+        if (usuario.getRol() == Enums.Rol.SUBGERENTE) {
+            return "redirect:/subgerente/dashboard";
+        }
+        if (usuario.getRol() == Enums.Rol.GERENTE_DISTRITAL) {
+            return "redirect:/gerente/distrital";
+        }
+        if (usuario.getRol() == Enums.Rol.GERENTE_MUNICIPAL) {
+            return "redirect:/gerente-municipal/dashboard";
+        }
+        if (usuario.getRol() == Enums.Rol.FISCALIZADOR) {
+            return "redirect:/inspector/dashboard";
+        }
         if (usuario.getRol() == Enums.Rol.NEGOCIO) {
             java.util.List<com.municipalidad.licencias.model.Solicitud> solicitudes =
                 solicitudService.obtenerPorUsuario(usuario);
