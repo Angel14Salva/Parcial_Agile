@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><title>Seguimiento de trámite</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body{background:linear-gradient(135deg,#1D3557 0%,#457B9D 100%);min-height:100vh}
+    .step{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600}
+    .step.done{background:#198754;color:#fff}
+    .step.active{background:#0d6efd;color:#fff}
+    .step.pending{background:#dee2e6;color:#6c757d}
+  </style>
+</head>
+<body class="py-4">
+<div class="container" style="max-width:700px">
+  <div class="text-center text-white mb-4">
+    <i class="bi bi-building fs-1"></i>
+    <h4 class="fw-bold mt-2">Licencias de Funcionamiento</h4>
+    <p class="opacity-75">Municipalidad Provincial de Trujillo</p>
+  </div>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-search me-2"></i>Consultar estado de trámite</h5>
+      <form th:action="@{/seguimiento}" method="get">
+        <div class="row g-2">
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold">Código de seguimiento</label>
+            <input type="text" name="codigo" class="form-control" th:value="${param.codigo}" placeholder="Ej: TRJ-2026-XXXX" required/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">DNI del solicitante</label>
+            <input type="text" name="dni" class="form-control" th:value="${param.dni}" placeholder="8 dígitos" maxlength="8" required/>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Consultar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div th:if="${error}" class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+  </div>
+  <div th:if="${solicitud != null}">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold" style="background:#1D3557;color:#fff">
+        <i class="bi bi-file-text me-2"></i>Trámite
+        <span class="float-end badge bg-light text-dark" th:text="${solicitud.codigoSeguimiento}"></span>
+      </div>
+      <div class="card-body">
+        <div class="row g-2 small">
+          <div class="col-md-6">
+            <span class="text-muted">Razón social</span>
+            <div class="fw-bold" th:text="${solicitud.razonSocial}"></div>
+          </div>
+          <div class="col-md-6">
+            <span class="text-muted">Distrito</span>
+            <div th:text="${solicitud.distrito?.name()?.replace('_',' ')}"></div>
+          </div>
+          <div class="col-md-6">
+            <span class="text-muted">Rubro</span>
+            <div th:text="${solicitud.rubro}"></div>
+          </div>
+          <div class="col-md-6">
+            <span class="text-muted">Fecha de solicitud</span>
+            <div th:text="${#temporals.format(solicitud.creadoEn,'dd/MM/yyyy')}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Estado del trámite</div>
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="step done"><i class="bi bi-check"></i></div>
+          <div><div class="fw-semibold small">Solicitud recibida</div></div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="step" th:classappend="${solicitud.montoPagado != null} ? 'done' : 'pending'">
+            <i class="bi bi-check"></i>
+          </div>
+          <div>
+            <div class="fw-semibold small">Pago de trámite (S/ 180)</div>
+            <div class="text-muted" style="font-size:.75rem" th:if="${solicitud.referenciaPago != null}">
+              Ref: <span th:text="${solicitud.referenciaPago}"></span>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="step" th:classappend="${solicitud.estado.name() != 'BORRADOR' and solicitud.estado.name() != 'PENDIENTE_VALIDACION' and solicitud.estado.name() != 'ADMITIDO'} ? 'done' : 'pending'">
+            <i class="bi bi-check"></i>
+          </div>
+          <div>
+            <div class="fw-semibold small">Inspección programada</div>
+            <div class="text-muted" style="font-size:.75rem" th:if="${inspeccion != null}">
+              Fecha: <span th:text="${#temporals.format(inspeccion.fechaProgramada,'dd/MM/yyyy')}"></span>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="step" th:classappend="${solicitud.estado.name() == 'APROBADO' or solicitud.estado.name() == 'DENEGADO'} ? 'done' : (${solicitud.estado.name() == 'OBSERVADO'} ? 'active' : 'pending')">
+            <i class="bi bi-clipboard-check"></i>
+          </div>
+          <div>
+            <div class="fw-semibold small">Resultado de inspección</div>
+            <div class="text-warning small" th:if="${solicitud.estado.name() == 'OBSERVADO'}">
+              <i class="bi bi-exclamation-triangle me-1"></i>Tiene observaciones pendientes
+            </div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="step" th:classappend="${solicitud.estado.name() == 'APROBADO'} ? 'done' : (${solicitud.estado.name() == 'DENEGADO'} ? 'done' : 'pending')">
+            <i class="bi bi-award"></i>
+          </div>
+          <div>
+            <div class="fw-semibold small" th:text="${solicitud.estado.name() == 'DENEGADO'} ? 'Licencia denegada' : 'Licencia emitida'"></div>
+            <div th:if="${licencia != null}">
+              <span class="badge bg-success" th:text="${licencia.numeroLicencia}"></span>
+              <a th:href="@{/publico/licencia/{id}/descargar(id=${licencia.id})}"
+                 class="btn btn-success btn-sm ms-2">
+                <i class="bi bi-download me-1"></i>Descargar PDF
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="alert text-center fw-semibold"
+         th:classappend="${solicitud.estado.name() == 'APROBADO'} ? 'alert-success' :
+                          (${solicitud.estado.name() == 'DENEGADO'} ? 'alert-danger' :
+                          (${solicitud.estado.name() == 'OBSERVADO'} ? 'alert-warning' : 'alert-info'))">
+      Estado actual: <span th:text="${solicitud.estado.name().replace('_',' ')}"></span>
+    </div>
+  </div>
+  <div class="text-center mt-3">
+    <a href="/publico/nueva-solicitud" class="btn btn-outline-light me-2">
+      <i class="bi bi-plus-circle me-1"></i>Iniciar nuevo trámite
+    </a>
+    <a href="/auth/login" class="btn btn-outline-light">
+      <i class="bi bi-box-arrow-in-right me-1"></i>Acceso funcionarios
+    </a>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

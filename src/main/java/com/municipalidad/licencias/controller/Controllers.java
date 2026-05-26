@@ -745,7 +745,7 @@ class PublicoController {
             com.municipalidad.licencias.model.Licencia licencia = licenciaRepo.findById(id).orElseThrow();
             byte[] pdf = com.municipalidad.licencias.util.PdfLicenciaUtil.generar(licencia);
             return org.springframework.http.ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename="licencia-" + licencia.getNumeroLicencia() + ".pdf"")
+                .header("Content-Disposition", "attachment; filename=\"licencia-" + licencia.getNumeroLicencia() + ".pdf\"")
                 .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
                 .body(pdf);
         } catch (Exception e) {
