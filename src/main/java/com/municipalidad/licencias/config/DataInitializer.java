@@ -50,7 +50,7 @@ public class DataInitializer implements CommandLineRunner {
                     continue;
                 }
                 // Solo actualizar si el username actual es el formato viejo (f1.trujillo, i01.trujillo, etc)
-                if (u.getUsername().matches("(f|i)\d+\..*") || u.getUsername().equals("inspector1")) {
+                if (u.getUsername().matches("(f|i)\\d+\\..*") || u.getUsername().equals("inspector1")) {
                     u.setUsername(nuevoUsername);
                     usuarioRepo.save(u);
                     log.info("Username actualizado: {} -> {}", u.getNombreCompleto(), nuevoUsername);
