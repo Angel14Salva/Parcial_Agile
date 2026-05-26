@@ -35,13 +35,21 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         // Eliminar usuario negocio1 y todo lo suyo
         usuarioRepo.findByUsername("negocio1").ifPresent(u -> {
-            solicitudRepo.findByUsuario(u).forEach(s -> {
-                inspeccionRepo.findBySolicitud(s).forEach(inspeccionRepo::delete);
-                licenciaRepo.findBySolicitud(s).ifPresent(licenciaRepo::delete);
-                solicitudRepo.delete(s);
-            });
-            usuarioRepo.delete(u);
-            log.info("Usuario negocio1 y sus datos eliminados.");
+            try {
+                solicitudRepo.findByUsuario(u).forEach(s -> {
+                    try {
+                        inspeccionRepo.findBySolicitud(s).forEach(i -> {
+                            try { inspeccionRepo.delete(i); } catch (Exception ex) { log.warn("No se pudo eliminar inspeccion {}: {}", i.getId(), ex.getMessage()); }
+                        });
+                        licenciaRepo.findBySolicitud(s).ifPresent(l -> {
+                            try { licenciaRepo.delete(l); } catch (Exception ex) { log.warn("No se pudo eliminar licencia: {}", ex.getMessage()); }
+                        });
+                        try { solicitudRepo.delete(s); } catch (Exception ex) { log.warn("No se pudo eliminar solicitud {}: {}", s.getId(), ex.getMessage()); }
+                    } catch (Exception ex) { log.warn("Error procesando solicitud {}: {}", s.getId(), ex.getMessage()); }
+                });
+                usuarioRepo.delete(u);
+                log.info("Usuario negocio1 eliminado.");
+            } catch (Exception ex) { log.warn("No se pudo eliminar negocio1: {}", ex.getMessage()); }
         });
 
         // Limpiar borradores huérfanos al arrancar
