@@ -84,6 +84,7 @@ public class SolicitudService {
             .modalidadTramite(dto.getModalidadTramite())
             .observacionesSolicitante(dto.getObservacionesSolicitante())
             .usuario(usuario)
+            .distrito(dto.getDistrito())
             .estado(Enums.EstadoTramite.BORRADOR)
             .build();
         // Generar código de seguimiento único

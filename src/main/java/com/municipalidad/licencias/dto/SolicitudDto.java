@@ -13,6 +13,7 @@ public class SolicitudDto {
     @NotBlank(message = "El domicilio fiscal es obligatorio.")
     private String domicilioFiscal;
 
+    private com.municipalidad.licencias.model.Enums.Distrito distrito;
     private String ruc;
     private String dni;
     private String telefono;
@@ -42,6 +43,8 @@ public class SolicitudDto {
     public String getRazonSocial()                   { return razonSocial; }
     public String getDomicilioFiscal()               { return domicilioFiscal; }
     public String getRubro()                         { return rubro; }
+    public com.municipalidad.licencias.model.Enums.Distrito getDistrito() { return distrito; }
+    public void setDistrito(com.municipalidad.licencias.model.Enums.Distrito v) { this.distrito = v; }
     public String getRuc()                           { return ruc; }
     public String getDni()                           { return dni; }
     public String getTelefono()                      { return telefono; }
