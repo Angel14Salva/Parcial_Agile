@@ -142,6 +142,15 @@ public class SolicitudService {
         s.setEstado(Enums.EstadoTramite.ADMITIDO);
         solicitudRepo.save(s);
         inspeccionService.programarPrimeraInspeccion(s);
+        // Enviar email con código de seguimiento
+        if (s.getCorreoElectronico() != null && s.getCodigoSeguimiento() != null) {
+            emailService.enviarCodigoSeguimiento(
+                s.getCorreoElectronico(),
+                s.getRazonSocial(),
+                s.getCodigoSeguimiento(),
+                s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO"
+            );
+        }
         return s;
     }
 
