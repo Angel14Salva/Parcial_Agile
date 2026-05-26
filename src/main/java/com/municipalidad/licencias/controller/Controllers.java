@@ -281,10 +281,12 @@ class SolicitudController {
         } else {
             model.addAttribute("multasLicencia", java.util.List.of());
         }
-        // Inspectores del distrito para asignación manual
+        // Fiscalizadores e inspectores del distrito para asignación manual
         if (s.getDistrito() != null) {
-            model.addAttribute("inspectoresDisponibles",
-                usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, s.getDistrito()));
+            java.util.List<com.municipalidad.licencias.model.Usuario> disponibles = new java.util.ArrayList<>();
+            disponibles.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.FISCALIZADOR, s.getDistrito()));
+            disponibles.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, s.getDistrito()));
+            model.addAttribute("inspectoresDisponibles", disponibles);
         }
         return "solicitud/detalle";
     }
