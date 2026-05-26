@@ -698,6 +698,163 @@ class MultaController {
 
 }
 
+// ── Subgerente ───────────────────────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/subgerente")
+class SubgerenteController {
+
+    private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+
+    SubgerenteController(com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
+                         com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
+        this.solicitudRepo = solicitudRepo;
+        this.usuarioRepo   = usuarioRepo;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/dashboard")
+    String dashboard(@org.springframework.security.core.annotation.AuthenticationPrincipal
+                         org.springframework.security.core.userdetails.UserDetails ud,
+                     org.springframework.ui.Model model) {
+        com.municipalidad.licencias.model.Usuario usuario =
+            usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+        com.municipalidad.licencias.model.Enums.Distrito distrito = usuario.getDistrito();
+        model.addAttribute("usuario", usuario);
+
+        java.util.List<com.municipalidad.licencias.model.Solicitud> todas =
+            distrito != null ? solicitudRepo.findByDistrito(distrito) : java.util.List.of();
+
+        model.addAttribute("todasSolicitudes", todas);
+        model.addAttribute("solicitudesPendientes", todas.stream()
+            .filter(s -> s.getEstado() == com.municipalidad.licencias.model.Enums.EstadoTramite.ADMITIDO)
+            .toList());
+        model.addAttribute("fiscalizadores",
+            distrito != null ?
+            usuarioRepo.findByRolAndDistrito(com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR, distrito) :
+            java.util.List.of());
+        return "subgerente/dashboard";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/solicitud/{id}/asignar")
+    String asignarInspector(@org.springframework.web.bind.annotation.PathVariable Long id,
+                             @org.springframework.web.bind.annotation.RequestParam Long inspectorId,
+                             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        try {
+            com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id).orElseThrow();
+            com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(inspectorId).orElseThrow();
+            s.setInspector(inspector);
+            solicitudRepo.save(s);
+            ra.addFlashAttribute("exito", "Fiscalizador " + inspector.getNombreCompleto() + " asignado correctamente.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al asignar: " + e.getMessage());
+        }
+        return "redirect:/subgerente/dashboard";
+    }
+}
+
+// ── Gerente Distrital ─────────────────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/gerente")
+class GerenteDistritController {
+
+    private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+
+    GerenteDistritController(com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
+                              com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
+        this.solicitudRepo = solicitudRepo;
+        this.usuarioRepo   = usuarioRepo;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/distrital")
+    String dashboard(@org.springframework.security.core.annotation.AuthenticationPrincipal
+                         org.springframework.security.core.userdetails.UserDetails ud,
+                     org.springframework.ui.Model model) {
+        com.municipalidad.licencias.model.Usuario usuario =
+            usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+        com.municipalidad.licencias.model.Enums.Distrito distrito = usuario.getDistrito();
+        model.addAttribute("usuario", usuario);
+
+        java.util.List<com.municipalidad.licencias.model.Solicitud> solicitudes =
+            distrito != null ? solicitudRepo.findByDistrito(distrito) : java.util.List.of();
+        java.util.List<com.municipalidad.licencias.model.Usuario> fiscalizadores =
+            distrito != null ?
+            usuarioRepo.findByRolAndDistrito(com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR, distrito) :
+            java.util.List.of();
+
+        model.addAttribute("totalSolicitudes", solicitudes.size());
+        model.addAttribute("aprobadas", solicitudes.stream()
+            .filter(s -> s.getEstado() == com.municipalidad.licencias.model.Enums.EstadoTramite.APROBADO).count());
+        model.addAttribute("pendientes", solicitudes.stream()
+            .filter(s -> s.getEstado() != com.municipalidad.licencias.model.Enums.EstadoTramite.APROBADO
+                      && s.getEstado() != com.municipalidad.licencias.model.Enums.EstadoTramite.DENEGADO).count());
+        model.addAttribute("totalFiscalizadores", fiscalizadores.size());
+        model.addAttribute("fiscalizadores", fiscalizadores);
+        model.addAttribute("subgerente",
+            distrito != null ?
+            usuarioRepo.findByRolAndDistritoAndActivo(
+                com.municipalidad.licencias.model.Enums.Rol.SUBGERENTE, distrito, true).orElse(null) : null);
+        return "gerente/dashboard-distrital";
+    }
+}
+
+// ── Gerente Municipal ─────────────────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/gerente-municipal")
+class GerenteMunicipalController {
+
+    private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
+    private final com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo;
+
+    GerenteMunicipalController(com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
+                                com.municipalidad.licencias.repository.UsuarioRepository usuarioRepo) {
+        this.solicitudRepo = solicitudRepo;
+        this.usuarioRepo   = usuarioRepo;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/dashboard")
+    String dashboard(org.springframework.ui.Model model,
+                     @org.springframework.security.core.annotation.AuthenticationPrincipal
+                         org.springframework.security.core.userdetails.UserDetails ud) {
+        com.municipalidad.licencias.model.Usuario usuario =
+            usuarioRepo.findByUsername(ud.getUsername()).orElseThrow();
+        model.addAttribute("usuario", usuario);
+
+        java.util.List<com.municipalidad.licencias.model.Solicitud> todas = solicitudRepo.findAll();
+        model.addAttribute("totalSolicitudes", todas.size());
+        model.addAttribute("totalAprobadas", todas.stream()
+            .filter(s -> s.getEstado() == com.municipalidad.licencias.model.Enums.EstadoTramite.APROBADO).count());
+        model.addAttribute("totalPendientes", todas.stream()
+            .filter(s -> s.getEstado() != com.municipalidad.licencias.model.Enums.EstadoTramite.APROBADO
+                      && s.getEstado() != com.municipalidad.licencias.model.Enums.EstadoTramite.DENEGADO).count());
+        model.addAttribute("totalFuncionarios",
+            usuarioRepo.findByRol(com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR).size() +
+            usuarioRepo.findByRol(com.municipalidad.licencias.model.Enums.Rol.SUBGERENTE).size() +
+            usuarioRepo.findByRol(com.municipalidad.licencias.model.Enums.Rol.GERENTE_DISTRITAL).size());
+
+        // Resumen por distrito
+        java.util.List<java.util.Map<String,Object>> distritos = new java.util.ArrayList<>();
+        for (com.municipalidad.licencias.model.Enums.Distrito d :
+             com.municipalidad.licencias.model.Enums.Distrito.values()) {
+            java.util.Map<String,Object> info = new java.util.HashMap<>();
+            info.put("nombre", d.name().replace("_"," "));
+            info.put("numSolicitudes", solicitudRepo.findByDistrito(d).size());
+            info.put("numFiscalizadores",
+                usuarioRepo.findByRolAndDistrito(
+                    com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR, d).size());
+            info.put("gerente", usuarioRepo.findByRolAndDistrito(
+                com.municipalidad.licencias.model.Enums.Rol.GERENTE_DISTRITAL, d)
+                .stream().findFirst().map(u -> u.getNombreCompleto()).orElse(null));
+            info.put("subgerente", usuarioRepo.findByRolAndDistrito(
+                com.municipalidad.licencias.model.Enums.Rol.SUBGERENTE, d)
+                .stream().findFirst().map(u -> u.getNombreCompleto()).orElse(null));
+            distritos.add(info);
+        }
+        model.addAttribute("distritos", distritos);
+        return "gerente/dashboard-municipal";
+    }
+}
+
 // ── Portal público (seguimiento sin login) ───────────────────────────────────
 @org.springframework.stereotype.Controller
 class PublicoController {

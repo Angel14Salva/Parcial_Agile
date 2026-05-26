@@ -73,6 +73,9 @@ public class Solicitud {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inspector_id")
+    private com.municipalidad.licencias.model.Usuario inspector;
 
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Inspeccion> inspecciones = new ArrayList<>();
@@ -154,6 +157,8 @@ public class Solicitud {
     public String getRazonSocial()               { return razonSocial; }
     public String getDomicilioFiscal()           { return domicilioFiscal; }
     public String getRubro()                     { return rubro; }
+    public com.municipalidad.licencias.model.Usuario getInspector() { return inspector; }
+    public void setInspector(com.municipalidad.licencias.model.Usuario v) { this.inspector = v; }
     public com.municipalidad.licencias.model.Enums.Distrito getDistrito() { return distrito; }
     public void setDistrito(com.municipalidad.licencias.model.Enums.Distrito v) { this.distrito = v; }
     public String getCodigoSeguimiento() { return codigoSeguimiento; }
