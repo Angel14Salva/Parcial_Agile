@@ -333,7 +333,7 @@ class InspectorController {
             try {
                 Inspeccion inspeccion = inspeccionService.obtenerPorId(id);
                 inspeccion.getSolicitud().setEstado(Enums.EstadoTramite.DENEGADO);
-                inspeccion.setResultado(Enums.ResultadoInspeccion.NO_CONFORME);
+                inspeccion.setResultado(Enums.ResultadoInspeccion.CON_OBSERVACIONES);
                 ra.addFlashAttribute("exito", "Solicitud denegada.");
                 return "redirect:/dashboard";
             } catch (Exception e) {
