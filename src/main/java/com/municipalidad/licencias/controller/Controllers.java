@@ -345,7 +345,7 @@ class InspectorController {
             return "inspector/registrar-resultado";
         }
         try {
-            log.info("Guardando resultado: {} obs: {}", dto.getResultado(), dto.getObservaciones());
+            System.out.println("Guardando resultado: {} obs: {}", dto.getResultado(), dto.getObservaciones());
             Inspeccion inspeccion = inspeccionService.registrarResultado(id, dto);
             if (inspeccion.getResultado() == Enums.ResultadoInspeccion.CONFORME) {
                 licenciaService.emitirLicencia(inspeccion.getSolicitud());
@@ -355,7 +355,7 @@ class InspectorController {
             }
             return "redirect:/dashboard";
         } catch (Exception e) {
-            log.error("Error registrando resultado: {}", e.getMessage());
+            System.out.println("Error registrando resultado: {}", e.getMessage());
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/inspector/inspeccion/" + id;
         }
