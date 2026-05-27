@@ -324,8 +324,7 @@ class InspectorController {
 
     @PostMapping("/inspeccion/{id}/resultado")
     String registrarResultado(@PathVariable Long id,
-                              @Valid @ModelAttribute("dto") ResultadoInspeccionDto dto,
-                              BindingResult errors,
+                              @ModelAttribute("dto") ResultadoInspeccionDto dto,
                               @org.springframework.web.bind.annotation.RequestParam(required=false) String denegar,
                               RedirectAttributes ra, Model model) {
         // Denegar directo
@@ -341,7 +340,7 @@ class InspectorController {
                 return "redirect:/inspector/inspeccion/" + id;
             }
         }
-        if (errors.hasErrors()) {
+        if (dto.getResultado() == null) {
             model.addAttribute("inspeccion", inspeccionService.obtenerPorId(id));
             return "inspector/registrar-resultado";
         }
