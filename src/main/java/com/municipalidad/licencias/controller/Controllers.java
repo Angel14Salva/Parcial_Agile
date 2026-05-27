@@ -304,21 +304,34 @@ class SolicitudController {
 class InspectorController {
 
     private final InspeccionService inspeccionService;
+    private final com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo;
+    private final com.municipalidad.licencias.repository.ObservacionRepository observacionRepo;
     private final LicenciaService   licenciaService;
     private final UsuarioRepository usuarioRepo;
 
     InspectorController(InspeccionService inspeccionService,
                         LicenciaService licenciaService,
-                        UsuarioRepository usuarioRepo) {
+                        UsuarioRepository usuarioRepo,
+                        com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
+                        com.municipalidad.licencias.repository.ObservacionRepository observacionRepo) {
         this.inspeccionService = inspeccionService;
         this.licenciaService   = licenciaService;
         this.usuarioRepo       = usuarioRepo;
+        this.inspeccionRepo    = inspeccionRepo;
+        this.observacionRepo   = observacionRepo;
     }
 
     @GetMapping("/inspeccion/{id}")
     String verInspeccion(@PathVariable Long id, Model model) {
-        model.addAttribute("inspeccion", inspeccionService.obtenerPorId(id));
+        Inspeccion insp = inspeccionService.obtenerPorId(id);
+        model.addAttribute("inspeccion", insp);
         model.addAttribute("dto", new ResultadoInspeccionDto());
+        java.util.List<com.municipalidad.licencias.model.Observacion> obsAnt =
+            inspeccionRepo.findBySolicitud(insp.getSolicitud()).stream()
+                .filter(i -> !i.getId().equals(insp.getId()))
+                .flatMap(i -> observacionRepo.findByInspeccion(i).stream())
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("observacionesAnteriores", obsAnt);
         return "inspector/registrar-resultado";
     }
 
@@ -419,7 +432,9 @@ class FiscalizacionController {
 
     FiscalizacionController(FiscalizacionService fiscalizacionService,
                              LicenciaService licenciaService,
-                             UsuarioRepository usuarioRepo) {
+                             UsuarioRepository usuarioRepo,
+                        com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
+                        com.municipalidad.licencias.repository.ObservacionRepository observacionRepo) {
         this.fiscalizacionService = fiscalizacionService;
         this.licenciaService      = licenciaService;
         this.usuarioRepo          = usuarioRepo;
