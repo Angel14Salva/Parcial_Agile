@@ -76,7 +76,7 @@ public class DataInitializer implements CommandLineRunner {
         crearUsuarioSiNoExiste("gerente.trujillo", "ger1234", "gerente.trujillo@municipalidad.gob.pe",
             "FLORES MEDINA, JORGE", Enums.Rol.GERENTE_DISTRITAL, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         // Subgerente Trujillo
-        crearUsuarioSiNoExiste("subgerente.trujillo", "sub1234", "subgerente.trujillo@municipalidad.gob.pe",
+        crearUsuarioSiNoExiste("sg.trujillo", "sub1234", "subgerente.trujillo@municipalidad.gob.pe",
             "PAREDES LOZANO, ANA MARIA", Enums.Rol.SUBGERENTE, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
