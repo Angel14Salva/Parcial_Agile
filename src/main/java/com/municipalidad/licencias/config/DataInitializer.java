@@ -38,12 +38,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         // Limpieza via SQL directo para evitar problemas de cascada
         try {
-            jdbc.execute("DELETE FROM notificacion");
-            jdbc.execute("DELETE FROM observacion");
-            jdbc.execute("DELETE FROM multa");
-            jdbc.execute("DELETE FROM inspeccion");
-            jdbc.execute("DELETE FROM licencia");
-            jdbc.execute("DELETE FROM solicitud");
+
 
 
             // Eliminar usuarios viejos con formato nombreapellidorol
