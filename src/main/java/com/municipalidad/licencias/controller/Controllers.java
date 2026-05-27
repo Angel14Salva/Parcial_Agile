@@ -67,8 +67,14 @@ class DashboardController {
             return "redirect:/gerente-municipal/dashboard";
         }
         if (usuario.getRol() == Enums.Rol.FISCALIZADOR || usuario.getRol() == Enums.Rol.INSPECTOR) {
-            model.addAttribute("inspeccionesPendientes",
-                inspeccionService.obtenerPendientesPorInspector(usuario));
+            // Mostrar solo la inspeccion mas reciente por solicitud
+            java.util.List<com.municipalidad.licencias.model.Inspeccion> todas =
+                inspeccionService.obtenerPendientesPorInspector(usuario);
+            java.util.Map<Long, com.municipalidad.licencias.model.Inspeccion> mapaRecientes = new java.util.LinkedHashMap<>();
+            for (com.municipalidad.licencias.model.Inspeccion i : todas) {
+                mapaRecientes.put(i.getSolicitud().getId(), i);
+            }
+            model.addAttribute("inspeccionesPendientes", new java.util.ArrayList<>(mapaRecientes.values()));
             model.addAttribute("licenciasVigentes",
                 licenciaService.obtenerLicenciasVigentes());
             model.addAttribute("licenciasRevocadas",
@@ -320,7 +326,21 @@ class InspectorController {
     String registrarResultado(@PathVariable Long id,
                               @Valid @ModelAttribute("dto") ResultadoInspeccionDto dto,
                               BindingResult errors,
+                              @org.springframework.web.bind.annotation.RequestParam(required=false) String denegar,
                               RedirectAttributes ra, Model model) {
+        // Denegar directo
+        if ("DENEGAR".equals(denegar)) {
+            try {
+                Inspeccion inspeccion = inspeccionService.obtenerPorId(id);
+                inspeccion.getSolicitud().setEstado(Enums.EstadoTramite.DENEGADO);
+                inspeccion.setResultado(Enums.ResultadoInspeccion.NO_CONFORME);
+                ra.addFlashAttribute("exito", "Solicitud denegada.");
+                return "redirect:/dashboard";
+            } catch (Exception e) {
+                ra.addFlashAttribute("error", e.getMessage());
+                return "redirect:/inspector/inspeccion/" + id;
+            }
+        }
         if (errors.hasErrors()) {
             model.addAttribute("inspeccion", inspeccionService.obtenerPorId(id));
             return "inspector/registrar-resultado";

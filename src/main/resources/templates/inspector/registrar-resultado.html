@@ -192,6 +192,11 @@
           <button type="submit" class="btn btn-primary fw-semibold">
             <i class="bi bi-save me-2"></i>Guardar resultado
           </button>
+          <button type="button" class="btn btn-danger ms-2"
+                  onclick="if(confirm('¿Está seguro de DENEGAR esta solicitud?')) { document.getElementById('resultadoDenegar').value='DENEGAR'; this.form.submit(); }">
+            <i class="bi bi-x-circle me-2"></i>Denegar solicitud
+          </button>
+          <input type="hidden" id="resultadoDenegar" name="denegar" value=""/>
         </div>
       </form>
     </div>
