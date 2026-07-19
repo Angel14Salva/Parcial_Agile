@@ -66,10 +66,16 @@ class DashboardController {
         if (usuario.getRol() == Enums.Rol.GERENTE_MUNICIPAL) {
             return "redirect:/gerente-municipal/dashboard";
         }
+        if (usuario.getRol() == Enums.Rol.CAJERO) {
+            return "redirect:/cajero/dashboard";
+        }
         if (usuario.getRol() == Enums.Rol.FISCALIZADOR || usuario.getRol() == Enums.Rol.INSPECTOR) {
-            // Mostrar solo la inspeccion mas reciente por solicitud
+            // El inspector solo ve las inspecciones pendientes del día actual;
+            // el fiscalizador mantiene la vista completa de fiscalización de oficio.
             java.util.List<com.municipalidad.licencias.model.Inspeccion> todas =
-                inspeccionService.obtenerPendientesPorInspector(usuario);
+                usuario.getRol() == Enums.Rol.INSPECTOR
+                    ? inspeccionService.obtenerPendientesHoyPorInspector(usuario)
+                    : inspeccionService.obtenerPendientesPorInspector(usuario);
             java.util.Map<Long, com.municipalidad.licencias.model.Inspeccion> mapaRecientes = new java.util.LinkedHashMap<>();
             for (com.municipalidad.licencias.model.Inspeccion i : todas) {
                 mapaRecientes.put(i.getSolicitud().getId(), i);
@@ -420,6 +426,106 @@ class LicenciaController {
         return "redirect:/dashboard";
     }
 }
+
+// ── Cajero (atención presencial) ────────────────────────────────────────────
+@Controller
+@RequestMapping("/cajero")
+class CajeroController {
+
+    private final SolicitudService  solicitudService;
+    private final LicenciaService   licenciaService;
+    private final UsuarioRepository usuarioRepo;
+    private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
+    private final com.municipalidad.licencias.repository.LicenciaRepository  licenciaRepo;
+
+    CajeroController(SolicitudService solicitudService,
+                     LicenciaService licenciaService,
+                     UsuarioRepository usuarioRepo,
+                     com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
+                     com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo) {
+        this.solicitudService = solicitudService;
+        this.licenciaService  = licenciaService;
+        this.usuarioRepo      = usuarioRepo;
+        this.solicitudRepo    = solicitudRepo;
+        this.licenciaRepo     = licenciaRepo;
+    }
+
+    private Usuario getUsuario(UserDetails ud) {
+        return usuarioRepo.findByUsername(ud.getUsername())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+
+    @GetMapping("/dashboard")
+    String dashboard(@AuthenticationPrincipal UserDetails ud, Model model) {
+        model.addAttribute("usuario", getUsuario(ud));
+        return "cajero/dashboard";
+    }
+
+    // ── Registro presencial de una nueva solicitud ──────────────────────────
+    @GetMapping("/nueva")
+    String nuevaForm(Model model) {
+        model.addAttribute("solicitudDto", new SolicitudDto());
+        model.addAttribute("rubros", Rubros.LISTA);
+        return "cajero/nueva";
+    }
+
+    @PostMapping("/nueva")
+    String registrar(@Valid @ModelAttribute SolicitudDto dto,
+                     BindingResult errors,
+                     @RequestParam(required = false) MultipartFile plano,
+                     @RequestParam(required = false) MultipartFile firma,
+                     @AuthenticationPrincipal UserDetails ud,
+                     RedirectAttributes ra, Model model) {
+        if (errors.hasErrors()) {
+            model.addAttribute("rubros", Rubros.LISTA);
+            return "cajero/nueva";
+        }
+        try {
+            Solicitud s = solicitudService.registrarPresencial(dto, plano, firma, getUsuario(ud));
+            ra.addFlashAttribute("exito",
+                "Solicitud registrada y pago cobrado correctamente. Código de seguimiento: " +
+                s.getCodigoSeguimiento());
+            return "redirect:/cajero/dashboard";
+        } catch (Exception e) {
+            model.addAttribute("rubros", Rubros.LISTA);
+            model.addAttribute("error", e.getMessage());
+            return "cajero/nueva";
+        }
+    }
+
+    // ── Cobro de renovación en ventanilla ────────────────────────────────────
+    @GetMapping("/renovar")
+    String buscarParaRenovar(@RequestParam(required = false) String ruc, Model model) {
+        if (ruc != null && !ruc.isBlank()) {
+            solicitudRepo.findAll().stream()
+                .filter(s -> ruc.trim().equals(s.getRuc()))
+                .flatMap(s -> licenciaRepo.findBySolicitud(s).stream())
+                .findFirst()
+                .ifPresentOrElse(
+                    l -> { model.addAttribute("licencia", l); model.addAttribute("ruc", ruc); },
+                    () -> model.addAttribute("error", "No se encontró ninguna licencia para el RUC " + ruc + ".")
+                );
+            model.addAttribute("ruc", ruc);
+        }
+        return "cajero/renovar";
+    }
+
+    @PostMapping("/licencia/{id}/renovar")
+    String cobrarRenovacion(@PathVariable Long id,
+                            @AuthenticationPrincipal UserDetails ud,
+                            RedirectAttributes ra) {
+        try {
+            Usuario cajero = getUsuario(ud);
+            licenciaService.renovar(id, "CAJA-" + cajero.getUsername().toUpperCase() +
+                "-" + System.currentTimeMillis());
+            ra.addFlashAttribute("exito", "Renovación cobrada y licencia extendida por un año más.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/cajero/dashboard";
+    }
+}
+
 
 // ── Fiscalización ─────────────────────────────────────────────────────────────
 @Controller

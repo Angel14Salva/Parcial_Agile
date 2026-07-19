@@ -18,12 +18,18 @@ public class Enums {
 
     public enum Rol {
         NEGOCIO,
+        CAJERO,
         INSPECTOR,
         FISCALIZADOR,
         SUBGERENTE,
         GERENTE_DISTRITAL,
         GERENTE_MUNICIPAL,
         ADMIN
+    }
+
+    public enum CanalTramite {
+        VIRTUAL,
+        PRESENCIAL
     }
 
     public enum EstadoTramite {

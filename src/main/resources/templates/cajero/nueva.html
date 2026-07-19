@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Registro presencial | Licencias Municipales</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body { background: #f0f4f8; }
+    .section-header {
+      background: #1D3557; color: #fff;
+      padding: .6rem 1rem; border-radius: 6px 6px 0 0;
+      font-weight: 600; font-size: .95rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .section-body { background: #fff; border: 1px solid #dee2e6; border-top: none;
+                    border-radius: 0 0 6px 6px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .auto-field { background: #f8fff8 !important; }
+    .field-hint { font-size: .78rem; color: #6c757d; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/cajero/dashboard">
+      <i class="bi bi-building me-2"></i>Licencias Municipales
+    </a>
+  </div>
+</nav>
+
+<div class="container" style="max-width:780px">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/cajero/dashboard">Panel de caja</a></li>
+      <li class="breadcrumb-item active">Registro presencial</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div>
+      <h4 class="fw-bold mb-0">Registro presencial en ventanilla</h4>
+      <p class="text-muted small mb-0">Municipalidad Provincial de Trujillo · Ley N°28976</p>
+    </div>
+  </div>
+
+  <!-- Pasos -->
+  <div class="d-flex gap-2 mb-4">
+    <span class="badge bg-primary px-3 py-2">Datos, documentos y cobro en un solo acto (S/180)</span>
+  </div>
+
+  <div th:if="${errorLicencia}" class="alert alert-warning alert-dismissible fade show mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Trámite no permitido:</strong> <span th:text="${errorLicencia}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>No se pudo registrar:</strong> <span th:text="${error}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div id="alertaError" class="alert alert-danger d-none"></div>
+
+  <form th:action="@{/cajero/nueva}" method="post"
+        th:object="${solicitudDto}" id="formSolicitud"
+        enctype="multipart/form-data">
+
+    <!-- ── SECCIÓN 0: Distrito ─────────────────────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-geo-alt"></i> Distrito del establecimiento</div>
+    <div class="form-section">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Selecciona el distrito donde opera tu negocio <span class="text-danger">*</span></label>
+        <select th:field="*{distrito}" class="form-select form-select-lg" required>
+          <option value="TRUJILLO" selected="selected">Trujillo (Cercado/Centro)</option>
+        </select>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          El trámite será gestionado por la municipalidad del distrito seleccionado.
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" name="modalidadTramite" value="NUEVA"/>
+
+    <!-- ── SECCIÓN II: Datos del solicitante ─────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-person-vcard"></i> II · Datos del solicitante</div>
+    <div class="section-body">
+      <p class="text-muted small mb-3">
+        <i class="bi bi-magic me-1"></i>Ingresa el RUC y DNI — los campos marcados con
+        <span class="badge bg-success">auto</span> se rellenan automáticamente.
+      </p>
+
+      <!-- Aviso jurisdicción -->
+      <div class="alert alert-warning border-warning mb-3" style="border-left: 4px solid #f59e0b;">
+        <div class="d-flex align-items-start gap-2">
+          <i class="bi bi-exclamation-triangle-fill text-warning mt-1"></i>
+          <div>
+            <strong>Importante — Jurisdicción del servicio</strong>
+            <p class="mb-1 mt-1 small">Este sistema emite licencias de funcionamiento <strong>únicamente para establecimientos ubicados en el distrito de Trujillo</strong>. Negocios en otros distritos (La Esperanza, El Porvenir, Florencia de Mora, etc.) deben tramitar su licencia ante la municipalidad distrital correspondiente.</p>
+            <p class="mb-0 small text-muted"><i class="bi bi-info-circle me-1"></i>El derecho de trámite abonado <strong>no es reembolsable</strong> en caso de que la solicitud sea denegada por encontrarse el establecimiento fuera de la jurisdicción. La admisión o denegación queda sujeta a verificación por parte de la Municipalidad Provincial de Trujillo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <!-- RUC -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">N° RUC <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="text" id="inputRuc" name="ruc" class="form-control"
+                   placeholder="11 dígitos" maxlength="11" pattern="\d{11}" required/>
+            <button type="button" class="btn btn-outline-primary" id="btnBuscarRuc">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <div id="rucStatus" class="field-hint mt-1"></div>
+        </div>
+
+        <!-- DNI -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">N° DNI del representante <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="text" id="inputDni" name="dni" class="form-control"
+                   placeholder="8 dígitos" maxlength="8" pattern="\d{8}" required/>
+            <button type="button" class="btn btn-outline-primary" id="btnValidarDni">
+              <i class="bi bi-person-check"></i>
+            </button>
+          </div>
+          <div id="dniStatus" class="field-hint mt-1"></div>
+        </div>
+
+        <!-- Razón social -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">
+            Apellidos y Nombre / Razón Social <span class="text-danger">*</span>
+            <span class="badge bg-success ms-1">auto</span>
+          </label>
+          <input type="text" th:field="*{razonSocial}" id="inputRazonSocial"
+                 class="form-control auto-field" readonly required
+                 placeholder="Se autorellena con el RUC"/>
+        </div>
+
+        <!-- Dirección del solicitante -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">
+            Dirección del solicitante <span class="text-danger">*</span>
+            <span class="badge bg-success ms-1">auto</span>
+          </label>
+          <input type="text" th:field="*{domicilioFiscal}" id="inputDomicilio"
+                 class="form-control auto-field" readonly required
+                 placeholder="Se autorellena con el RUC"/>
+        </div>
+
+        <!-- Teléfono -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">N° Teléfono <span class="text-danger">*</span></label>
+          <input type="tel" th:field="*{telefono}" class="form-control"
+                 placeholder="Ej: 987654321" pattern="[0-9]{9}" maxlength="9"
+                 title="Ingresa un número de celular de 9 dígitos" required/>
+          <div class="field-hint mt-1">Solo números, 9 dígitos (Ej: 987654321)</div>
+        </div>
+
+        <!-- Correo -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Correo Electrónico <span class="text-danger">*</span></label>
+          <input type="email" th:field="*{correoElectronico}" class="form-control"
+                 placeholder="correo@ejemplo.com" required/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN III: Representante legal ──────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-person-badge"></i> III · Representante legal o apoderado</div>
+    <div class="section-body">
+      <div class="row g-3">
+        <!-- Nombre representante -->
+        <div class="col-md-7">
+          <label class="form-label fw-semibold">
+            Apellidos y Nombres <span class="badge bg-success ms-1">auto</span>
+          </label>
+          <input type="text" th:field="*{nombreRepresentante}" id="inputRepresentante"
+                 class="form-control auto-field" readonly
+                 placeholder="Se autorellena al validar DNI"/>
+        </div>
+
+        <!-- DNI representante -->
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">
+            N° DNI / C.E. <span class="badge bg-success ms-1">auto</span>
+          </label>
+          <input type="text" th:field="*{dniRepresentante}" id="inputDniRep"
+                 class="form-control auto-field" readonly
+                 placeholder="Se autorellena al validar DNI"/>
+        </div>
+
+        <!-- Partida SUNARP -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">N° Partida electrónica SUNARP (opcional)</label>
+          <input type="text" th:field="*{partidaSunarp}" class="form-control"
+                 placeholder="Ej: 12345678" pattern="[0-9]*" maxlength="20"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                 title="Solo números"/>
+          <div class="field-hint">Solo para personas jurídicas con inscripción en SUNARP.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN IV: Datos del establecimiento ─────────────────────────── -->
+    <div class="section-header"><i class="bi bi-shop"></i> IV · Datos del establecimiento</div>
+    <div class="section-body">
+      <div class="row g-3">
+        <!-- Nombre comercial -->
+        <div class="col-md-7">
+          <label class="form-label fw-semibold">Nombre comercial <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{nombreComercial}" class="form-control"
+                 placeholder="Nombre del local o negocio" required/>
+        </div>
+
+        <!-- Horario -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">Horario de atención <span class="text-danger">*</span></label>
+          <div class="border rounded p-3 bg-white" id="horarioWidget">
+            <!-- Días -->
+            <div class="mb-2">
+              <p class="small fw-semibold mb-2 text-muted">Selecciona los días:</p>
+              <div class="d-flex gap-2 flex-wrap" id="diasBtns">
+                <button type="button" class="btn btn-outline-primary btn-sm dia-btn" data-dia="Lun">Lun</button>
+                <button type="button" class="btn btn-outline-primary btn-sm dia-btn" data-dia="Mar">Mar</button>
+                <button type="button" class="btn btn-outline-primary btn-sm dia-btn" data-dia="Mié">Mié</button>
+                <button type="button" class="btn btn-outline-primary btn-sm dia-btn" data-dia="Jue">Jue</button>
+                <button type="button" class="btn btn-outline-primary btn-sm dia-btn" data-dia="Vie">Vie</button>
+                <button type="button" class="btn btn-outline-primary btn-sm dia-btn" data-dia="Sáb">Sáb</button>
+                <button type="button" class="btn btn-outline-primary btn-sm dia-btn" data-dia="Dom">Dom</button>
+              </div>
+            </div>
+            <!-- Rango de horas -->
+            <div class="row g-2 align-items-center mt-1">
+              <div class="col-auto">
+                <label class="form-label small fw-semibold mb-0">Desde:</label>
+                <input type="time" id="horaDesde" class="form-control form-control-sm" value="09:00" style="width:110px"/>
+              </div>
+              <div class="col-auto pt-3">
+                <span class="text-muted">—</span>
+              </div>
+              <div class="col-auto">
+                <label class="form-label small fw-semibold mb-0">Hasta:</label>
+                <input type="time" id="horaHasta" class="form-control form-control-sm" value="18:00" style="width:110px"/>
+              </div>
+              <div class="col-auto pt-3">
+                <button type="button" class="btn btn-success btn-sm" id="btnAgregarHorario">
+                  <i class="bi bi-plus-circle me-1"></i>Agregar
+                </button>
+              </div>
+            </div>
+            <!-- Lista de horarios agregados -->
+            <div id="horariosLista" class="mt-3 d-flex flex-wrap gap-2"></div>
+            <div class="field-hint mt-2" id="horarioHint">Selecciona días y rango de horas, luego presiona Agregar.</div>
+          </div>
+          <!-- Campo oculto que se envía al servidor -->
+          <input type="hidden" th:field="*{horarioAtencion}" id="inputHorario" required/>
+        </div>
+
+        <!-- Dirección del establecimiento -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">Dirección del establecimiento <span class="text-danger">*</span></label>
+          <input type="text" th:field="*{direccionEstablecimiento}" class="form-control"
+                 placeholder="Av./Jr./Ca. N° Urb. Distrito" required/>
+          <div class="field-hint">Puede diferir del domicilio fiscal del RUC.</div>
+        </div>
+
+        <!-- Rubro -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Giro / Rubro <span class="text-danger">*</span></label>
+          <select th:field="*{rubro}" class="form-select" id="selectRubro" required>
+            <option value="">-- Selecciona --</option>
+            <option th:each="r : ${rubros}" th:value="${r}" th:text="${r}"></option>
+          </select>
+          <div id="otroRubroDiv" class="mt-2 d-none">
+            <input type="text" id="otroRubroTexto" class="form-control"
+                   placeholder="Describe el rubro *" maxlength="100"/>
+          </div>
+        </div>
+
+        <!-- Área total -->
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Área total (m²)</label>
+          <input type="number" th:field="*{areaTotalM2}" class="form-control"
+                 min="1" step="0.01" placeholder="Ej: 50.5"/>
+        </div>
+
+        <!-- Estacionamientos -->
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">N° Estacionamientos</label>
+          <input type="number" th:field="*{numEstacionamientos}" class="form-control"
+                 min="0" placeholder="Ej: 2"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN V: Documentos ──────────────────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-paperclip"></i> V · Documentos adjuntos</div>
+    <div class="section-body">
+      <div class="row g-3">
+        <!-- Plano del local -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">
+            Plano del local <span class="text-danger">*</span>
+          </label>
+          <input type="file" name="plano" id="inputPlano" class="form-control"
+                 accept=".pdf,.jpg,.jpeg,.png" required/>
+          <div class="field-hint mt-1">
+            <i class="bi bi-info-circle me-1"></i>PDF, JPG o PNG · Máx. 10 MB
+          </div>
+        </div>
+
+        <!-- Firma del solicitante -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">
+            Firma del solicitante / Representante legal <span class="text-danger">*</span>
+          </label>
+          <input type="file" name="firma" id="inputFirma" class="form-control"
+                 accept=".jpg,.jpeg,.png" required/>
+          <div class="field-hint mt-1">
+            <i class="bi bi-info-circle me-1"></i>JPG o PNG · Foto o escáner de la firma · Máx. 5 MB
+          </div>
+        </div>
+
+        <!-- Preview firma -->
+        <div class="col-12" id="firmaPreviewDiv" style="display:none">
+          <label class="form-label fw-semibold small text-muted">Vista previa de la firma:</label>
+          <div class="border rounded p-2 bg-white" style="max-width:300px">
+            <img id="firmaPreview" src="" alt="Firma" style="max-width:100%; max-height:120px"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN VI: Observaciones ─────────────────────────────────────── -->
+    <div class="section-header"><i class="bi bi-chat-text"></i> Observaciones del solicitante (opcional)</div>
+    <div class="section-body">
+      <textarea th:field="*{observacionesSolicitante}" class="form-control" rows="3"
+                placeholder="Ingresa aquí cualquier comentario u observación adicional sobre tu solicitud..."></textarea>
+    </div>
+
+    <!-- ── Declaración jurada ─────────────────────────────────────────────── -->
+    <div class="card border-warning mb-4">
+      <div class="card-body">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="checkDeclaracion" required/>
+          <label class="form-check-label small" for="checkDeclaracion">
+            <strong>Declaración jurada:</strong> Declaro bajo juramento que los datos consignados son
+            verdaderos y que el establecimiento cumple con las condiciones de seguridad establecidas
+            por ley. Tengo conocimiento de que esta declaración está sujeta a fiscalización posterior
+            y que la falsedad de los datos acarrea sanciones administrativas y penales.
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campos ocultos para RUC/DNI validados -->
+    <input type="hidden" id="rucValidado" value=""/>
+    <input type="hidden" id="dniValidado" value=""/>
+
+    <div id="alertaValidacion" class="alert alert-warning d-none mb-3">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      Debes validar el RUC y el DNI antes de continuar.
+    </div>
+
+    <div class="d-flex gap-2 mb-5">
+      <a href="/cajero/dashboard" class="btn btn-outline-secondary">
+        <i class="bi bi-x me-1"></i>Cancelar
+      </a>
+      <button type="submit" class="btn btn-success px-4" id="btnContinuar">
+        <i class="bi bi-cash-coin me-2"></i>Registrar y cobrar S/180.00
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let rucOk = false, dniOk = false;
+
+  // ── Buscar RUC ──────────────────────────────────────────────────────────────
+  document.getElementById('btnBuscarRuc').addEventListener('click', async () => {
+    const ruc = document.getElementById('inputRuc').value.trim();
+    const status = document.getElementById('rucStatus');
+    if (!/^\d{11}$/.test(ruc)) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>RUC debe tener 11 dígitos.</span>';
+      return;
+    }
+    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Consultando SUNAT...</span>';
+    document.getElementById('btnBuscarRuc').disabled = true;
+    try {
+      const res = await fetch(`/api/validar/ruc/${ruc}`);
+      const data = await res.json();
+      if (!res.ok) {
+        status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error || 'RUC no encontrado'}</span>`;
+        rucOk = false;
+      } else {
+        document.getElementById('inputRazonSocial').value = data.razonSocial;
+        document.getElementById('inputDomicilio').value   = data.domicilioFiscal;
+        document.getElementById('rucValidado').value      = ruc;
+        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i><strong>${data.razonSocial}</strong> · ${data.condicion}</span>`;
+        rucOk = true;
+      }
+    } catch(e) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión.</span>';
+      rucOk = false;
+    } finally {
+      document.getElementById('btnBuscarRuc').disabled = false;
+    }
+  });
+
+  // ── Validar DNI ─────────────────────────────────────────────────────────────
+  document.getElementById('btnValidarDni').addEventListener('click', async () => {
+    const ruc = document.getElementById('rucValidado').value;
+    const dni = document.getElementById('inputDni').value.trim();
+    const status = document.getElementById('dniStatus');
+    if (!rucOk) {
+      status.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Primero valida el RUC.</span>';
+      return;
+    }
+    if (!/^\d{8}$/.test(dni)) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>DNI debe tener 8 dígitos.</span>';
+      return;
+    }
+    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Validando con RENIEC...</span>';
+    document.getElementById('btnValidarDni').disabled = true;
+    try {
+      const res = await fetch('/api/validar/ruc-dni', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruc, dni })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data.mensaje || data.error || 'Error al validar.';
+        status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${msg}</span>`;
+        dniOk = false;
+      } else {
+        const nombre = data.datosDni ? data.datosDni.nombreCompleto : '';
+        document.getElementById('inputRepresentante').value = nombre;
+        document.getElementById('inputDniRep').value        = dni;
+        document.getElementById('dniValidado').value        = dni;
+        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i><strong>${nombre}</strong> confirmado como representante legal.</span>`;
+        dniOk = true;
+      }
+    } catch(e) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión.</span>';
+      dniOk = false;
+    } finally {
+      document.getElementById('btnValidarDni').disabled = false;
+    }
+  });
+
+  // ── Buscar con Enter ────────────────────────────────────────────────────────
+  document.getElementById('inputRuc').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnBuscarRuc').click(); }
+  });
+  document.getElementById('inputDni').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnValidarDni').click(); }
+  });
+
+  // ── Widget de horario ─────────────────────────────────────────────────────────
+  const diasSeleccionados = new Set();
+  const horarios = [];
+
+  document.querySelectorAll('.dia-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dia = btn.dataset.dia;
+      if (diasSeleccionados.has(dia)) {
+        diasSeleccionados.delete(dia);
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline-primary');
+      } else {
+        diasSeleccionados.add(dia);
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-primary');
+      }
+    });
+  });
+
+  document.getElementById('btnAgregarHorario').addEventListener('click', () => {
+    if (diasSeleccionados.size === 0) {
+      document.getElementById('horarioHint').innerHTML =
+        '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>Selecciona al menos un dia.</span>';
+      return;
+    }
+    const desde = document.getElementById('horaDesde').value;
+    const hasta = document.getElementById('horaHasta').value;
+    if (desde >= hasta) {
+      document.getElementById('horarioHint').innerHTML =
+        '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>La hora de cierre debe ser despues de la apertura.</span>';
+      return;
+    }
+    const orden = ['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
+    const dias = [...diasSeleccionados].sort((a,b) => orden.indexOf(a) - orden.indexOf(b));
+    horarios.push({ dias, desde, hasta });
+    renderHorarios();
+    diasSeleccionados.clear();
+    document.querySelectorAll('.dia-btn').forEach(b => {
+      b.classList.remove('btn-primary');
+      b.classList.add('btn-outline-primary');
+    });
+    document.getElementById('horarioHint').innerHTML =
+      '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Horario agregado.</span>';
+  });
+
+  function renderHorarios() {
+    const lista = document.getElementById('horariosLista');
+    lista.innerHTML = '';
+    horarios.forEach((h, i) => {
+      const div = document.createElement('div');
+      div.className = 'badge bg-primary d-flex align-items-center gap-2 p-2';
+      div.style.fontSize = '.85rem';
+      div.innerHTML = '<i class="bi bi-clock"></i><span>' + h.dias.join(', ') + ' - ' + h.desde + ' a ' + h.hasta + '</span>' +
+        '<button type="button" class="btn-close btn-close-white btn-sm" style="font-size:.55rem" onclick="eliminarHorario(' + i + ')"></button>';
+      lista.appendChild(div);
+    });
+    const texto = horarios.map(h => h.dias.join('-') + ' ' + h.desde + '-' + h.hasta).join(' | ');
+    document.getElementById('inputHorario').value = texto;
+  }
+
+  window.eliminarHorario = function(i) {
+    horarios.splice(i, 1);
+    renderHorarios();
+  };
+
+  // ── Rubro "Otro" ────────────────────────────────────────────────────────────
+  const selectRubro = document.getElementById('selectRubro');
+  const otroDiv     = document.getElementById('otroRubroDiv');
+  const otroTexto   = document.getElementById('otroRubroTexto');
+  selectRubro.addEventListener('change', () => {
+    if (selectRubro.value === 'Otro') {
+      otroDiv.classList.remove('d-none');
+      otroTexto.required = true;
+    } else {
+      otroDiv.classList.add('d-none');
+      otroTexto.required = false;
+      otroTexto.value = '';
+    }
+  });
+
+  // ── Preview firma ───────────────────────────────────────────────────────────
+  document.getElementById('inputFirma').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('firmaPreview').src = ev.target.result;
+        document.getElementById('firmaPreviewDiv').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // ── Validar antes de enviar ─────────────────────────────────────────────────
+  document.getElementById('formSolicitud').addEventListener('submit', (e) => {
+    if (!rucOk || !dniOk) {
+      e.preventDefault();
+      document.getElementById('alertaValidacion').classList.remove('d-none');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (selectRubro.value === 'Otro') {
+      if (!otroTexto.value.trim()) {
+        e.preventDefault();
+        otroTexto.classList.add('is-invalid');
+        otroTexto.focus();
+        return;
+      }
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'rubro';
+      hidden.value = otroTexto.value.trim();
+      selectRubro.disabled = true;
+      document.getElementById('formSolicitud').appendChild(hidden);
+    }
+  });
+</script>
+</body>
+</html>

@@ -47,6 +47,15 @@ public class Solicitud {
     // ── Modalidad ─────────────────────────────────────────────────────────────
     private String modalidadTramite = "NUEVA";
 
+    // ── Canal de atención (virtual o presencial en caja) ────────────────────────
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Enums.CanalTramite canal = Enums.CanalTramite.VIRTUAL;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cajero_id")
+    private Usuario cajero;
+
     // ── Documentos ────────────────────────────────────────────────────────────
     private String planoUrl;
     private String firmaUrl;
@@ -177,6 +186,10 @@ public class Solicitud {
     public Integer getNumEstacionamientos()      { return numEstacionamientos; }
     public String getModalidadTramite()          { return modalidadTramite; }
     public String getObservacionesSolicitante()  { return observacionesSolicitante; }
+    public Enums.CanalTramite getCanal()         { return canal; }
+    public void setCanal(Enums.CanalTramite v)   { this.canal = v; }
+    public Usuario getCajero()                   { return cajero; }
+    public void setCajero(Usuario v)             { this.cajero = v; }
     public String getPlanoUrl()                  { return planoUrl; }
     public String getFirmaUrl()                  { return firmaUrl; }
     public BigDecimal getMontoPagado()           { return montoPagado; }
