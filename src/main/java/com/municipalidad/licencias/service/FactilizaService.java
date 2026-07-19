@@ -98,6 +98,10 @@ public class FactilizaService {
     public ResultadoValidacion validarRucYDni(String ruc, String dni) {
         if (ruc == null || !ruc.matches("\\d{11}"))
             return new ResultadoValidacion(false, "El RUC debe tener 11 dígitos.", null, null);
+        if (!ruc.startsWith("20"))
+            return new ResultadoValidacion(false,
+                "Solo se aceptan RUC de empresas (persona jurídica, inician con 20). " +
+                "Los RUC de persona natural no son válidos para este trámite.", null, null);
         if (dni == null || !dni.matches("\\d{8}"))
             return new ResultadoValidacion(false, "El DNI debe tener 8 dígitos.", null, null);
 

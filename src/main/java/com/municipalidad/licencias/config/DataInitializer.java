@@ -36,35 +36,31 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Limpieza via SQL directo para evitar problemas de cascada
-        try {
-
-
-
-            // Reasignar registros de inspectores antiguos al inspector único antes de limpiarlos
-            jdbc.execute("UPDATE inspeccion SET inspector_id = (SELECT id FROM usuario WHERE username = 'inspector.garcia') " +
-                "WHERE inspector_id IN (SELECT id FROM usuario WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
-            jdbc.execute("UPDATE solicitud SET inspector_id = (SELECT id FROM usuario WHERE username = 'inspector.garcia') " +
-                "WHERE inspector_id IN (SELECT id FROM usuario WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
-            // Eliminar usuarios viejos con formato nombreapellidorol
-            jdbc.execute("DELETE FROM usuario WHERE rol IN ('INSPECTOR','FISCALIZADOR') AND username NOT IN ('inspector.garcia','fiscal.rios','fiscal.vargas','fiscal.herrera')");
-            jdbc.execute("DELETE FROM notificacion WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')");
-            jdbc.execute("DELETE FROM multa WHERE licencia_id IN (SELECT id FROM licencia WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')))");
-            jdbc.execute("DELETE FROM observacion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
-            jdbc.execute("DELETE FROM inspeccion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
-            jdbc.execute("DELETE FROM licencia WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
-            jdbc.execute("DELETE FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')");
-            jdbc.execute("DELETE FROM usuario WHERE username = 'negocio1'");
-            // Limpiar borradores
-            jdbc.execute("DELETE FROM inspeccion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE estado = 'BORRADOR')");
-            jdbc.execute("DELETE FROM solicitud WHERE estado = 'BORRADOR'");
-            // Eliminar distritos distintos a TRUJILLO
-            jdbc.execute("DELETE FROM inspeccion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE distrito != 'TRUJILLO')");
-            jdbc.execute("DELETE FROM licencia WHERE solicitud_id IN (SELECT id FROM solicitud WHERE distrito != 'TRUJILLO')");
-            jdbc.execute("DELETE FROM solicitud WHERE distrito != 'TRUJILLO'");
-            jdbc.execute("DELETE FROM usuario WHERE distrito IS NOT NULL AND distrito != 'TRUJILLO'");
-            log.info("Limpieza inicial completada.");
-        } catch (Exception ex) { log.warn("Limpieza inicial: {}", ex.getMessage()); }
+        // Limpieza via SQL directo para evitar problemas de cascada.
+        // Cada sentencia va en su propio try/catch para que un fallo puntual
+        // no cancele el resto de la limpieza.
+        ejecutarSeguro("UPDATE inspecciones SET inspector_id = (SELECT id FROM usuarios WHERE username = 'inspector.garcia') " +
+            "WHERE inspector_id IN (SELECT id FROM usuarios WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
+        ejecutarSeguro("UPDATE solicitudes SET inspector_id = (SELECT id FROM usuarios WHERE username = 'inspector.garcia') " +
+            "WHERE inspector_id IN (SELECT id FROM usuarios WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
+        // Eliminar usuarios viejos con formato nombreapellidorol
+        ejecutarSeguro("DELETE FROM usuarios WHERE rol IN ('INSPECTOR','FISCALIZADOR') AND username NOT IN ('inspector.garcia','fiscal.rios','fiscal.vargas','fiscal.herrera')");
+        ejecutarSeguro("DELETE FROM notificaciones WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1')");
+        ejecutarSeguro("DELETE FROM multas WHERE licencia_id IN (SELECT id FROM licencias WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1')))");
+        ejecutarSeguro("DELETE FROM observaciones WHERE inspeccion_id IN (SELECT id FROM inspecciones WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1')))");
+        ejecutarSeguro("DELETE FROM inspecciones WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1'))");
+        ejecutarSeguro("DELETE FROM licencias WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1'))");
+        ejecutarSeguro("DELETE FROM solicitudes WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1')");
+        ejecutarSeguro("DELETE FROM usuarios WHERE username = 'negocio1'");
+        // Limpiar borradores
+        ejecutarSeguro("DELETE FROM inspecciones WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE estado = 'BORRADOR')");
+        ejecutarSeguro("DELETE FROM solicitudes WHERE estado = 'BORRADOR'");
+        // Eliminar distritos distintos a TRUJILLO
+        ejecutarSeguro("DELETE FROM inspecciones WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE distrito != 'TRUJILLO')");
+        ejecutarSeguro("DELETE FROM licencias WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE distrito != 'TRUJILLO')");
+        ejecutarSeguro("DELETE FROM solicitudes WHERE distrito != 'TRUJILLO'");
+        ejecutarSeguro("DELETE FROM usuarios WHERE distrito IS NOT NULL AND distrito != 'TRUJILLO'");
+        log.info("Limpieza inicial completada.");
 
                 // Inspector (uno solo, encargado de todas las inspecciones ITSE)
         crearUsuarioSiNoExiste("inspector.garcia",  "insp1234", "inspector.garcia@municipalidad.gob.pe",  "GARCIA LOPEZ, CARLOS",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
@@ -93,6 +89,14 @@ public class DataInitializer implements CommandLineRunner {
         log.info("=======================================================");
         log.info("  Usuarios demo: admin/admin123  inspector.garcia/insp1234  cajero1/caja1234");
         log.info("=======================================================");
+    }
+
+    private void ejecutarSeguro(String sql) {
+        try {
+            jdbc.execute(sql);
+        } catch (Exception ex) {
+            log.warn("Limpieza inicial - sentencia omitida: {}", ex.getMessage());
+        }
     }
 
     private void crearUsuarioSiNoExiste(String username, String password,

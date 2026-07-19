@@ -105,7 +105,7 @@
           <label class="form-label fw-semibold">N° RUC <span class="text-danger">*</span></label>
           <div class="input-group">
             <input type="text" id="inputRuc" name="ruc" class="form-control"
-                   placeholder="11 dígitos" maxlength="11" pattern="\d{11}" required/>
+                   placeholder="20 + 9 dígitos (empresa)" maxlength="11" pattern="20\d{9}" required/>
             <button type="button" class="btn btn-outline-primary" id="btnBuscarRuc">
               <i class="bi bi-search"></i>
             </button>
@@ -383,8 +383,8 @@
   document.getElementById('btnBuscarRuc').addEventListener('click', async () => {
     const ruc = document.getElementById('inputRuc').value.trim();
     const status = document.getElementById('rucStatus');
-    if (!/^\d{11}$/.test(ruc)) {
-      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>RUC debe tener 11 dígitos.</span>';
+    if (!/^20\d{9}$/.test(ruc)) {
+      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Solo se aceptan RUC de empresas (deben iniciar con 20, 11 dígitos en total).</span>';
       return;
     }
     status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Consultando SUNAT...</span>';

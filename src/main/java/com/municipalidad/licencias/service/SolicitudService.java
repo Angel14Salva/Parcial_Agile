@@ -49,6 +49,9 @@ public class SolicitudService {
 
     @Transactional
     public Solicitud crearBorrador(SolicitudDto dto, Usuario usuario) {
+        if (dto.getRuc() == null || !dto.getRuc().startsWith("20"))
+            throw new IllegalArgumentException(
+                "Solo se aceptan RUC de empresas (persona jurídica, inician con 20).");
         // Eliminar borradores previos del usuario publico (sin pago completado)
         solicitudRepo.findByUsuario(usuario).stream()
             .filter(s -> s.getEstado() == Enums.EstadoTramite.BORRADOR)
@@ -171,6 +174,9 @@ public class SolicitudService {
     @Transactional
     public Solicitud registrarPresencial(SolicitudDto dto, MultipartFile plano,
                                          MultipartFile firma, Usuario cajero) {
+        if (dto.getRuc() == null || !dto.getRuc().startsWith("20"))
+            throw new IllegalArgumentException(
+                "Solo se aceptan RUC de empresas (persona jurídica, inician con 20).");
         if (plano == null || plano.isEmpty())
             throw new IllegalArgumentException("El plano del local es obligatorio.");
         validarArchivo(plano);

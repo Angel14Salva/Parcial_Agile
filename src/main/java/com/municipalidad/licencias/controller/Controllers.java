@@ -1493,6 +1493,10 @@ class ValidacionApiController {
     @org.springframework.web.bind.annotation.GetMapping("/ruc/{ruc}")
     org.springframework.http.ResponseEntity<?> consultarRuc(
         @org.springframework.web.bind.annotation.PathVariable String ruc) {
+        if (!ruc.startsWith("20"))
+            return org.springframework.http.ResponseEntity.badRequest()
+                .body(java.util.Map.of("error",
+                    "Solo se aceptan RUC de empresas (persona jurídica, inician con 20)."));
         var datos = factilizaService.consultarRuc(ruc);
         if (datos == null)
             return org.springframework.http.ResponseEntity.badRequest()
