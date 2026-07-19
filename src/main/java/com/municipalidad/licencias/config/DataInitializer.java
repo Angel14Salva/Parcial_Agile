@@ -41,8 +41,13 @@ public class DataInitializer implements CommandLineRunner {
 
 
 
+            // Reasignar registros de inspectores antiguos al inspector único antes de limpiarlos
+            jdbc.execute("UPDATE inspeccion SET inspector_id = (SELECT id FROM usuario WHERE username = 'inspector.garcia') " +
+                "WHERE inspector_id IN (SELECT id FROM usuario WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
+            jdbc.execute("UPDATE solicitud SET inspector_id = (SELECT id FROM usuario WHERE username = 'inspector.garcia') " +
+                "WHERE inspector_id IN (SELECT id FROM usuario WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
             // Eliminar usuarios viejos con formato nombreapellidorol
-            jdbc.execute("DELETE FROM usuario WHERE rol IN ('INSPECTOR','FISCALIZADOR') AND username NOT IN ('inspector.garcia','inspector.torres','inspector.ramirez','fiscal.rios','fiscal.vargas','fiscal.herrera','inspector1')");
+            jdbc.execute("DELETE FROM usuario WHERE rol IN ('INSPECTOR','FISCALIZADOR') AND username NOT IN ('inspector.garcia','fiscal.rios','fiscal.vargas','fiscal.herrera')");
             jdbc.execute("DELETE FROM notificacion WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')");
             jdbc.execute("DELETE FROM multa WHERE licencia_id IN (SELECT id FROM licencia WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1')))");
             jdbc.execute("DELETE FROM observacion WHERE solicitud_id IN (SELECT id FROM solicitud WHERE usuario_id IN (SELECT id FROM usuario WHERE username = 'negocio1'))");
@@ -61,14 +66,15 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Limpieza inicial completada.");
         } catch (Exception ex) { log.warn("Limpieza inicial: {}", ex.getMessage()); }
 
-                // Inspectores
+                // Inspector (uno solo, encargado de todas las inspecciones ITSE)
         crearUsuarioSiNoExiste("inspector.garcia",  "insp1234", "inspector.garcia@municipalidad.gob.pe",  "GARCIA LOPEZ, CARLOS",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
-        crearUsuarioSiNoExiste("inspector.torres",  "insp1234", "inspector.torres@municipalidad.gob.pe",  "TORRES MENDEZ, PEDRO",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
-        crearUsuarioSiNoExiste("inspector.ramirez", "insp1234", "inspector.ramirez@municipalidad.gob.pe", "RAMIREZ SILVA, JUAN",    Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         // Fiscalizadores
         crearUsuarioSiNoExiste("fiscal.rios",    "fisc1234", "fiscal.rios@municipalidad.gob.pe",    "RIOS CASTILLO, MARIA",   Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("fiscal.vargas",  "fisc1234", "fiscal.vargas@municipalidad.gob.pe",  "VARGAS NUNEZ, LUIS",     Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("fiscal.herrera", "fisc1234", "fiscal.herrera@municipalidad.gob.pe", "HERRERA CAMPOS, ANA",    Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        // Cajeros (atención presencial en ventanilla)
+        crearUsuarioSiNoExiste("cajero1", "caja1234", "cajero1@municipalidad.gob.pe",
+            "MEDINA ROJAS, PATRICIA", Enums.Rol.CAJERO, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         // Gerente municipal
         crearUsuarioSiNoExiste("gerente.municipal", "ger1234", "gerente@municipalidad.gob.pe",
             "RODRIGUEZ CASTILLO, CARLOS", Enums.Rol.GERENTE_MUNICIPAL, null);
@@ -80,14 +86,12 @@ public class DataInitializer implements CommandLineRunner {
             "PAREDES LOZANO, ANA MARIA", Enums.Rol.SUBGERENTE, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
-        crearUsuarioSiNoExiste("inspector1", "inspector123", "inspector1@municipalidad.gob.pe",
-            "Inspector García", Enums.Rol.INSPECTOR);
 
         crearUsuarioSiNoExiste("publico", java.util.UUID.randomUUID().toString(),
             "publico@licencias.gob.pe", "Ciudadano Público", Enums.Rol.NEGOCIO);
 
         log.info("=======================================================");
-        log.info("  Usuarios demo: admin/admin123  inspector1/inspector123  negocio1/negocio123");
+        log.info("  Usuarios demo: admin/admin123  inspector.garcia/insp1234  cajero1/caja1234");
         log.info("=======================================================");
     }
 

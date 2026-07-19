@@ -115,8 +115,33 @@ public class LicenciaService {
         LocalDate hoy = LocalDate.now();
         List<Licencia> expiradas = licenciaRepo.findByEstado(Enums.EstadoLicencia.VIGENTE)
             .stream().filter(l -> l.getFechaVencimiento().isBefore(hoy)).toList();
-        expiradas.forEach(l -> l.setEstado(Enums.EstadoLicencia.EXPIRADA));
-        licenciaRepo.saveAll(expiradas);
+        List<Licencia> expiradasPorVencer = licenciaRepo.findByEstado(Enums.EstadoLicencia.POR_VENCER)
+            .stream().filter(l -> l.getFechaVencimiento().isBefore(hoy)).toList();
+        java.util.List<Licencia> todasExpiradasHoy = new java.util.ArrayList<>();
+        todasExpiradasHoy.addAll(expiradas);
+        todasExpiradasHoy.addAll(expiradasPorVencer);
+        todasExpiradasHoy.forEach(l -> {
+            l.setEstado(Enums.EstadoLicencia.EXPIRADA);
+            // RF: notificar al negocio que su licencia ha vencido
+            notificacionService.crear(
+                l.getSolicitud().getUsuario(),
+                "Tu licencia de funcionamiento ha vencido",
+                "La licencia " + l.getNumeroLicencia() + " venció el " +
+                l.getFechaVencimiento().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                ". El estado de tu licencia digital ahora es \"Vencida\". Para continuar operando, " +
+                "debes iniciar nuevamente el trámite de licencia.",
+                "/solicitud/" + l.getSolicitud().getId() + "/detalle"
+            );
+            if (l.getSolicitud().getCorreoElectronico() != null) {
+                emailService.enviarActualizacion(
+                    l.getSolicitud().getCorreoElectronico(),
+                    l.getSolicitud().getRazonSocial(),
+                    l.getSolicitud().getCodigoSeguimiento() != null ? l.getSolicitud().getCodigoSeguimiento() : "",
+                    "Licencia vencida",
+                    "Tu licencia " + l.getNumeroLicencia() + " ha vencido. Debes iniciar un nuevo trámite para renovarla.");
+            }
+        });
+        licenciaRepo.saveAll(todasExpiradasHoy);
 
         List<Licencia> porVencer = licenciaRepo.findLicenciasProximasAVencer(hoy.plusDays(alertaDias1));
         porVencer.stream().filter(l -> l.getEstado() == Enums.EstadoLicencia.VIGENTE)

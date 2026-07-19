@@ -162,6 +162,101 @@ public class SolicitudService {
         return s;
     }
 
+    /**
+     * RF-CAJERO: Registro presencial de una solicitud en ventanilla.
+     * El cajero ingresa los datos del negocio, la documentación (plano) y cobra
+     * el pago directamente (no pasa por Flow). El trámite queda ADMITIDO de inmediato
+     * y se programa la primera inspección automáticamente.
+     */
+    @Transactional
+    public Solicitud registrarPresencial(SolicitudDto dto, MultipartFile plano,
+                                         MultipartFile firma, Usuario cajero) {
+        if (plano == null || plano.isEmpty())
+            throw new IllegalArgumentException("El plano del local es obligatorio.");
+        validarArchivo(plano);
+
+        // RF15: mismo control de licencia vigente en la misma dirección
+        String direccionNueva = dto.getDireccionEstablecimiento() != null ?
+            dto.getDireccionEstablecimiento().trim().toLowerCase() : "";
+        if (!direccionNueva.isEmpty()) {
+            for (Solicitud existente : solicitudRepo.findAll()) {
+                if (existente.getLicencia() != null &&
+                    existente.getLicencia().getEstado() == Enums.EstadoLicencia.VIGENTE) {
+                    String direccionExistente = existente.getDireccionEstablecimiento() != null ?
+                        existente.getDireccionEstablecimiento().trim().toLowerCase() : "";
+                    if (direccionNueva.equals(direccionExistente)) {
+                        throw new IllegalStateException(
+                            "Ya existe una licencia vigente para esa dirección. " +
+                            "Debe tramitarse como renovación, no como solicitud nueva.");
+                    }
+                }
+            }
+        }
+
+        ResultadoSunat resultado = sunatService.validar(dto.getRazonSocial(), dto.getDomicilioFiscal());
+        if (!resultado.valido())
+            throw new IllegalArgumentException("SUNAT: " + resultado.mensaje());
+
+        // El titular queda como el usuario "publico" para que pueda consultarse por código+DNI
+        Usuario titular = usuarioRepo.findByUsername("publico")
+            .orElseThrow(() -> new IllegalStateException("Usuario público del sistema no configurado."));
+
+        Solicitud s = Solicitud.builder()
+            .razonSocial(dto.getRazonSocial().trim())
+            .domicilioFiscal(dto.getDomicilioFiscal().trim())
+            .rubro(dto.getRubro().trim())
+            .ruc(dto.getRuc())
+            .dni(dto.getDni())
+            .telefono(dto.getTelefono())
+            .correoElectronico(dto.getCorreoElectronico())
+            .nombreRepresentante(dto.getNombreRepresentante())
+            .dniRepresentante(dto.getDniRepresentante())
+            .partidaSunarp(dto.getPartidaSunarp())
+            .nombreComercial(dto.getNombreComercial())
+            .direccionEstablecimiento(dto.getDireccionEstablecimiento())
+            .horarioAtencion(dto.getHorarioAtencion())
+            .areaTotalM2(dto.getAreaTotalM2())
+            .numEstacionamientos(dto.getNumEstacionamientos())
+            .modalidadTramite(dto.getModalidadTramite())
+            .observacionesSolicitante(dto.getObservacionesSolicitante())
+            .usuario(titular)
+            .estado(Enums.EstadoTramite.ADMITIDO)
+            .build();
+        s.setDistrito(dto.getDistrito());
+        s.setCanal(Enums.CanalTramite.PRESENCIAL);
+        s.setCajero(cajero);
+
+        String prefijo = s.getDistrito() != null ? s.getDistrito().name().substring(0, 3) : "TRJ";
+        s.setCodigoSeguimiento(prefijo + "-" + java.time.Year.now().getValue() + "-" +
+            UUID.randomUUID().toString().substring(0, 6).toUpperCase());
+
+        try {
+            String urlPlano = cloudinaryService.subirArchivo(plano, "planos");
+            s.setPlanoUrl(urlPlano);
+            if (firma != null && !firma.isEmpty()) {
+                s.setFirmaUrl(cloudinaryService.subirArchivo(firma, "firmas"));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error al subir el plano: " + e.getMessage(), e);
+        }
+
+        s.setValidadoSunat(true);
+        s.setMontoPagado(montoPagoTramite);
+        s.setFechaPago(LocalDateTime.now());
+        s.setReferenciaPago("CAJA-" + cajero.getUsername().toUpperCase() + "-" +
+            System.currentTimeMillis());
+
+        solicitudRepo.save(s);
+        inspeccionService.programarPrimeraInspeccion(s);
+
+        if (s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank()) {
+            emailService.enviarCodigoSeguimiento(
+                s.getCorreoElectronico(), s.getRazonSocial(), s.getCodigoSeguimiento(),
+                s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO");
+        }
+        return s;
+    }
+
     public Solicitud obtenerPorId(Long id) {
         return solicitudRepo.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + id));

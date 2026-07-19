@@ -22,4 +22,12 @@ public interface InspeccionRepository extends JpaRepository<Inspeccion, Long> {
 
     @Query("SELECT i FROM Inspeccion i WHERE i.inspector = :inspector ORDER BY i.fechaProgramada ASC")
     List<Inspeccion> findAllByInspector(Usuario inspector);
+
+    @Query("SELECT i FROM Inspeccion i WHERE i.inspector = :inspector " +
+           "AND i.fechaProgramada = :fecha AND i.resultado = 'PENDIENTE' ORDER BY i.creadoEn ASC")
+    List<Inspeccion> findPendientesByInspectorYFecha(Usuario inspector, LocalDate fecha);
+
+    @Query("SELECT COUNT(i) FROM Inspeccion i WHERE i.inspector = :inspector " +
+           "AND i.fechaProgramada = :fecha AND i.resultado = 'PENDIENTE'")
+    long contarProgramadasEnFecha(Usuario inspector, LocalDate fecha);
 }

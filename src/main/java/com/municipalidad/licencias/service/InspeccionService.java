@@ -23,22 +23,28 @@ public class InspeccionService {
     private final UsuarioRepository     usuarioRepo;
     private final DiasHabilesUtil       diasHabiles;
     private final NotificacionService   notificacionService;
+    private final EmailService          emailService;
 
     @Value("${app.inspeccion.dias-habiles}")
     private int diasHabilesSegundaInspeccion;
+
+    @Value("${app.inspeccion.capacidad-diaria:4}")
+    private int capacidadDiariaInspector;
 
     public InspeccionService(InspeccionRepository inspeccionRepo,
                              SolicitudRepository solicitudRepo,
                              ObservacionRepository observacionRepo,
                              UsuarioRepository usuarioRepo,
                              DiasHabilesUtil diasHabiles,
-                             NotificacionService notificacionService) {
+                             NotificacionService notificacionService,
+                             EmailService emailService) {
         this.inspeccionRepo      = inspeccionRepo;
         this.solicitudRepo       = solicitudRepo;
         this.observacionRepo     = observacionRepo;
         this.usuarioRepo         = usuarioRepo;
         this.diasHabiles         = diasHabiles;
         this.notificacionService = notificacionService;
+        this.emailService        = emailService;
     }
 
     @Transactional
@@ -54,21 +60,8 @@ public class InspeccionService {
     }
 
     public Inspeccion programarPrimeraInspeccion(Solicitud solicitud) {
-        LocalDate fecha = diasHabiles.siguienteDiaHabil(LocalDate.now().plusDays(1));
-        // Asignar fiscalizador del mismo distrito, con menos inspecciones pendientes
-        java.util.List<Usuario> candidatos = new java.util.ArrayList<>();
-        if (solicitud.getDistrito() != null) {
-            candidatos.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.FISCALIZADOR, solicitud.getDistrito()));
-            if (candidatos.isEmpty())
-                candidatos.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, solicitud.getDistrito()));
-        }
-        if (candidatos.isEmpty()) candidatos.addAll(usuarioRepo.findByRol(Enums.Rol.FISCALIZADOR));
-        if (candidatos.isEmpty()) candidatos.addAll(usuarioRepo.findByRol(Enums.Rol.INSPECTOR));
-        Usuario inspector = candidatos.stream()
-            .filter(Usuario::isActivo)
-            .min(java.util.Comparator.comparingInt(u ->
-                inspeccionRepo.findPendientesByInspector(u).size()))
-            .orElseThrow(() -> new IllegalStateException("No hay inspectores disponibles."));
+        Usuario inspector = obtenerInspectorUnico();
+        LocalDate fecha = buscarFechaDisponible(inspector, LocalDate.now().plusDays(1));
 
         Inspeccion inspeccion = Inspeccion.builder()
             .solicitud(solicitud).inspector(inspector)
@@ -78,7 +71,8 @@ public class InspeccionService {
         solicitud.setEstado(Enums.EstadoTramite.INSPECCION_PROGRAMADA);
         solicitudRepo.save(solicitud);
 
-        // Notificar al negocio
+        // Notificar al negocio (la notificación del día de la visita se envía
+        // adicionalmente el mismo día mediante el job notificarInspeccionesDeHoy)
         notificacionService.crear(solicitud.getUsuario(),
             "Inspección técnica programada",
             "Tu solicitud fue admitida. Se programó una inspección técnica para el " +
@@ -86,6 +80,35 @@ public class InspeccionService {
             " con el inspector " + inspector.getNombreCompleto() + ".");
 
         return inspeccionRepo.save(inspeccion);
+    }
+
+    /**
+     * En la municipalidad solo existe un inspector encargado de todas las
+     * inspecciones técnicas (ITSE). Los fiscalizadores atienden fiscalización
+     * de oficio / multas, no la agenda de inspecciones de trámites.
+     */
+    private Usuario obtenerInspectorUnico() {
+        return usuarioRepo.findByRol(Enums.Rol.INSPECTOR).stream()
+            .filter(Usuario::isActivo)
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException(
+                "No hay un inspector activo configurado en el sistema."));
+    }
+
+    /**
+     * Busca el día hábil más cercano (a partir de {@code desde}) en el que el
+     * inspector todavía tiene cupo disponible, según su capacidad diaria
+     * configurada en app.inspeccion.capacidad-diaria.
+     */
+    private LocalDate buscarFechaDisponible(Usuario inspector, LocalDate desde) {
+        LocalDate fecha = diasHabiles.siguienteDiaHabil(desde);
+        int intentos = 0;
+        while (inspeccionRepo.contarProgramadasEnFecha(inspector, fecha) >= capacidadDiariaInspector
+               && intentos < 60) {
+            fecha = diasHabiles.siguienteDiaHabil(fecha.plusDays(1));
+            intentos++;
+        }
+        return fecha;
     }
 
     @Transactional
@@ -141,7 +164,8 @@ public class InspeccionService {
 
     @Transactional
     public Inspeccion programarSegundaInspeccion(Solicitud solicitud, Usuario inspector) {
-        LocalDate fecha = diasHabiles.sumarDiasHabiles(LocalDate.now(), diasHabilesSegundaInspeccion);
+        LocalDate fechaBase = diasHabiles.sumarDiasHabiles(LocalDate.now(), diasHabilesSegundaInspeccion);
+        LocalDate fecha = buscarFechaDisponible(inspector, fechaBase);
         Inspeccion segunda = Inspeccion.builder()
             .solicitud(solicitud).inspector(inspector)
             .tipo(Enums.TipoInspeccion.SEGUNDA).fechaProgramada(fecha)
@@ -160,6 +184,56 @@ public class InspeccionService {
 
     public List<Inspeccion> obtenerPendientesPorInspector(Usuario inspector) {
         return inspeccionRepo.findPendientesByInspector(inspector);
+    }
+
+    /**
+     * RF: al ingresar, el inspector solo debe ver las inspecciones pendientes
+     * del día actual. Conforme las va completando, desaparecen de la lista
+     * (dejan de estar PENDIENTE) y las de otros días no se muestran.
+     */
+    public List<Inspeccion> obtenerPendientesHoyPorInspector(Usuario inspector) {
+        return inspeccionRepo.findPendientesByInspectorYFecha(inspector, LocalDate.now());
+    }
+
+    /**
+     * RF: el día en que corresponde una inspección (p.ej. viernes si fue
+     * programada para un viernes), tanto el negocio como el inspector deben
+     * recibir una notificación indicando que tienen una inspección ese día.
+     * Corre todas las mañanas.
+     */
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 7 * * *")
+    @Transactional
+    public void notificarInspeccionesDeHoy() {
+        LocalDate hoy = LocalDate.now();
+        List<Inspeccion> deHoy = inspeccionRepo.findByFechaProgramadaAndResultado(
+            hoy, Enums.ResultadoInspeccion.PENDIENTE);
+        String fechaTexto = hoy.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+        for (Inspeccion i : deHoy) {
+            Solicitud s = i.getSolicitud();
+
+            // Notificar al negocio
+            notificacionService.crear(s.getUsuario(),
+                "Hoy tienes una inspección programada",
+                "Recuerda: hoy " + fechaTexto + " se realizará la inspección técnica de tu local \"" +
+                s.getNombreComercial() + "\" con el inspector " + i.getInspector().getNombreCompleto() + ".",
+                "/solicitud/" + s.getId() + "/detalle");
+            if (s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank()) {
+                emailService.enviarActualizacion(
+                    s.getCorreoElectronico(), s.getRazonSocial(),
+                    s.getCodigoSeguimiento() != null ? s.getCodigoSeguimiento() : "",
+                    "Inspección programada para hoy",
+                    "Hoy " + fechaTexto + " se realizará la inspección técnica de tu local.");
+            }
+
+            // Notificar al inspector
+            notificacionService.crear(i.getInspector(),
+                "Tienes una inspección programada para hoy",
+                "Hoy " + fechaTexto + " debes visitar \"" + s.getNombreComercial() +
+                "\" (" + s.getDireccionEstablecimiento() + ") — trámite " +
+                (s.getCodigoSeguimiento() != null ? s.getCodigoSeguimiento() : s.getId()) + ".",
+                "/inspector/inspeccion/" + i.getId());
+        }
     }
 
     public List<Inspeccion> obtenerPorSolicitud(Solicitud solicitud) {
