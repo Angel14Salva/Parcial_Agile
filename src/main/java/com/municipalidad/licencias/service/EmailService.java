@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -44,18 +45,29 @@ public class EmailService {
     }
 
     private void enviarHtml(String destinatario, String asunto, String html, String contexto) {
+        enviarHtml(destinatario, asunto, html, contexto, null, null);
+    }
+
+    private void enviarHtml(String destinatario, String asunto, String html, String contexto,
+                             byte[] adjuntoPdf, String nombreAdjunto) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("api-key", apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-            Map<String, Object> body = Map.of(
+            var body = new java.util.HashMap<String, Object>(Map.of(
                 "sender", Map.of("name", fromName, "email", fromEmail),
                 "to", List.of(Map.of("email", destinatario)),
                 "subject", asunto,
                 "htmlContent", html
-            );
+            ));
+            if (adjuntoPdf != null && adjuntoPdf.length > 0) {
+                body.put("attachment", List.of(Map.of(
+                    "content", Base64.getEncoder().encodeToString(adjuntoPdf),
+                    "name", nombreAdjunto != null ? nombreAdjunto : "factura.pdf"
+                )));
+            }
 
             restTemplate.postForEntity(BREVO_URL, new HttpEntity<>(body, headers), String.class);
         } catch (Exception e) {
@@ -66,7 +78,8 @@ public class EmailService {
     public void enviarComprobanteYCodigo(String destinatario, String razonSocial, String ruc,
                                         String codigoSeguimiento, String numeroFactura,
                                         String concepto, String total, String metodoPago,
-                                        String numeroOperacion, String distrito) {
+                                        String numeroOperacion, String distrito,
+                                        byte[] facturaPdf) {
         String html = """
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
               <div style="background:#1D3557;color:#fff;padding:24px;border-radius:8px 8px 0 0;text-align:center">
@@ -112,7 +125,7 @@ public class EmailService {
                           numeroFactura, concepto, metodoPago, numeroOperacion, total, codigoSeguimiento);
 
         enviarHtml(destinatario, "📄 Comprobante de Pago y Código de Seguimiento - " + codigoSeguimiento,
-            html, "comprobante/seguimiento");
+            html, "comprobante/seguimiento", facturaPdf, "Factura-" + numeroFactura + ".pdf");
     }
 
     public void enviarCodigoSeguimiento(String destinatario, String nombreNegocio,
@@ -204,45 +217,5 @@ public class EmailService {
             """.formatted(codigo, nombreNegocio, estado, detalle, codigo);
 
         enviarHtml(destinatario, "Actualización de trámite " + codigo, html, "actualización");
-    }
-
-    public void enviarComprobantePago(String destinatario, String razonSocial, String ruc,
-                                      String numeroFactura, String concepto, String total,
-                                      String metodoPago, String numeroOperacion) {
-        String html = """
-            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-              <div style="background:#1D3557;color:#fff;padding:24px;border-radius:8px 8px 0 0;text-align:center">
-                <h2 style="margin:0">🏛️ Municipalidad Provincial de Trujillo</h2>
-                <p style="margin:8px 0 0;opacity:.8">Comprobante de Pago Emitido</p>
-              </div>
-              <div style="background:#f8f9fa;padding:24px;border-radius:0 0 8px 8px">
-                <h3 style="color:#1D3557;margin-top:0">¡Pago Confirmado Exitosamente!</h3>
-                <p>Estimado(a) representante de <strong>%s</strong> (RUC: <strong>%s</strong>):</p>
-                <p>Se ha registrado exitosamente el pago de su derecho de trámite.</p>
-
-                <div style="background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:16px;margin:20px 0">
-                  <h4 style="margin:0 0 12px;color:#1D3557;border-bottom:1px solid #eee;padding-bottom:8px">📄 Detalle del Comprobante de Pago</h4>
-                  <table style="width:100%%;font-size:14px;border-collapse:collapse">
-                    <tr><td style="padding:4px 0;color:#666">N° Comprobante:</td><td style="padding:4px 0;font-weight:bold;text-align:right">%s</td></tr>
-                    <tr><td style="padding:4px 0;color:#666">Concepto:</td><td style="padding:4px 0;text-align:right">%s</td></tr>
-                    <tr><td style="padding:4px 0;color:#666">Método de Pago:</td><td style="padding:4px 0;text-align:right">%s</td></tr>
-                    <tr><td style="padding:4px 0;color:#666">N° Operación:</td><td style="padding:4px 0;text-align:right">%s</td></tr>
-                    <tr style="border-top:1px solid #eee"><td style="padding:8px 0 0;font-weight:bold;color:#1D3557">Monto Total:</td><td style="padding:8px 0 0;font-weight:bold;color:#198754;font-size:16px;text-align:right">S/ %s</td></tr>
-                  </table>
-                </div>
-
-                <p style="font-size:14px;color:#555;text-align:center;margin-top:20px;">
-                  Recuerde continuar con el formulario de registro del trámite para completar su solicitud.
-                </p>
-
-                <hr style="margin:24px 0;border:none;border-top:1px solid #dee2e6"/>
-                <p style="color:#999;font-size:12px;margin:0;text-align:center">
-                  Municipalidad Provincial de Trujillo — Subgerencia de Licencias y Comercialización
-                </p>
-              </div>
-            </div>
-            """.formatted(razonSocial, ruc, numeroFactura, concepto, metodoPago, numeroOperacion, total);
-
-        enviarHtml(destinatario, "📄 Comprobante de Pago - " + numeroFactura, html, "comprobante de pago");
     }
 }

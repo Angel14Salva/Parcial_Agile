@@ -268,6 +268,8 @@ public class SolicitudService {
                 var f = facturaOpt.get();
                 f.setSolicitudId(s.getId());
                 facturaRepo.save(f);
+                String montoEnLetras = com.municipalidad.licencias.util.NumeroALetrasUtil.convertir(f.getImporteTotal());
+                byte[] facturaPdf = com.municipalidad.licencias.util.PdfFacturaUtil.generar(f, montoEnLetras);
                 emailService.enviarComprobanteYCodigo(
                     s.getCorreoElectronico(),
                     s.getRazonSocial(),
@@ -278,7 +280,8 @@ public class SolicitudService {
                     f.getImporteTotal().toString(),
                     f.getMetodoPago().name(),
                     f.getNumeroOperacion(),
-                    s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO"
+                    s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO",
+                    facturaPdf
                 );
             } else {
                 emailService.enviarCodigoSeguimiento(
