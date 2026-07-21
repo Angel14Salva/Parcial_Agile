@@ -263,7 +263,7 @@ public class EmailService {
 
             resend.emails().send(params);
         } catch (Exception e) {
-            System.err.println("Error enviando email comprobante de pago: " + e.getMessage());
+            log.error("Error enviando email comprobante de pago a {}", destinatario, e);
         }
     }
 }
