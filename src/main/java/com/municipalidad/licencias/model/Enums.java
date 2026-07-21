@@ -80,9 +80,11 @@ public class Enums {
     }
 
     public enum EstadoSesionCaja {
+        PENDIENTE_APERTURA,
         ABIERTA,
-        PENDIENTE_APROBACION,
-        CERRADA
+        PENDIENTE_CIERRE,
+        CERRADA,
+        RECHAZADA
     }
 
 }

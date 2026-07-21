@@ -37,63 +37,76 @@
   <h4 class="fw-bold mb-1"><i class="bi bi-cash-coin me-2 text-primary"></i>Panel de caja</h4>
   <p class="text-muted small mb-4" th:text="'Bienvenido, ' + ${usuario.nombreCompleto}"></p>
 
-  <!-- ── Estado de caja (apertura / cierre) ───────────────────────────────── -->
-  <div class="card shadow-sm mb-4">
+  <!-- ── Estado de caja (apertura / cierre, ambos sujetos a aprobación del admin) ── -->
+  <div class="card shadow-sm mb-4" th:with="estadoCaja=${sesionCaja != null ? sesionCaja.estado.name() : 'CERRADA'}">
     <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <div th:if="${sesionCaja == null}">
+      <div th:if="${estadoCaja == 'CERRADA'}">
         <span class="badge bg-secondary mb-1">Caja cerrada</span>
-        <p class="text-muted small mb-0">Abre la caja indicando el monto inicial en efectivo antes de empezar a cobrar.</p>
+        <p class="text-muted small mb-0">Solicita la apertura indicando el monto inicial en efectivo. El administrador debe aprobarla antes de que puedas operar.</p>
       </div>
-      <div th:if="${sesionCaja != null and sesionCaja.estado.name() == 'ABIERTA'}">
+      <div th:if="${estadoCaja == 'PENDIENTE_APERTURA'}">
+        <span class="badge bg-warning text-dark mb-1">Solicitud de apertura enviada</span>
+        <p class="text-muted small mb-0">
+          Esperando que el administrador apruebe la apertura con S/ <span th:text="${sesionCaja.montoApertura}"></span>.
+        </p>
+      </div>
+      <div th:if="${estadoCaja == 'ABIERTA'}">
         <span class="badge bg-success mb-1">Caja abierta</span>
         <p class="text-muted small mb-0">
           Desde <span th:text="${#temporals.format(sesionCaja.fechaApertura,'HH:mm')}"></span>
           — monto inicial S/ <span th:text="${sesionCaja.montoApertura}"></span>
         </p>
       </div>
-      <div th:if="${sesionCaja != null and sesionCaja.estado.name() == 'PENDIENTE_APROBACION'}">
-        <span class="badge bg-warning text-dark mb-1">Cierre en revisión</span>
+      <div th:if="${estadoCaja == 'PENDIENTE_CIERRE'}">
+        <span class="badge bg-warning text-dark mb-1">Solicitud de cierre enviada</span>
         <p class="text-muted small mb-0">
-          Tu cierre tiene una diferencia de S/ <span th:text="${sesionCaja.diferencia}"></span> respecto a lo esperado.
-          El administrador debe aprobarlo o rechazarlo.
+          Esperando que el administrador confirme el cierre (monto contado S/ <span th:text="${sesionCaja.montoCierreContado}"></span>).
         </p>
       </div>
 
       <div>
-        <button th:if="${sesionCaja == null}" type="button" class="btn btn-primary btn-sm"
+        <button th:if="${estadoCaja == 'CERRADA'}" type="button" class="btn btn-primary btn-sm"
                 data-bs-toggle="modal" data-bs-target="#modalAbrirCaja">
-          <i class="bi bi-unlock me-1"></i>Abrir caja
+          <i class="bi bi-unlock me-1"></i>Solicitar apertura
         </button>
-        <button th:if="${sesionCaja != null and sesionCaja.estado.name() == 'ABIERTA'}" type="button"
+        <button th:if="${estadoCaja == 'ABIERTA'}" type="button"
                 class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalCerrarCaja">
-          <i class="bi bi-lock me-1"></i>Cerrar caja
+          <i class="bi bi-lock me-1"></i>Solicitar cierre
         </button>
       </div>
     </div>
   </div>
 
-  <div class="row g-4">
+  <div class="row g-4" th:with="cajaAbierta=${sesionCaja != null and sesionCaja.estado.name() == 'ABIERTA'}">
     <div class="col-md-6">
-      <div class="card shadow-sm h-100">
+      <div class="card shadow-sm h-100" th:classappend="${cajaAbierta} ? '' : 'opacity-50'">
         <div class="card-body text-center py-5">
           <i class="bi bi-file-earmark-plus text-primary" style="font-size:2.5rem"></i>
           <h5 class="fw-semibold mt-3">Registrar solicitud presencial</h5>
           <p class="text-muted small">Atiende a un negocio que llega a ventanilla: registra sus datos, la documentación y cobra el trámite (S/2).</p>
-          <a href="/cajero/nueva" class="btn btn-primary">
+          <a th:if="${cajaAbierta}" href="/cajero/nueva" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i>Nueva solicitud
           </a>
+          <button th:unless="${cajaAbierta}" type="button" class="btn btn-primary" disabled>
+            <i class="bi bi-lock-fill me-1"></i>Nueva solicitud
+          </button>
+          <p th:unless="${cajaAbierta}" class="text-muted small mt-2 mb-0">Debes tener la caja abierta para usar esta opción.</p>
         </div>
       </div>
     </div>
     <div class="col-md-6">
-      <div class="card shadow-sm h-100">
+      <div class="card shadow-sm h-100" th:classappend="${cajaAbierta} ? '' : 'opacity-50'">
         <div class="card-body text-center py-5">
           <i class="bi bi-arrow-repeat text-success" style="font-size:2.5rem"></i>
           <h5 class="fw-semibold mt-3">Cobrar renovación</h5>
           <p class="text-muted small">Busca la licencia de un negocio por su RUC y cobra la renovación anual (S/2) en el mismo acto.</p>
-          <a href="/cajero/renovar" class="btn btn-success">
+          <a th:if="${cajaAbierta}" href="/cajero/renovar" class="btn btn-success">
             <i class="bi bi-search me-1"></i>Buscar por RUC
           </a>
+          <button th:unless="${cajaAbierta}" type="button" class="btn btn-success" disabled>
+            <i class="bi bi-lock-fill me-1"></i>Buscar por RUC
+          </button>
+          <p th:unless="${cajaAbierta}" class="text-muted small mt-2 mb-0">Debes tener la caja abierta para usar esta opción.</p>
         </div>
       </div>
     </div>
@@ -106,16 +119,17 @@
     <form class="modal-content" action="/cajero/caja/abrir" method="post">
       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-unlock me-2"></i>Abrir caja</h5>
+        <h5 class="modal-title"><i class="bi bi-unlock me-2"></i>Solicitar apertura de caja</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <label class="form-label small">Monto inicial en efectivo (S/)</label>
         <input type="number" step="0.01" min="0" name="montoApertura" class="form-control" required/>
+        <p class="text-muted small mt-2 mb-0">El administrador debe aprobar esta solicitud antes de que puedas empezar a cobrar.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary btn-sm">Abrir caja</button>
+        <button type="submit" class="btn btn-primary btn-sm">Enviar solicitud</button>
       </div>
     </form>
   </div>
@@ -127,7 +141,7 @@
     <form class="modal-content" action="/cajero/caja/cerrar" method="post">
       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-lock me-2"></i>Cerrar caja</h5>
+        <h5 class="modal-title"><i class="bi bi-lock me-2"></i>Solicitar cierre de caja</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -137,12 +151,12 @@
         <textarea name="observaciones" class="form-control" rows="2"
                   placeholder="Ej: falta cuadrar S/2 de un vuelto mal dado"></textarea>
         <p class="text-muted small mt-2 mb-0">
-          Si el monto contado no coincide con lo esperado, se enviará una solicitud al administrador para que apruebe o rechace el cierre.
+          El administrador debe confirmar el cierre antes de que quede registrado, coincida o no el monto.
         </p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-danger btn-sm">Cerrar caja</button>
+        <button type="submit" class="btn btn-danger btn-sm">Enviar solicitud</button>
       </div>
     </form>
   </div>

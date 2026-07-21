@@ -32,36 +32,46 @@
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h4 class="fw-bold mb-1"><i class="bi bi-cash-coin me-2 text-primary"></i>Cierres de caja pendientes</h4>
-      <p class="text-muted small mb-0">Cierres con diferencia entre el monto contado y el esperado, a la espera de tu aprobación.</p>
+      <h4 class="fw-bold mb-1"><i class="bi bi-cash-coin me-2 text-primary"></i>Solicitudes de caja pendientes</h4>
+      <p class="text-muted small mb-0">Aperturas y cierres de caja a la espera de tu aprobación.</p>
     </div>
     <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver</a>
   </div>
 
   <div th:if="${#lists.isEmpty(sesiones)}" class="text-center py-5">
     <i class="bi bi-check2-circle text-muted" style="font-size:3rem"></i>
-    <p class="text-muted mt-3">No hay cierres de caja pendientes de revisión.</p>
+    <p class="text-muted mt-3">No hay solicitudes de caja pendientes de revisión.</p>
   </div>
 
   <div class="row g-3" th:unless="${#lists.isEmpty(sesiones)}">
-    <div class="col-12" th:each="s : ${sesiones}">
+    <div class="col-12" th:each="s : ${sesiones}" th:with="esApertura=${s.estado.name() == 'PENDIENTE_APERTURA'}">
       <div class="card shadow-sm">
         <div class="card-body">
           <div class="d-flex justify-content-between flex-wrap gap-2">
             <div>
-              <h6 class="fw-bold mb-1" th:text="${s.cajero.nombreCompleto} + ' (' + ${s.cajero.username} + ')'"></h6>
+              <h6 class="fw-bold mb-1">
+                <span class="badge mb-1" th:classappend="${esApertura} ? 'bg-primary' : 'bg-warning text-dark'"
+                      th:text="${esApertura} ? 'Solicitud de apertura' : 'Solicitud de cierre'"></span>
+                <span th:text="${s.cajero.nombreCompleto} + ' (' + ${s.cajero.username} + ')'"></span>
+              </h6>
               <p class="text-muted small mb-1">
-                Abierta: <span th:text="${#temporals.format(s.fechaApertura,'dd/MM/yy HH:mm')}"></span>
-                — Monto inicial: S/ <span th:text="${s.montoApertura}"></span>
+                Solicitada: <span th:text="${#temporals.format(s.fechaApertura,'dd/MM/yy HH:mm')}"></span>
               </p>
-              <p class="small mb-1">
-                Esperado: <strong>S/ <span th:text="${s.montoCierreEsperado}"></span></strong>
+              <p th:if="${esApertura}" class="small mb-1">
+                Monto inicial solicitado: <strong>S/ <span th:text="${s.montoApertura}"></span></strong>
+              </p>
+              <p th:unless="${esApertura}" class="small mb-1">
+                Monto inicial: S/ <span th:text="${s.montoApertura}"></span>
+                &nbsp;|&nbsp; Esperado: <strong>S/ <span th:text="${s.montoCierreEsperado}"></span></strong>
                 &nbsp;|&nbsp; Contado: <strong>S/ <span th:text="${s.montoCierreContado}"></span></strong>
                 &nbsp;|&nbsp;
-                <span class="badge" th:classappend="${s.diferencia.signum() > 0} ? 'bg-info text-dark' : 'bg-danger'"
-                      th:text="(${s.diferencia.signum() > 0} ? 'Sobrante S/ ' : 'Faltante S/ ') + ${s.diferencia.abs()}"></span>
+                <span th:if="${s.diferencia.signum() == 0}" class="badge bg-success">Cuadra</span>
+                <span th:if="${s.diferencia.signum() > 0}" class="badge bg-info text-dark"
+                      th:text="'Sobrante S/ ' + ${s.diferencia.abs()}"></span>
+                <span th:if="${s.diferencia.signum() < 0}" class="badge bg-danger"
+                      th:text="'Faltante S/ ' + ${s.diferencia.abs()}"></span>
               </p>
-              <p th:if="${s.observacionesCajero != null and !s.observacionesCajero.isBlank()}" class="text-muted small mb-0">
+              <p th:if="${!esApertura and s.observacionesCajero != null and !s.observacionesCajero.isBlank()}" class="text-muted small mb-0">
                 <i class="bi bi-chat-left-text me-1"></i>Nota del cajero: <span th:text="${s.observacionesCajero}"></span>
               </p>
             </div>

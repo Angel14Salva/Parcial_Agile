@@ -17,8 +17,14 @@ import java.util.Optional;
 @Service
 public class CajaSesionService {
 
-    private static final List<Enums.EstadoSesionCaja> ESTADOS_ACTIVOS =
-        List.of(Enums.EstadoSesionCaja.ABIERTA, Enums.EstadoSesionCaja.PENDIENTE_APROBACION);
+    private static final List<Enums.EstadoSesionCaja> ESTADOS_ACTIVOS = List.of(
+        Enums.EstadoSesionCaja.PENDIENTE_APERTURA,
+        Enums.EstadoSesionCaja.ABIERTA,
+        Enums.EstadoSesionCaja.PENDIENTE_CIERRE);
+
+    private static final List<Enums.EstadoSesionCaja> ESTADOS_PENDIENTES = List.of(
+        Enums.EstadoSesionCaja.PENDIENTE_APERTURA,
+        Enums.EstadoSesionCaja.PENDIENTE_CIERRE);
 
     private final CajaSesionRepository cajaSesionRepo;
     private final FacturaCajaRepository facturaRepo;
@@ -33,17 +39,34 @@ public class CajaSesionService {
         this.notificacionService = notificacionService;
     }
 
+    /** Sesión en curso del cajero (solicitud de apertura, abierta, o solicitud de cierre). */
     public Optional<CajaSesion> obtenerSesionActual(Usuario cajero) {
         return cajaSesionRepo.findFirstByCajeroAndEstadoInOrderByFechaAperturaDesc(cajero, ESTADOS_ACTIVOS);
     }
 
+    public boolean tieneCajaAbierta(Usuario cajero) {
+        return obtenerSesionActual(cajero)
+            .map(s -> s.getEstado() == Enums.EstadoSesionCaja.ABIERTA)
+            .orElse(false);
+    }
+
     @Transactional
-    public CajaSesion abrir(Usuario cajero, BigDecimal montoApertura) {
+    public CajaSesion solicitarApertura(Usuario cajero, BigDecimal montoApertura) {
         if (montoApertura == null || montoApertura.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("El monto de apertura no puede ser negativo.");
         if (obtenerSesionActual(cajero).isPresent())
-            throw new IllegalStateException("Ya tienes una caja abierta o pendiente de revisión.");
-        return cajaSesionRepo.save(CajaSesion.builder().cajero(cajero).montoApertura(montoApertura).build());
+            throw new IllegalStateException("Ya tienes una caja abierta o una solicitud en curso.");
+
+        CajaSesion sesion = cajaSesionRepo.save(
+            CajaSesion.builder().cajero(cajero).montoApertura(montoApertura).build());
+
+        for (Usuario admin : usuarioRepo.findByRol(Enums.Rol.ADMIN)) {
+            notificacionService.crear(admin,
+                "Solicitud de apertura de caja",
+                "El cajero " + cajero.getNombreCompleto() + " solicita abrir caja con S/ " + montoApertura + ".",
+                "/admin/cajas/pendientes");
+        }
+        return sesion;
     }
 
     private BigDecimal calcularMontoEsperado(CajaSesion sesion) {
@@ -54,13 +77,13 @@ public class CajaSesionService {
     }
 
     @Transactional
-    public CajaSesion cerrar(Usuario cajero, BigDecimal montoContado, String observaciones) {
+    public CajaSesion solicitarCierre(Usuario cajero, BigDecimal montoContado, String observaciones) {
         if (montoContado == null || montoContado.compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("El monto contado no puede ser negativo.");
         CajaSesion sesion = obtenerSesionActual(cajero)
             .orElseThrow(() -> new IllegalStateException("No tienes ninguna caja abierta."));
-        if (sesion.getEstado() == Enums.EstadoSesionCaja.PENDIENTE_APROBACION)
-            throw new IllegalStateException("El cierre de esta caja ya está en revisión por el administrador.");
+        if (sesion.getEstado() != Enums.EstadoSesionCaja.ABIERTA)
+            throw new IllegalStateException("Tu caja todavía no ha sido aprobada o ya tiene un cierre en revisión.");
 
         BigDecimal montoEsperado = calcularMontoEsperado(sesion);
         BigDecimal diferencia = montoContado.subtract(montoEsperado);
@@ -68,65 +91,87 @@ public class CajaSesionService {
         sesion.setMontoCierreEsperado(montoEsperado);
         sesion.setDiferencia(diferencia);
         sesion.setObservacionesCajero(observaciones);
+        sesion.setEstado(Enums.EstadoSesionCaja.PENDIENTE_CIERRE);
+        sesion = cajaSesionRepo.save(sesion);
 
-        if (diferencia.compareTo(BigDecimal.ZERO) == 0) {
-            sesion.setEstado(Enums.EstadoSesionCaja.CERRADA);
-            sesion.setFechaCierre(LocalDateTime.now());
-        } else {
-            sesion.setEstado(Enums.EstadoSesionCaja.PENDIENTE_APROBACION);
-            String signo = diferencia.compareTo(BigDecimal.ZERO) > 0 ? "sobrante" : "faltante";
-            for (Usuario admin : usuarioRepo.findByRol(Enums.Rol.ADMIN)) {
-                notificacionService.crear(admin,
-                    "Cierre de caja con inconsistencia",
-                    "El cajero " + cajero.getNombreCompleto() + " intentó cerrar caja con un " + signo +
-                        " de S/ " + diferencia.abs() + " (esperado S/ " + montoEsperado + ", contado S/ " + montoContado + ").",
-                    "/admin/cajas/pendientes");
-            }
+        String detalle = diferencia.compareTo(BigDecimal.ZERO) == 0
+            ? "El monto contado coincide con lo esperado (S/ " + montoEsperado + ")."
+            : "Hay una diferencia de S/ " + diferencia.abs() + " (esperado S/ " + montoEsperado +
+                ", contado S/ " + montoContado + ").";
+        for (Usuario admin : usuarioRepo.findByRol(Enums.Rol.ADMIN)) {
+            notificacionService.crear(admin,
+                "Solicitud de cierre de caja",
+                "El cajero " + cajero.getNombreCompleto() + " solicita cerrar caja. " + detalle,
+                "/admin/cajas/pendientes");
         }
-        return cajaSesionRepo.save(sesion);
+        return sesion;
     }
 
     public List<CajaSesion> obtenerPendientesAprobacion() {
-        return cajaSesionRepo.findByEstadoOrderByFechaAperturaAsc(Enums.EstadoSesionCaja.PENDIENTE_APROBACION);
+        return cajaSesionRepo.findByEstadoInOrderByFechaAperturaAsc(ESTADOS_PENDIENTES);
     }
 
     private CajaSesion obtenerPendiente(Long id) {
         CajaSesion sesion = cajaSesionRepo.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Sesión de caja no encontrada: " + id));
-        if (sesion.getEstado() != Enums.EstadoSesionCaja.PENDIENTE_APROBACION)
-            throw new IllegalStateException("Esta sesión de caja ya fue resuelta.");
+        if (!ESTADOS_PENDIENTES.contains(sesion.getEstado()))
+            throw new IllegalStateException("Esta solicitud ya fue resuelta.");
         return sesion;
     }
 
     @Transactional
     public void aprobar(Long id, Usuario admin, String comentario) {
         CajaSesion sesion = obtenerPendiente(id);
-        sesion.setEstado(Enums.EstadoSesionCaja.CERRADA);
-        sesion.setFechaCierre(LocalDateTime.now());
         sesion.setRevisadoPor(admin);
         sesion.setFechaRevision(LocalDateTime.now());
         sesion.setComentarioAdmin(comentario);
-        cajaSesionRepo.save(sesion);
-        notificacionService.crear(sesion.getCajero(),
-            "Cierre de caja aprobado",
-            "El administrador aprobó el cierre de tu caja con una diferencia de S/ " + sesion.getDiferencia() + "." +
-                (comentario != null && !comentario.isBlank() ? " Comentario: " + comentario : ""));
+
+        if (sesion.getEstado() == Enums.EstadoSesionCaja.PENDIENTE_APERTURA) {
+            sesion.setEstado(Enums.EstadoSesionCaja.ABIERTA);
+            sesion.setFechaApertura(LocalDateTime.now());
+            cajaSesionRepo.save(sesion);
+            notificacionService.crear(sesion.getCajero(),
+                "Apertura de caja aprobada",
+                "El administrador aprobó la apertura de tu caja con S/ " + sesion.getMontoApertura() + ". Ya puedes operar." +
+                    comentarioSuffix(comentario));
+        } else {
+            sesion.setEstado(Enums.EstadoSesionCaja.CERRADA);
+            sesion.setFechaCierre(LocalDateTime.now());
+            cajaSesionRepo.save(sesion);
+            notificacionService.crear(sesion.getCajero(),
+                "Cierre de caja aprobado",
+                "El administrador aprobó el cierre de tu caja." + comentarioSuffix(comentario));
+        }
     }
 
     @Transactional
     public void rechazar(Long id, Usuario admin, String comentario) {
         CajaSesion sesion = obtenerPendiente(id);
-        sesion.setEstado(Enums.EstadoSesionCaja.ABIERTA);
-        sesion.setMontoCierreContado(null);
-        sesion.setMontoCierreEsperado(null);
-        sesion.setDiferencia(null);
         sesion.setRevisadoPor(admin);
         sesion.setFechaRevision(LocalDateTime.now());
         sesion.setComentarioAdmin(comentario);
-        cajaSesionRepo.save(sesion);
-        notificacionService.crear(sesion.getCajero(),
-            "Cierre de caja rechazado",
-            "El administrador rechazó el cierre de tu caja. Vuelve a contar el efectivo e intenta cerrar de nuevo." +
-                (comentario != null && !comentario.isBlank() ? " Motivo: " + comentario : ""));
+
+        if (sesion.getEstado() == Enums.EstadoSesionCaja.PENDIENTE_APERTURA) {
+            sesion.setEstado(Enums.EstadoSesionCaja.RECHAZADA);
+            cajaSesionRepo.save(sesion);
+            notificacionService.crear(sesion.getCajero(),
+                "Apertura de caja rechazada",
+                "El administrador rechazó tu solicitud de apertura de caja. Puedes enviar una nueva solicitud." +
+                    comentarioSuffix(comentario));
+        } else {
+            sesion.setEstado(Enums.EstadoSesionCaja.ABIERTA);
+            sesion.setMontoCierreContado(null);
+            sesion.setMontoCierreEsperado(null);
+            sesion.setDiferencia(null);
+            cajaSesionRepo.save(sesion);
+            notificacionService.crear(sesion.getCajero(),
+                "Cierre de caja rechazado",
+                "El administrador rechazó tu solicitud de cierre. Vuelve a contar el efectivo e intenta de nuevo." +
+                    comentarioSuffix(comentario));
+        }
+    }
+
+    private String comentarioSuffix(String comentario) {
+        return comentario != null && !comentario.isBlank() ? " Comentario: " + comentario : "";
     }
 }

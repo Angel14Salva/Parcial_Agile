@@ -15,5 +15,5 @@ public interface CajaSesionRepository extends JpaRepository<CajaSesion, Long> {
     Optional<CajaSesion> findFirstByCajeroAndEstadoInOrderByFechaAperturaDesc(
         Usuario cajero, List<Enums.EstadoSesionCaja> estados);
 
-    List<CajaSesion> findByEstadoOrderByFechaAperturaAsc(Enums.EstadoSesionCaja estado);
+    List<CajaSesion> findByEstadoInOrderByFechaAperturaAsc(List<Enums.EstadoSesionCaja> estados);
 }

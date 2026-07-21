@@ -486,14 +486,14 @@ class CajeroController {
         return "cajero/dashboard";
     }
 
-    // ── Apertura y cierre de caja ────────────────────────────────────────────
+    // ── Apertura y cierre de caja (ambas requieren aprobación del admin) ────
     @PostMapping("/caja/abrir")
     String abrirCaja(@RequestParam java.math.BigDecimal montoApertura,
                      @AuthenticationPrincipal UserDetails ud,
                      RedirectAttributes ra) {
         try {
-            cajaSesionService.abrir(getUsuario(ud), montoApertura);
-            ra.addFlashAttribute("exito", "Caja abierta con S/ " + montoApertura + ".");
+            cajaSesionService.solicitarApertura(getUsuario(ud), montoApertura);
+            ra.addFlashAttribute("exito", "Se envió tu solicitud de apertura de caja al administrador. Espera su aprobación.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
@@ -506,14 +506,8 @@ class CajeroController {
                       @AuthenticationPrincipal UserDetails ud,
                       RedirectAttributes ra) {
         try {
-            var sesion = cajaSesionService.cerrar(getUsuario(ud), montoContado, observaciones);
-            if (sesion.getEstado() == com.municipalidad.licencias.model.Enums.EstadoSesionCaja.CERRADA) {
-                ra.addFlashAttribute("exito", "Caja cerrada correctamente. El monto contado coincide con lo esperado.");
-            } else {
-                ra.addFlashAttribute("error",
-                    "El monto contado no coincide con lo esperado (diferencia de S/ " + sesion.getDiferencia().abs() +
-                        "). Se envió una solicitud al administrador para que revise el cierre.");
-            }
+            cajaSesionService.solicitarCierre(getUsuario(ud), montoContado, observaciones);
+            ra.addFlashAttribute("exito", "Se envió tu solicitud de cierre de caja al administrador. Espera su aprobación.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
@@ -523,7 +517,11 @@ class CajeroController {
     // ── Paso 0: número de operación (o ir a pagar) ──────────────────────────
     // De momento se omite esta pantalla intermedia y se va directo a pagar el trámite.
     @GetMapping("/nueva")
-    String inicio(Model model) {
+    String inicio(@AuthenticationPrincipal UserDetails ud, RedirectAttributes ra) {
+        if (!cajaSesionService.tieneCajaAbierta(getUsuario(ud))) {
+            ra.addFlashAttribute("error", "Debes tener la caja abierta (con aprobación del administrador) para registrar solicitudes.");
+            return "redirect:/cajero/dashboard";
+        }
         return "redirect:/cajero/pago/nuevo";
     }
 
@@ -575,7 +573,11 @@ class CajeroController {
 
     // ── Paso 1 (si NO tiene operación): pedir RUC/Razón social y elegir método ──
     @GetMapping("/pago/nuevo")
-    String pagoNuevoForm(Model model) {
+    String pagoNuevoForm(@AuthenticationPrincipal UserDetails ud, RedirectAttributes ra) {
+        if (!cajaSesionService.tieneCajaAbierta(getUsuario(ud))) {
+            ra.addFlashAttribute("error", "Debes tener la caja abierta (con aprobación del administrador) para registrar solicitudes.");
+            return "redirect:/cajero/dashboard";
+        }
         return "cajero/pago-nuevo";
     }
 
@@ -713,7 +715,12 @@ class CajeroController {
 
     // ── Cobro de renovación en ventanilla ────────────────────────────────────
     @GetMapping("/renovar")
-    String buscarParaRenovar(@RequestParam(required = false) String ruc, Model model) {
+    String buscarParaRenovar(@RequestParam(required = false) String ruc, Model model,
+                             @AuthenticationPrincipal UserDetails ud, RedirectAttributes ra) {
+        if (!cajaSesionService.tieneCajaAbierta(getUsuario(ud))) {
+            ra.addFlashAttribute("error", "Debes tener la caja abierta (con aprobación del administrador) para cobrar renovaciones.");
+            return "redirect:/cajero/dashboard";
+        }
         if (ruc != null && !ruc.isBlank()) {
             solicitudRepo.findAll().stream()
                 .filter(s -> ruc.trim().equals(s.getRuc()))
@@ -734,6 +741,8 @@ class CajeroController {
                             RedirectAttributes ra) {
         try {
             Usuario cajero = getUsuario(ud);
+            if (!cajaSesionService.tieneCajaAbierta(cajero))
+                throw new IllegalStateException("Debes tener la caja abierta (con aprobación del administrador) para cobrar renovaciones.");
             licenciaService.renovar(id, "CAJA-" + cajero.getUsername().toUpperCase() +
                 "-" + System.currentTimeMillis());
             ra.addFlashAttribute("exito", "Renovación cobrada y licencia extendida por un año más.");

@@ -32,7 +32,7 @@ public class CajaSesion {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Enums.EstadoSesionCaja estado = Enums.EstadoSesionCaja.ABIERTA;
+    private Enums.EstadoSesionCaja estado = Enums.EstadoSesionCaja.PENDIENTE_APERTURA;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "revisado_por_id")
@@ -74,6 +74,7 @@ public class CajaSesion {
     public Usuario getCajero()                    { return cajero; }
     public BigDecimal getMontoApertura()          { return montoApertura; }
     public LocalDateTime getFechaApertura()       { return fechaApertura; }
+    public void setFechaApertura(LocalDateTime v) { this.fechaApertura = v; }
     public BigDecimal getMontoCierreContado()     { return montoCierreContado; }
     public void setMontoCierreContado(BigDecimal v) { this.montoCierreContado = v; }
     public BigDecimal getMontoCierreEsperado()    { return montoCierreEsperado; }
