@@ -312,7 +312,7 @@
     <div class="section-body">
       <div class="row g-3">
         <!-- Plano del local -->
-        <div class="col-md-6">
+        <div class="col-12">
           <label class="form-label fw-semibold">
             Plano del local <span class="text-danger">*</span>
           </label>
@@ -320,26 +320,6 @@
                  accept=".pdf,.jpg,.jpeg,.png" required/>
           <div class="field-hint mt-1">
             <i class="bi bi-info-circle me-1"></i>PDF, JPG o PNG · Máx. 10 MB
-          </div>
-        </div>
-
-        <!-- Firma del solicitante -->
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">
-            Firma del solicitante / Representante legal <span class="text-danger">*</span>
-          </label>
-          <input type="file" name="firma" id="inputFirma" class="form-control"
-                 accept=".jpg,.jpeg,.png" required/>
-          <div class="field-hint mt-1">
-            <i class="bi bi-info-circle me-1"></i>JPG o PNG · Foto o escáner de la firma · Máx. 5 MB
-          </div>
-        </div>
-
-        <!-- Preview firma -->
-        <div class="col-12" id="firmaPreviewDiv" style="display:none">
-          <label class="form-label fw-semibold small text-muted">Vista previa de la firma:</label>
-          <div class="border rounded p-2 bg-white" style="max-width:300px">
-            <img id="firmaPreview" src="" alt="Firma" style="max-width:100%; max-height:120px"/>
           </div>
         </div>
       </div>
@@ -550,19 +530,6 @@
       otroDiv.classList.add('d-none');
       otroTexto.required = false;
       otroTexto.value = '';
-    }
-  });
-
-  // ── Preview firma ───────────────────────────────────────────────────────────
-  document.getElementById('inputFirma').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        document.getElementById('firmaPreview').src = ev.target.result;
-        document.getElementById('firmaPreviewDiv').style.display = 'block';
-      };
-      reader.readAsDataURL(file);
     }
   });
 

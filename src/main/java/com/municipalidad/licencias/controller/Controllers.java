@@ -153,18 +153,15 @@ class SolicitudController {
             model.addAttribute("errorPlano", "El plano del local es obligatorio.");
             return "solicitud/nueva";
         }
-        if (firma == null || firma.isEmpty()) {
-            model.addAttribute("rubros", Rubros.LISTA);
-            model.addAttribute("errorFirma", "La firma del solicitante es obligatoria.");
-            return "solicitud/nueva";
-        }
         try {
             Usuario usuario = usuarioRepo.findByUsername("publico").orElseThrow();
             Solicitud s = solicitudService.crearBorrador(dto, usuario);
             // Guardar plano
             solicitudService.cargarPlano(s.getId(), plano);
-            // Guardar firma
-            solicitudService.cargarFirma(s.getId(), firma);
+            // Guardar firma opcional
+            if (firma != null && !firma.isEmpty()) {
+                solicitudService.cargarFirma(s.getId(), firma);
+            }
             return "redirect:/solicitud/" + s.getId() + "/pago";
         } catch (IllegalStateException e) {
             model.addAttribute("rubros", Rubros.LISTA);
