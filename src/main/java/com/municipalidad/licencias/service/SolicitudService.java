@@ -26,6 +26,7 @@ public class SolicitudService {
     private final InspeccionService inspeccionService;
     private final com.municipalidad.licencias.service.CloudinaryService cloudinaryService;
     private final com.municipalidad.licencias.service.EmailService emailService;
+    private final com.municipalidad.licencias.repository.FacturaCajaRepository facturaRepo;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -38,13 +39,15 @@ public class SolicitudService {
                             SunatService sunatService,
                             InspeccionService inspeccionService,
                             com.municipalidad.licencias.service.CloudinaryService cloudinaryService,
-                            com.municipalidad.licencias.service.EmailService emailService) {
+                            com.municipalidad.licencias.service.EmailService emailService,
+                            com.municipalidad.licencias.repository.FacturaCajaRepository facturaRepo) {
         this.solicitudRepo     = solicitudRepo;
         this.usuarioRepo       = usuarioRepo;
         this.sunatService      = sunatService;
         this.inspeccionService = inspeccionService;
         this.cloudinaryService = cloudinaryService;
         this.emailService      = emailService;
+        this.facturaRepo       = facturaRepo;
     }
 
     @Transactional
@@ -258,9 +261,30 @@ public class SolicitudService {
         inspeccionService.programarPrimeraInspeccion(s);
 
         if (s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank()) {
-            emailService.enviarCodigoSeguimiento(
-                s.getCorreoElectronico(), s.getRazonSocial(), s.getCodigoSeguimiento(),
-                s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO");
+            var facturaOpt = (referenciaPagoExterna != null && !referenciaPagoExterna.isBlank())
+                ? facturaRepo.findByNumeroOperacion(referenciaPagoExterna.trim())
+                : java.util.Optional.<com.municipalidad.licencias.model.FacturaCaja>empty();
+            if (facturaOpt.isPresent()) {
+                var f = facturaOpt.get();
+                f.setSolicitudId(s.getId());
+                facturaRepo.save(f);
+                emailService.enviarComprobanteYCodigo(
+                    s.getCorreoElectronico(),
+                    s.getRazonSocial(),
+                    s.getRuc(),
+                    s.getCodigoSeguimiento(),
+                    f.getNumeroFormateado(),
+                    f.getConcepto(),
+                    f.getImporteTotal().toString(),
+                    f.getMetodoPago().name(),
+                    f.getNumeroOperacion(),
+                    s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO"
+                );
+            } else {
+                emailService.enviarCodigoSeguimiento(
+                    s.getCorreoElectronico(), s.getRazonSocial(), s.getCodigoSeguimiento(),
+                    s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO");
+            }
         }
         return s;
     }
