@@ -582,9 +582,10 @@ class CajeroController {
                          jakarta.servlet.http.HttpServletRequest request,
                          RedirectAttributes ra) {
         try {
+            Usuario cajero = getUsuario(ud);
             var factura = facturaService.crearFacturaPendienteQR(
                 ruc, razonSocial, direccion, montoTramite,
-                "Derecho de tramite - Licencia de Funcionamiento", getUsuario(ud));
+                "Derecho de tramite - Licencia de Funcionamiento", cajero);
 
             String scheme = request.getHeader("X-Forwarded-Proto") != null ?
                 request.getHeader("X-Forwarded-Proto") : request.getScheme();
@@ -594,8 +595,11 @@ class CajeroController {
             String urlRetorno = baseUrl + "/cajero/pago/qr/retorno?facturaId=" + factura.getId();
             String urlConfirmacion = baseUrl + "/cajero/pago/qr/confirmar?facturaId=" + factura.getId();
 
+            String emailPagador = cajero.getEmail() != null && !cajero.getEmail().isBlank()
+                ? cajero.getEmail() : "publico@licencias.gob.pe";
+
             var orden = flowService.crearOrdenFactura(factura.getId(),
-                "caja@municipalidad.gob.pe", razonSocial, montoTramite.doubleValue(),
+                emailPagador, razonSocial, montoTramite.doubleValue(),
                 urlRetorno, urlConfirmacion);
 
             return "redirect:" + orden.url();
