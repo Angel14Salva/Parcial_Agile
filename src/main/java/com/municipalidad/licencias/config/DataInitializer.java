@@ -44,7 +44,12 @@ public class DataInitializer implements CommandLineRunner {
         ejecutarSeguro("UPDATE solicitudes SET inspector_id = (SELECT id FROM usuarios WHERE username = 'inspector.garcia') " +
             "WHERE inspector_id IN (SELECT id FROM usuarios WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
         // Eliminar usuarios viejos con formato nombreapellidorol
-        ejecutarSeguro("DELETE FROM usuarios WHERE rol IN ('INSPECTOR','FISCALIZADOR') AND username NOT IN ('inspector.garcia','fiscal.rios','fiscal.vargas','fiscal.herrera')");
+        ejecutarSeguro("DELETE FROM usuarios WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia'");
+        // Solo quedan 3 cuentas de staff: admin, cajero1, inspector.garcia (+ 'publico', cuenta interna
+        // del ciudadano virtual). Se eliminan fiscalizadores, subgerente y gerentes por completo.
+        ejecutarSeguro("DELETE FROM multas WHERE inspector_id IN (SELECT id FROM usuarios WHERE rol = 'FISCALIZADOR')");
+        ejecutarSeguro("DELETE FROM notificaciones WHERE usuario_id IN (SELECT id FROM usuarios WHERE rol IN ('FISCALIZADOR','SUBGERENTE','GERENTE_DISTRITAL','GERENTE_MUNICIPAL'))");
+        ejecutarSeguro("DELETE FROM usuarios WHERE rol IN ('FISCALIZADOR','SUBGERENTE','GERENTE_DISTRITAL','GERENTE_MUNICIPAL')");
         ejecutarSeguro("DELETE FROM notificaciones WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1')");
         ejecutarSeguro("DELETE FROM multas WHERE licencia_id IN (SELECT id FROM licencias WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1')))");
         ejecutarSeguro("DELETE FROM observaciones WHERE inspeccion_id IN (SELECT id FROM inspecciones WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN (SELECT id FROM usuarios WHERE username = 'negocio1')))");
@@ -64,22 +69,9 @@ public class DataInitializer implements CommandLineRunner {
 
                 // Inspector (uno solo, encargado de todas las inspecciones ITSE)
         crearUsuarioSiNoExiste("inspector.garcia",  "insp1234", "inspector.garcia@municipalidad.gob.pe",  "GARCIA LOPEZ, CARLOS",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
-        // Fiscalizadores
-        crearUsuarioSiNoExiste("fiscal.rios",    "fisc1234", "fiscal.rios@municipalidad.gob.pe",    "RIOS CASTILLO, MARIA",   Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
-        crearUsuarioSiNoExiste("fiscal.vargas",  "fisc1234", "fiscal.vargas@municipalidad.gob.pe",  "VARGAS NUNEZ, LUIS",     Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
-        crearUsuarioSiNoExiste("fiscal.herrera", "fisc1234", "fiscal.herrera@municipalidad.gob.pe", "HERRERA CAMPOS, ANA",    Enums.Rol.FISCALIZADOR, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         // Cajeros (atención presencial en ventanilla)
         crearUsuarioSiNoExiste("cajero1", "caja1234", "cajero1@municipalidad.gob.pe",
             "MEDINA ROJAS, PATRICIA", Enums.Rol.CAJERO, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
-        // Gerente municipal
-        crearUsuarioSiNoExiste("gerente.municipal", "ger1234", "gerente@municipalidad.gob.pe",
-            "RODRIGUEZ CASTILLO, CARLOS", Enums.Rol.GERENTE_MUNICIPAL, null);
-        // Gerente distrital Trujillo
-        crearUsuarioSiNoExiste("gerente.trujillo", "ger1234", "gerente.trujillo@municipalidad.gob.pe",
-            "FLORES MEDINA, JORGE", Enums.Rol.GERENTE_DISTRITAL, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
-        // Subgerente Trujillo
-        crearUsuarioSiNoExiste("sg.trujillo", "sub1234", "subgerente.trujillo@municipalidad.gob.pe",
-            "PAREDES LOZANO, ANA MARIA", Enums.Rol.SUBGERENTE, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         crearUsuarioSiNoExiste("admin",      "admin123",     "admin@municipalidad.gob.pe",
             "Administrador",    Enums.Rol.ADMIN);
 
