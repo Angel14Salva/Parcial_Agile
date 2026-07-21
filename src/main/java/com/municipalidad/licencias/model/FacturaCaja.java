@@ -30,6 +30,8 @@ public class FacturaCaja {
 
     private String direccionCliente;
 
+    private String emailCliente;
+
     @Column(nullable = false)
     private String concepto;
 
@@ -80,7 +82,7 @@ public class FacturaCaja {
     public static Builder builder() { return new Builder(); }
 
     public static class Builder {
-        private String rucCliente, razonSocialCliente, direccionCliente, concepto;
+        private String rucCliente, razonSocialCliente, direccionCliente, emailCliente, concepto;
         private BigDecimal valorVenta, igv, importeTotal, montoRecibido, vuelto;
         private Enums.MetodoPago metodoPago;
         private Enums.EstadoFactura estado;
@@ -90,6 +92,7 @@ public class FacturaCaja {
         public Builder rucCliente(String v)         { this.rucCliente = v; return this; }
         public Builder razonSocialCliente(String v) { this.razonSocialCliente = v; return this; }
         public Builder direccionCliente(String v)   { this.direccionCliente = v; return this; }
+        public Builder emailCliente(String v)       { this.emailCliente = v; return this; }
         public Builder concepto(String v)           { this.concepto = v; return this; }
         public Builder valorVenta(BigDecimal v)     { this.valorVenta = v; return this; }
         public Builder igv(BigDecimal v)            { this.igv = v; return this; }
@@ -106,6 +109,7 @@ public class FacturaCaja {
             f.rucCliente         = this.rucCliente;
             f.razonSocialCliente = this.razonSocialCliente;
             f.direccionCliente   = this.direccionCliente;
+            f.emailCliente       = this.emailCliente;
             f.concepto            = this.concepto;
             f.valorVenta          = this.valorVenta;
             f.igv                 = this.igv;
@@ -129,6 +133,7 @@ public class FacturaCaja {
     public String getRucCliente()                { return rucCliente; }
     public String getRazonSocialCliente()        { return razonSocialCliente; }
     public String getDireccionCliente()          { return direccionCliente; }
+    public String getEmailCliente()              { return emailCliente; }
     public String getConcepto()                  { return concepto; }
     public BigDecimal getValorVenta()            { return valorVenta; }
     public BigDecimal getIgv()                   { return igv; }

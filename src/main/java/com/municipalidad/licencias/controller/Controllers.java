@@ -485,8 +485,18 @@ class CajeroController {
 
     // ── Paso 1 (si ya tiene operación): formulario completo del trámite ────
     @GetMapping("/nueva/datos")
-    String nuevaForm(@RequestParam(required = false) String operacion, Model model) {
-        model.addAttribute("solicitudDto", new SolicitudDto());
+    String nuevaForm(@RequestParam(required = false) String operacion,
+                     @RequestParam(required = false) String ruc,
+                     @RequestParam(required = false) String razonSocial,
+                     @RequestParam(required = false) String direccion,
+                     @RequestParam(required = false) String email,
+                     Model model) {
+        SolicitudDto dto = new SolicitudDto();
+        if (ruc != null) dto.setRuc(ruc);
+        if (razonSocial != null) dto.setRazonSocial(razonSocial);
+        if (direccion != null) dto.setDomicilioFiscal(direccion);
+        if (email != null) dto.setCorreoElectronico(email);
+        model.addAttribute("solicitudDto", dto);
         model.addAttribute("rubros", Rubros.LISTA);
         model.addAttribute("operacion", operacion);
         return "cajero/nueva";
@@ -530,10 +540,12 @@ class CajeroController {
     String pagoEfectivoForm(@RequestParam String ruc,
                             @RequestParam String razonSocial,
                             @RequestParam(required = false) String direccion,
+                            @RequestParam(required = false) String email,
                             Model model) {
         model.addAttribute("ruc", ruc);
         model.addAttribute("razonSocial", razonSocial);
         model.addAttribute("direccion", direccion);
+        model.addAttribute("email", email);
         model.addAttribute("montoTramite", montoTramite);
         return "cajero/pago-efectivo";
     }
@@ -544,11 +556,12 @@ class CajeroController {
             @RequestParam String ruc,
             @RequestParam String razonSocial,
             @RequestParam(required = false) String direccion,
+            @RequestParam(required = false) String email,
             @RequestParam java.math.BigDecimal montoRecibido,
             @AuthenticationPrincipal UserDetails ud) {
         try {
             var factura = facturaService.generarFacturaEfectivo(
-                ruc, razonSocial, direccion, montoTramite, montoRecibido,
+                ruc, razonSocial, direccion, email, montoTramite, montoRecibido,
                 "Derecho de tramite - Licencia de Funcionamiento", getUsuario(ud));
             return java.util.Map.of(
                 "ok", true,
@@ -587,7 +600,7 @@ class CajeroController {
         try {
             Usuario cajero = getUsuario(ud);
             var factura = facturaService.crearFacturaPendienteQR(
-                ruc, razonSocial, direccion, montoTramite,
+                ruc, razonSocial, direccion, email, montoTramite,
                 "Derecho de tramite - Licencia de Funcionamiento", cajero);
 
             String scheme = request.getHeader("X-Forwarded-Proto") != null ?

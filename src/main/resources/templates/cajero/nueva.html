@@ -64,6 +64,10 @@
   <div th:if="${operacion}" class="alert alert-success mb-3">
     <i class="bi bi-check-circle me-2"></i>Pago ya registrado — N.° de operación: <strong th:text="${operacion}"></strong>
   </div>
+  <div th:if="${solicitudDto.ruc}" class="alert alert-info mb-3">
+    <i class="bi bi-info-circle me-2"></i>Los datos del negocio ya están precargados desde el paso anterior.
+    Igual debes darle a <strong>"Buscar"</strong> junto al RUC y <strong>validar el DNI</strong> del representante para confirmar antes de enviar.
+  </div>
 
   <form th:action="@{/cajero/nueva/datos}" method="post"
         th:object="${solicitudDto}" id="formSolicitud"
@@ -113,6 +117,7 @@
           <label class="form-label fw-semibold">N° RUC <span class="text-danger">*</span></label>
           <div class="input-group">
             <input type="text" id="inputRuc" name="ruc" class="form-control"
+                   th:value="${solicitudDto.ruc}"
                    placeholder="20 + 9 dígitos (empresa)" maxlength="11" pattern="20\d{9}" required/>
             <button type="button" class="btn btn-outline-primary" id="btnBuscarRuc">
               <i class="bi bi-search"></i>

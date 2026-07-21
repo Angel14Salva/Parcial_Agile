@@ -67,6 +67,7 @@
   const RUC = /*[[${ruc}]]*/ '';
   const RAZON_SOCIAL = /*[[${razonSocial}]]*/ '';
   const DIRECCION = /*[[${direccion}]]*/ '';
+  const EMAIL = /*[[${email}]]*/ '';
   const CSRF_TOKEN = /*[[${_csrf.token}]]*/ '';
   const CSRF_HEADER = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
 
@@ -87,7 +88,7 @@
       return;
     }
     const body = new URLSearchParams({
-      ruc: RUC, razonSocial: RAZON_SOCIAL, direccion: DIRECCION,
+      ruc: RUC, razonSocial: RAZON_SOCIAL, direccion: DIRECCION, email: EMAIL,
       montoRecibido: recibido.toFixed(2)
     });
     try {
@@ -110,7 +111,11 @@
       btnImprimir.classList.remove('disabled');
 
       const btnContinuar = document.getElementById('btnContinuar');
-      btnContinuar.href = '/cajero/nueva/datos?operacion=' + encodeURIComponent(data.numeroOperacion);
+      const params = new URLSearchParams({
+        operacion: data.numeroOperacion, ruc: RUC, razonSocial: RAZON_SOCIAL,
+        direccion: DIRECCION, email: EMAIL
+      });
+      btnContinuar.href = '/cajero/nueva/datos?' + params.toString();
       btnContinuar.classList.remove('d-none');
 
       document.getElementById('btnConfirmar').disabled = true;

@@ -24,7 +24,8 @@ public class FacturaCajaService {
 
     @Transactional
     public synchronized FacturaCaja generarFacturaEfectivo(String ruc, String razonSocial, String direccion,
-                                                            BigDecimal importeTotal, BigDecimal montoRecibido,
+                                                            String email, BigDecimal importeTotal,
+                                                            BigDecimal montoRecibido,
                                                             String concepto, Usuario cajero) {
         if (montoRecibido.compareTo(importeTotal) < 0)
             throw new IllegalArgumentException("El monto recibido es menor al monto a pagar (S/ " + importeTotal + ").");
@@ -32,7 +33,7 @@ public class FacturaCajaService {
         BigDecimal vuelto = montoRecibido.subtract(importeTotal).setScale(2, RoundingMode.HALF_UP);
         BigDecimal[] valores = calcularValorVentaEIgv(importeTotal);
 
-        FacturaCaja factura = construirBase(ruc, razonSocial, direccion, concepto, importeTotal, valores, cajero, Enums.MetodoPago.EFECTIVO);
+        FacturaCaja factura = construirBase(ruc, razonSocial, direccion, email, concepto, importeTotal, valores, cajero, Enums.MetodoPago.EFECTIVO);
         factura.setMontoRecibido(montoRecibido);
         factura.setVuelto(vuelto);
         factura.setEstado(Enums.EstadoFactura.PAGADA);
@@ -43,9 +44,10 @@ public class FacturaCajaService {
 
     @Transactional
     public synchronized FacturaCaja crearFacturaPendienteQR(String ruc, String razonSocial, String direccion,
-                                                             BigDecimal importeTotal, String concepto, Usuario cajero) {
+                                                             String email, BigDecimal importeTotal,
+                                                             String concepto, Usuario cajero) {
         BigDecimal[] valores = calcularValorVentaEIgv(importeTotal);
-        FacturaCaja factura = construirBase(ruc, razonSocial, direccion, concepto, importeTotal, valores, cajero, Enums.MetodoPago.QR);
+        FacturaCaja factura = construirBase(ruc, razonSocial, direccion, email, concepto, importeTotal, valores, cajero, Enums.MetodoPago.QR);
         factura.setEstado(Enums.EstadoFactura.PENDIENTE);
         return facturaRepo.save(factura);
     }
@@ -62,7 +64,7 @@ public class FacturaCajaService {
         return factura;
     }
 
-    private FacturaCaja construirBase(String ruc, String razonSocial, String direccion, String concepto,
+    private FacturaCaja construirBase(String ruc, String razonSocial, String direccion, String email, String concepto,
                                        BigDecimal importeTotal, BigDecimal[] valores, Usuario cajero,
                                        Enums.MetodoPago metodoPago) {
         return FacturaCaja.builder()
@@ -70,6 +72,7 @@ public class FacturaCajaService {
             .rucCliente(ruc)
             .razonSocialCliente(razonSocial)
             .direccionCliente(direccion)
+            .emailCliente(email)
             .concepto(concepto)
             .valorVenta(valores[0])
             .igv(valores[1])

@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/img/**").permitAll()
                 .requestMatchers("/auth/**", "/error", "/seguimiento", "/publico/**", "/").permitAll()
                 .requestMatchers("/pago/**").permitAll()
-                .requestMatchers("/cajero/pago/qr/confirmar").permitAll()
+                .requestMatchers("/cajero/pago/qr/confirmar", "/cajero/pago/qr/retorno").permitAll()
                 .requestMatchers("/publico/licencia/*/renovar", "/publico/licencia/*/renovar/flow", "/publico/licencia/*/renovar/retorno", "/publico/licencia/*/renovar/confirmar").permitAll()
                 .requestMatchers("/solicitud/nueva", "/solicitud/*/pago", "/solicitud/*/pago/flow", "/solicitud/*/pago/retorno", "/solicitud/*/plano", "/solicitud/*/observaciones", "/solicitud/*/observaciones/subsanar", "/solicitud/*/observacion/*/subsanar").permitAll()
                 .requestMatchers("/multas/*/detalle").authenticated()

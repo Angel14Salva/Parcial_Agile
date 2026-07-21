@@ -42,7 +42,7 @@
        class="btn btn-outline-primary btn-lg">
       <i class="bi bi-printer me-2"></i>Imprimir factura
     </a>
-    <a th:href="@{/cajero/nueva/datos(operacion=${factura.numeroOperacion})}"
+    <a th:href="@{/cajero/nueva/datos(operacion=${factura.numeroOperacion}, ruc=${factura.rucCliente}, razonSocial=${factura.razonSocialCliente}, direccion=${factura.direccionCliente}, email=${factura.emailCliente})}"
        class="btn btn-primary btn-lg">
       <i class="bi bi-arrow-right-circle me-2"></i>Continuar al formulario del trámite
     </a>
