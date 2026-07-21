@@ -61,9 +61,14 @@
   </div>
   <div id="alertaError" class="alert alert-danger d-none"></div>
 
-  <form th:action="@{/cajero/nueva}" method="post"
+  <div th:if="${operacion}" class="alert alert-success mb-3">
+    <i class="bi bi-check-circle me-2"></i>Pago ya registrado — N.° de operación: <strong th:text="${operacion}"></strong>
+  </div>
+
+  <form th:action="@{/cajero/nueva/datos}" method="post"
         th:object="${solicitudDto}" id="formSolicitud"
         enctype="multipart/form-data">
+    <input type="hidden" name="operacion" th:value="${operacion}"/>
 
     <!-- ── SECCIÓN 0: Distrito ─────────────────────────────────────────────── -->
     <div class="section-header"><i class="bi bi-geo-alt"></i> Distrito del establecimiento</div>
@@ -371,7 +376,7 @@
         <i class="bi bi-x me-1"></i>Cancelar
       </a>
       <button type="submit" class="btn btn-success px-4" id="btnContinuar">
-        <i class="bi bi-cash-coin me-2"></i>Registrar y cobrar S/180.00
+        <i class="bi bi-check-circle me-2"></i>Registrar solicitud
       </button>
     </div>
 

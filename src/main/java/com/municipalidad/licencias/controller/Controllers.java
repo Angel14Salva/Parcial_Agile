@@ -85,6 +85,7 @@ class DashboardController {
                 licenciaService.obtenerLicenciasVigentes());
             model.addAttribute("licenciasRevocadas",
                 licenciaService.obtenerLicenciasRevocadas());
+            model.addAttribute("mostrarFiscalizacion", usuario.getRol() != Enums.Rol.INSPECTOR);
             return "inspector/dashboard-inspector";
         } else {
             model.addAttribute("tramitesActivos", solicitudService.obtenerTramitesActivos());
@@ -109,17 +110,20 @@ class SolicitudController {
     private final UsuarioRepository usuarioRepo;
     private final com.municipalidad.licencias.service.FlowService flowService;
     private final com.municipalidad.licencias.service.MultaService multaServiceDet;
+    private final org.springframework.core.env.Environment environment;
 
     SolicitudController(SolicitudService solicitudService,
                         LicenciaService licenciaService,
                         UsuarioRepository usuarioRepo,
                         com.municipalidad.licencias.service.FlowService flowService,
-                        com.municipalidad.licencias.service.MultaService multaServiceDet) {
+                        com.municipalidad.licencias.service.MultaService multaServiceDet,
+                        org.springframework.core.env.Environment environment) {
         this.solicitudService = solicitudService;
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
         this.flowService      = flowService;
         this.multaServiceDet  = multaServiceDet;
+        this.environment      = environment;
     }
 
     @GetMapping("/nueva")
@@ -191,6 +195,7 @@ class SolicitudController {
     @GetMapping("/{id}/pago")
     String pagoForm(@PathVariable Long id, Model model) {
         model.addAttribute("solicitud", solicitudService.obtenerPorId(id));
+        model.addAttribute("esLocal", java.util.Arrays.asList(environment.getActiveProfiles()).contains("local"));
         return "solicitud/pago";
     }
 
@@ -270,11 +275,13 @@ class SolicitudController {
     @PostMapping("/{id}/pago")
     String procesarPago(@PathVariable Long id,
                         @RequestParam String referenciaPago,
+                        Model model,
                         RedirectAttributes ra) {
         try {
-            solicitudService.enviarConPago(id, referenciaPago);
-            ra.addFlashAttribute("exito", "Solicitud enviada. Se programó la inspección técnica.");
-            return "redirect:/dashboard";
+            Solicitud s = solicitudService.enviarConPago(id, referenciaPago);
+            model.addAttribute("solicitud", s);
+            model.addAttribute("codigoSeguimiento", s.getCodigoSeguimiento());
+            return "solicitud/comprobante";
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/solicitud/" + id + "/pago";
@@ -437,17 +444,26 @@ class CajeroController {
     private final UsuarioRepository usuarioRepo;
     private final com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo;
     private final com.municipalidad.licencias.repository.LicenciaRepository  licenciaRepo;
+    private final com.municipalidad.licencias.service.FacturaCajaService facturaService;
+    private final com.municipalidad.licencias.service.FlowService flowService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.pago.tramite}")
+    private java.math.BigDecimal montoTramite;
 
     CajeroController(SolicitudService solicitudService,
                      LicenciaService licenciaService,
                      UsuarioRepository usuarioRepo,
                      com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
-                     com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo) {
+                     com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
+                     com.municipalidad.licencias.service.FacturaCajaService facturaService,
+                     com.municipalidad.licencias.service.FlowService flowService) {
         this.solicitudService = solicitudService;
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
         this.solicitudRepo    = solicitudRepo;
         this.licenciaRepo     = licenciaRepo;
+        this.facturaService   = facturaService;
+        this.flowService      = flowService;
     }
 
     private Usuario getUsuario(UserDetails ud) {
@@ -461,36 +477,177 @@ class CajeroController {
         return "cajero/dashboard";
     }
 
-    // ── Registro presencial de una nueva solicitud ──────────────────────────
+    // ── Paso 0: número de operación (o ir a pagar) ──────────────────────────
     @GetMapping("/nueva")
-    String nuevaForm(Model model) {
+    String inicio(Model model) {
+        return "cajero/inicio";
+    }
+
+    // ── Paso 1 (si ya tiene operación): formulario completo del trámite ────
+    @GetMapping("/nueva/datos")
+    String nuevaForm(@RequestParam(required = false) String operacion, Model model) {
         model.addAttribute("solicitudDto", new SolicitudDto());
         model.addAttribute("rubros", Rubros.LISTA);
+        model.addAttribute("operacion", operacion);
         return "cajero/nueva";
     }
 
-    @PostMapping("/nueva")
+    @PostMapping("/nueva/datos")
     String registrar(@Valid @ModelAttribute SolicitudDto dto,
                      BindingResult errors,
                      @RequestParam(required = false) MultipartFile plano,
                      @RequestParam(required = false) MultipartFile firma,
+                     @RequestParam(required = false) String operacion,
                      @AuthenticationPrincipal UserDetails ud,
                      RedirectAttributes ra, Model model) {
         if (errors.hasErrors()) {
             model.addAttribute("rubros", Rubros.LISTA);
+            model.addAttribute("operacion", operacion);
             return "cajero/nueva";
         }
         try {
-            Solicitud s = solicitudService.registrarPresencial(dto, plano, firma, getUsuario(ud));
+            Solicitud s = solicitudService.registrarPresencial(dto, plano, firma, getUsuario(ud), operacion);
             ra.addFlashAttribute("exito",
                 "Solicitud registrada y pago cobrado correctamente. Código de seguimiento: " +
                 s.getCodigoSeguimiento());
             return "redirect:/cajero/dashboard";
         } catch (Exception e) {
             model.addAttribute("rubros", Rubros.LISTA);
+            model.addAttribute("operacion", operacion);
             model.addAttribute("error", e.getMessage());
             return "cajero/nueva";
         }
+    }
+
+    // ── Paso 1 (si NO tiene operación): pedir RUC/Razón social y elegir método ──
+    @GetMapping("/pago/nuevo")
+    String pagoNuevoForm(Model model) {
+        return "cajero/pago-nuevo";
+    }
+
+    // ── Pago en efectivo ─────────────────────────────────────────────────────
+    @GetMapping("/pago/efectivo")
+    String pagoEfectivoForm(@RequestParam String ruc,
+                            @RequestParam String razonSocial,
+                            @RequestParam(required = false) String direccion,
+                            Model model) {
+        model.addAttribute("ruc", ruc);
+        model.addAttribute("razonSocial", razonSocial);
+        model.addAttribute("direccion", direccion);
+        model.addAttribute("montoTramite", montoTramite);
+        return "cajero/pago-efectivo";
+    }
+
+    @PostMapping("/pago/efectivo/confirmar")
+    @org.springframework.web.bind.annotation.ResponseBody
+    java.util.Map<String, Object> confirmarEfectivo(
+            @RequestParam String ruc,
+            @RequestParam String razonSocial,
+            @RequestParam(required = false) String direccion,
+            @RequestParam java.math.BigDecimal montoRecibido,
+            @AuthenticationPrincipal UserDetails ud) {
+        try {
+            var factura = facturaService.generarFacturaEfectivo(
+                ruc, razonSocial, direccion, montoTramite, montoRecibido,
+                "Derecho de tramite - Licencia de Funcionamiento", getUsuario(ud));
+            return java.util.Map.of(
+                "ok", true,
+                "facturaId", factura.getId(),
+                "numeroOperacion", factura.getNumeroOperacion(),
+                "vuelto", factura.getVuelto()
+            );
+        } catch (Exception e) {
+            return java.util.Map.of("ok", false, "error", e.getMessage());
+        }
+    }
+
+    // ── Pago con QR (todos los medios de Flow) ──────────────────────────────
+    @GetMapping("/pago/qr")
+    String pagoQrForm(@RequestParam String ruc,
+                      @RequestParam String razonSocial,
+                      @RequestParam(required = false) String direccion,
+                      Model model) {
+        model.addAttribute("ruc", ruc);
+        model.addAttribute("razonSocial", razonSocial);
+        model.addAttribute("direccion", direccion);
+        model.addAttribute("montoTramite", montoTramite);
+        return "cajero/pago-qr";
+    }
+
+    @PostMapping("/pago/qr/iniciar")
+    String iniciarPagoQr(@RequestParam String ruc,
+                         @RequestParam String razonSocial,
+                         @RequestParam(required = false) String direccion,
+                         @AuthenticationPrincipal UserDetails ud,
+                         jakarta.servlet.http.HttpServletRequest request,
+                         RedirectAttributes ra) {
+        try {
+            var factura = facturaService.crearFacturaPendienteQR(
+                ruc, razonSocial, direccion, montoTramite,
+                "Derecho de tramite - Licencia de Funcionamiento", getUsuario(ud));
+
+            String scheme = request.getHeader("X-Forwarded-Proto") != null ?
+                request.getHeader("X-Forwarded-Proto") : request.getScheme();
+            String host = request.getHeader("X-Forwarded-Host") != null ?
+                request.getHeader("X-Forwarded-Host") : request.getServerName();
+            String baseUrl = scheme + "://" + host;
+            String urlRetorno = baseUrl + "/cajero/pago/qr/retorno?facturaId=" + factura.getId();
+            String urlConfirmacion = baseUrl + "/cajero/pago/qr/confirmar?facturaId=" + factura.getId();
+
+            var orden = flowService.crearOrdenFactura(factura.getId(),
+                "caja@municipalidad.gob.pe", razonSocial, montoTramite.doubleValue(),
+                urlRetorno, urlConfirmacion);
+
+            return "redirect:" + orden.url();
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al conectar con el sistema de pago: " + e.getMessage());
+            return "redirect:/cajero/pago/qr?ruc=" + ruc + "&razonSocial=" + razonSocial;
+        }
+    }
+
+    @GetMapping("/pago/qr/retorno")
+    String retornoQr(@RequestParam Long facturaId,
+                     @RequestParam(required = false) String token,
+                     Model model, RedirectAttributes ra) {
+        try {
+            if (token != null) {
+                var estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    var factura = facturaService.confirmarPagoQR(facturaId, token);
+                    model.addAttribute("factura", factura);
+                    return "cajero/pago-confirmado";
+                }
+            }
+            ra.addFlashAttribute("error", "El pago no fue confirmado. Intenta nuevamente.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error al verificar el pago: " + e.getMessage());
+        }
+        return "redirect:/cajero/pago/nuevo";
+    }
+
+    @PostMapping("/pago/qr/confirmar")
+    @org.springframework.web.bind.annotation.ResponseBody
+    String confirmarQrWebhook(@RequestParam Long facturaId,
+                              @RequestParam(required = false) String token) {
+        try {
+            if (token != null) {
+                var estado = flowService.verificarPago(token);
+                if (estado != null && estado.path("status").asInt() == 2) {
+                    facturaService.confirmarPagoQR(facturaId, token);
+                }
+            }
+        } catch (Exception ignored) {}
+        return "OK";
+    }
+
+    // ── Factura imprimible ───────────────────────────────────────────────────
+    @GetMapping("/factura/{id}")
+    String verFactura(@PathVariable Long id, Model model) {
+        var factura = facturaService.obtenerPorId(id);
+        model.addAttribute("factura", factura);
+        model.addAttribute("montoEnLetras",
+            com.municipalidad.licencias.util.NumeroALetrasUtil.convertir(factura.getImporteTotal()));
+        return "cajero/factura";
     }
 
     // ── Cobro de renovación en ventanilla ────────────────────────────────────

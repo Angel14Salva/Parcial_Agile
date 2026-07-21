@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="'Factura ' + ${factura.numeroFormateado}">Factura</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      color: #000;
+      background: #e9e9e9;
+      margin: 0;
+      padding: 20px;
+    }
+    .hoja {
+      background: #fff;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 18px 22px;
+      border: 1px solid #999;
+    }
+    .top-bar { text-align: right; font-size: 10px; color: #555; margin-bottom: 6px; }
+    .encabezado { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 8px; }
+    .empresa-nombre { font-weight: bold; font-size: 13px; text-transform: uppercase; }
+    .empresa-datos { font-size: 11px; line-height: 1.4; margin-top: 2px; }
+    .caja-factura { border: 1px solid #000; padding: 8px 14px; text-align: center; min-width: 220px; }
+    .caja-factura .titulo { font-weight: bold; font-size: 13px; }
+    .caja-factura .ruc { font-size: 12px; margin-top: 3px; }
+    .caja-factura .serie { font-weight: bold; font-size: 13px; margin-top: 3px; }
+
+    .datos-tramite { margin: 10px 0; font-size: 12px; }
+    .datos-tramite table { width: 100%; border-collapse: collapse; }
+    .datos-tramite td { padding: 2px 4px; vertical-align: top; }
+    .datos-tramite td.label { width: 160px; color: #333; }
+
+    table.items { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.items th, table.items td { border: 1px solid #000; padding: 4px 6px; font-size: 11px; }
+    table.items th { background: #f0f0f0; text-align: left; }
+    table.items td.num { text-align: right; }
+
+    .zona-inferior { display: flex; justify-content: space-between; margin-top: 12px; gap: 20px; }
+    .zona-izq { flex: 1; font-size: 11px; }
+    .zona-der { width: 260px; }
+    .zona-der table { width: 100%; border-collapse: collapse; }
+    .zona-der td { border: 1px solid #000; padding: 4px 8px; font-size: 11.5px; }
+    .zona-der td.label { background: #f7f7f7; }
+    .zona-der td.valor { text-align: right; width: 90px; }
+    .zona-der tr.total td { font-weight: bold; background: #eef6ee; }
+
+    .monto-letras { font-weight: bold; margin-top: 14px; font-size: 12px; }
+
+    .nota-pie { border: 1px solid #000; text-align: center; padding: 8px; margin-top: 16px; font-size: 11px; }
+
+    .acciones { text-align: center; margin-bottom: 16px; }
+    .acciones button {
+      background: #1D3557; color: #fff; border: none; padding: 10px 22px;
+      border-radius: 6px; font-size: 14px; cursor: pointer;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .hoja { border: none; max-width: 100%; }
+      .acciones { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="acciones">
+  <button onclick="window.print()">🖨 Imprimir factura</button>
+</div>
+
+<div class="hoja">
+  <div class="top-bar" th:text="${#temporals.format(factura.creadoEn, 'dd/MM/yyyy')}"></div>
+
+  <div class="encabezado">
+    <div>
+      <div class="empresa-nombre">MUNICIPALIDAD PROVINCIAL DE TRUJILLO</div>
+      <div class="empresa-datos">
+        JR. ALMAGRO NRO. 525<br/>
+        TRUJILLO - TRUJILLO - LA LIBERTAD
+      </div>
+    </div>
+    <div class="caja-factura">
+      <div class="titulo">FACTURA ELECTRONICA</div>
+      <div class="ruc">RUC: 20175639391</div>
+      <div class="serie" th:text="${factura.numeroFormateado}"></div>
+    </div>
+  </div>
+
+  <div class="datos-tramite">
+    <table>
+      <tr>
+        <td class="label">Fecha de Emisión</td>
+        <td th:text="${#temporals.format(factura.fechaEmision, 'dd/MM/yyyy')}"></td>
+      </tr>
+      <tr>
+        <td class="label">Señor(es)</td>
+        <td th:text="${factura.razonSocialCliente}"></td>
+      </tr>
+      <tr>
+        <td class="label">RUC</td>
+        <td th:text="${factura.rucCliente}"></td>
+      </tr>
+      <tr>
+        <td class="label">Dirección del Cliente</td>
+        <td th:text="${factura.direccionCliente ?: '-'}"></td>
+      </tr>
+      <tr>
+        <td class="label">Tipo de Moneda</td>
+        <td>SOLES</td>
+      </tr>
+      <tr>
+        <td class="label">Forma de Pago</td>
+        <td th:text="${factura.metodoPago.name() == 'EFECTIVO' ? 'EFECTIVO' : 'MEDIO ELECTRONICO (QR)'}"></td>
+      </tr>
+    </table>
+  </div>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th>Cantidad</th>
+        <th>Unidad Medida</th>
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Valor Unitario</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="num">1.00</td>
+        <td>UNIDAD</td>
+        <td>TRAM-LIC-FUNC</td>
+        <td th:text="${factura.concepto}"></td>
+        <td class="num" th:text="${#numbers.formatDecimal(factura.valorVenta, 1, 2)}"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="zona-inferior">
+    <div class="zona-izq">
+      <div th:if="${factura.metodoPago.name() == 'EFECTIVO'}">
+        <strong>Monto recibido:</strong> S/ <span th:text="${#numbers.formatDecimal(factura.montoRecibido, 1, 2)}"></span><br/>
+        <strong>Vuelto:</strong> S/ <span th:text="${#numbers.formatDecimal(factura.vuelto, 1, 2)}"></span>
+      </div>
+      <div th:unless="${factura.metodoPago.name() == 'EFECTIVO'}">
+        <strong>N.° de operación:</strong> <span th:text="${factura.numeroOperacion}"></span>
+      </div>
+    </div>
+    <div class="zona-der">
+      <table>
+        <tr><td class="label">Sub Total Ventas</td><td class="valor" th:text="'S/. ' + ${#numbers.formatDecimal(factura.valorVenta, 1, 2)}"></td></tr>
+        <tr><td class="label">Anticipos</td><td class="valor">S/. 0.00</td></tr>
+        <tr><td class="label">Descuentos</td><td class="valor">S/. 0.00</td></tr>
+        <tr><td class="label">Valor Venta</td><td class="valor" th:text="'S/. ' + ${#numbers.formatDecimal(factura.valorVenta, 1, 2)}"></td></tr>
+        <tr><td class="label">ISC</td><td class="valor">S/. 0.00</td></tr>
+        <tr><td class="label">IGV</td><td class="valor" th:text="'S/. ' + ${#numbers.formatDecimal(factura.igv, 1, 2)}"></td></tr>
+        <tr><td class="label">Otros Cargos</td><td class="valor">S/. 0.00</td></tr>
+        <tr><td class="label">Otros Tributos</td><td class="valor">S/. 0.00</td></tr>
+        <tr class="total"><td class="label">Importe Total</td><td class="valor" th:text="'S/. ' + ${#numbers.formatDecimal(factura.importeTotal, 1, 2)}"></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="monto-letras" th:text="${montoEnLetras}"></div>
+
+  <div class="nota-pie">
+    Esta es una representación impresa de la factura electrónica, generada en el Sistema de Licencias
+    de la Municipalidad Provincial de Trujillo.
+  </div>
+</div>
+
+</body>
+</html>

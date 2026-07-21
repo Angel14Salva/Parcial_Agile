@@ -173,7 +173,7 @@ public class SolicitudService {
      */
     @Transactional
     public Solicitud registrarPresencial(SolicitudDto dto, MultipartFile plano,
-                                         MultipartFile firma, Usuario cajero) {
+                                         MultipartFile firma, Usuario cajero, String referenciaPagoExterna) {
         if (dto.getRuc() == null || !dto.getRuc().startsWith("20"))
             throw new IllegalArgumentException(
                 "Solo se aceptan RUC de empresas (persona jurídica, inician con 20).");
@@ -249,8 +249,10 @@ public class SolicitudService {
         s.setValidadoSunat(true);
         s.setMontoPagado(montoPagoTramite);
         s.setFechaPago(LocalDateTime.now());
-        s.setReferenciaPago("CAJA-" + cajero.getUsername().toUpperCase() + "-" +
-            System.currentTimeMillis());
+        s.setReferenciaPago(
+            (referenciaPagoExterna != null && !referenciaPagoExterna.isBlank())
+                ? referenciaPagoExterna.trim()
+                : "CAJA-" + cajero.getUsername().toUpperCase() + "-" + System.currentTimeMillis());
 
         solicitudRepo.save(s);
         inspeccionService.programarPrimeraInspeccion(s);

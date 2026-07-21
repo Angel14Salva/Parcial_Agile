@@ -79,6 +79,50 @@ public class FlowService {
         }
     }
 
+    public OrdenFlow crearOrdenFactura(Long facturaId, String email, String nombrePagador, double monto,
+                                       String urlRetorno, String urlConfirmacion) {
+        try {
+            Map<String, String> params = new TreeMap<>();
+            params.put("apiKey", apiKey);
+            params.put("commerceOrder", "FACT-" + facturaId);
+            params.put("subject", "Derecho de tramite - Licencia de Funcionamiento");
+            params.put("currency", "PEN");
+            params.put("amount", String.valueOf((int) monto));
+            params.put("email", email);
+            params.put("payerName", nombrePagador);
+            params.put("urlConfirmation", urlConfirmacion);
+            params.put("urlReturn", urlRetorno);
+
+            String firma = firmar(params);
+            params.put("s", firma);
+
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            params.forEach(formData::add);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            ResponseEntity<String> resp = restTemplate.exchange(
+                apiUrl + "/payment/create",
+                HttpMethod.POST,
+                new HttpEntity<>(formData, headers),
+                String.class
+            );
+
+            JsonNode json = mapper.readTree(resp.getBody());
+            String token = json.path("token").asText();
+            String flowOrderNum = json.path("flowOrder").asText();
+            String urlPago = json.path("url").asText() + "?token=" + token;
+
+            log.info("Orden Flow (factura caja) creada: {} para factura {}", flowOrderNum, facturaId);
+            return new OrdenFlow(urlPago, token, flowOrderNum);
+
+        } catch (Exception e) {
+            log.error("Error creando orden Flow (factura caja): {}", e.getMessage());
+            throw new RuntimeException("Error al crear la orden de pago: " + e.getMessage());
+        }
+    }
+
     public JsonNode verificarPago(String token) {
         try {
             Map<String, String> params = new TreeMap<>();

@@ -32,6 +32,17 @@ public class Enums {
         PRESENCIAL
     }
 
+    public enum MetodoPago {
+        EFECTIVO,
+        QR
+    }
+
+    public enum EstadoFactura {
+        PENDIENTE,
+        PAGADA,
+        ANULADA
+    }
+
     public enum EstadoTramite {
         BORRADOR,
         PENDIENTE_VALIDACION,

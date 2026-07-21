@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head><meta charset="UTF-8"/><title>Pagar trámite | Caja</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>body{background:#f0f4f8}</style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/cajero/dashboard">
+      <i class="bi bi-building me-2"></i>Licencias Municipales
+    </a>
+    <div class="ms-auto d-flex gap-3 align-items-center">
+      <span class="text-white-50 small" sec:authentication="name"></span>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="max-width:620px">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/cajero/dashboard">Panel de caja</a></li>
+      <li class="breadcrumb-item"><a href="/cajero/nueva">Nuevo trámite</a></li>
+      <li class="breadcrumb-item active">Pagar trámite</li>
+    </ol>
+  </nav>
+
+  <h4 class="fw-bold mb-1"><i class="bi bi-receipt me-2 text-primary"></i>Datos para la factura</h4>
+  <p class="text-muted small mb-4">Necesitamos el RUC y la razón social del negocio para emitir el comprobante de pago.</p>
+
+  <div id="alertaError" class="alert alert-danger d-none"></div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <label class="form-label fw-semibold">N° RUC (empresa) <span class="text-danger">*</span></label>
+      <div class="input-group mb-1">
+        <input type="text" id="inputRuc" class="form-control" placeholder="20 + 9 dígitos"
+               maxlength="11" pattern="20\d{9}" required/>
+        <button type="button" class="btn btn-outline-primary" id="btnBuscarRuc">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+      <div id="rucStatus" class="field-hint mb-3" style="font-size:.8rem"></div>
+
+      <label class="form-label fw-semibold">Razón social</label>
+      <input type="text" id="inputRazonSocial" class="form-control mb-3 auto-field" readonly
+             placeholder="Se autorellena con el RUC" style="background:#f8fff8"/>
+
+      <label class="form-label fw-semibold">Dirección fiscal</label>
+      <input type="text" id="inputDireccion" class="form-control auto-field" readonly
+             placeholder="Se autorellena con el RUC" style="background:#f8fff8"/>
+    </div>
+  </div>
+
+  <h6 class="fw-semibold mb-3">Selecciona el método de pago</h6>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <button type="button" id="btnEfectivo" class="btn btn-outline-success btn-lg w-100 py-4">
+        <i class="bi bi-cash-stack d-block mb-2" style="font-size:1.8rem"></i>Efectivo
+      </button>
+    </div>
+    <div class="col-md-6">
+      <button type="button" id="btnQr" class="btn btn-outline-primary btn-lg w-100 py-4">
+        <i class="bi bi-qr-code d-block mb-2" style="font-size:1.8rem"></i>QR / Pasarela de pago
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let rucOk = false;
+  let datosRuc = { razonSocial: '', direccion: '' };
+
+  document.getElementById('btnBuscarRuc').addEventListener('click', async () => {
+    const ruc = document.getElementById('inputRuc').value.trim();
+    const status = document.getElementById('rucStatus');
+    if (!/^20\d{9}$/.test(ruc)) {
+      status.innerHTML = '<span class="text-danger">Solo se aceptan RUC de empresas (inician con 20, 11 dígitos).</span>';
+      return;
+    }
+    status.innerHTML = '<span class="text-muted">Consultando SUNAT...</span>';
+    try {
+      const res = await fetch(`/api/validar/ruc/${ruc}`);
+      const data = await res.json();
+      if (!res.ok) {
+        status.innerHTML = `<span class="text-danger">${data.error || 'RUC no encontrado'}</span>`;
+        rucOk = false;
+      } else {
+        document.getElementById('inputRazonSocial').value = data.razonSocial;
+        document.getElementById('inputDireccion').value = data.domicilioFiscal;
+        datosRuc.razonSocial = data.razonSocial;
+        datosRuc.direccion = data.domicilioFiscal;
+        status.innerHTML = `<span class="text-success">✓ ${data.razonSocial}</span>`;
+        rucOk = true;
+      }
+    } catch (e) {
+      status.innerHTML = '<span class="text-danger">Error de conexión.</span>';
+      rucOk = false;
+    }
+  });
+
+  function irAPagar(metodo) {
+    const errDiv = document.getElementById('alertaError');
+    if (!rucOk) {
+      errDiv.textContent = 'Debes validar el RUC antes de continuar.';
+      errDiv.classList.remove('d-none');
+      window.scrollTo({top:0, behavior:'smooth'});
+      return;
+    }
+    const ruc = encodeURIComponent(document.getElementById('inputRuc').value.trim());
+    const razonSocial = encodeURIComponent(datosRuc.razonSocial);
+    const direccion = encodeURIComponent(datosRuc.direccion || '');
+    window.location.href = `/cajero/pago/${metodo}?ruc=${ruc}&razonSocial=${razonSocial}&direccion=${direccion}`;
+  }
+
+  document.getElementById('btnEfectivo').addEventListener('click', () => irAPagar('efectivo'));
+  document.getElementById('btnQr').addEventListener('click', () => irAPagar('qr'));
+</script>
+</body>
+</html>
