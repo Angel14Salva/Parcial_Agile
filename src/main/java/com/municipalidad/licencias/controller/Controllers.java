@@ -448,6 +448,7 @@ class CajeroController {
     private final com.municipalidad.licencias.service.FacturaCajaService facturaService;
     private final com.municipalidad.licencias.service.FlowService flowService;
     private final com.municipalidad.licencias.service.CajaSesionService cajaSesionService;
+    private final com.municipalidad.licencias.service.EmailService emailService;
 
     @org.springframework.beans.factory.annotation.Value("${app.pago.tramite}")
     private java.math.BigDecimal montoTramite;
@@ -459,7 +460,8 @@ class CajeroController {
                      com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
                      com.municipalidad.licencias.service.FacturaCajaService facturaService,
                      com.municipalidad.licencias.service.FlowService flowService,
-                     com.municipalidad.licencias.service.CajaSesionService cajaSesionService) {
+                     com.municipalidad.licencias.service.CajaSesionService cajaSesionService,
+                     com.municipalidad.licencias.service.EmailService emailService) {
         this.solicitudService = solicitudService;
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
@@ -468,6 +470,7 @@ class CajeroController {
         this.facturaService   = facturaService;
         this.flowService      = flowService;
         this.cajaSesionService = cajaSesionService;
+        this.emailService      = emailService;
     }
 
     private Usuario getUsuario(UserDetails ud) {
@@ -604,6 +607,20 @@ class CajeroController {
             var factura = facturaService.generarFacturaEfectivo(
                 ruc, razonSocial, direccion, email, montoTramite, montoRecibido,
                 "Derecho de tramite - Licencia de Funcionamiento", getUsuario(ud));
+
+            if (email != null && !email.isBlank()) {
+                emailService.enviarComprobantePago(
+                    email,
+                    razonSocial,
+                    ruc,
+                    factura.getNumeroFormateado(),
+                    factura.getConcepto(),
+                    factura.getImporteTotal().toString(),
+                    factura.getMetodoPago().name(),
+                    factura.getNumeroOperacion()
+                );
+            }
+
             return java.util.Map.of(
                 "ok", true,
                 "facturaId", factura.getId(),
