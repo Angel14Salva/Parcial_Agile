@@ -1,45 +1,63 @@
 package com.municipalidad.licencias.service;
 
-import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Envia correos via la API HTTPS de Brevo (antes Sendinblue). Render bloquea las
+ * conexiones SMTP salientes, por eso el envio tiene que ser via una API HTTP en vez
+ * de SMTP directo (mismo motivo por el que se usaba Resend originalmente).
+ */
 @Service
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    private static final String BREVO_URL = "https://api.brevo.com/v3/smtp/email";
 
-    private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${spring.mail.username:}")
+    @Value("${brevo.api-key:}")
+    private String apiKey;
+
+    @Value("${brevo.from-email:}")
     private String fromEmail;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
+    @Value("${brevo.from-name:Municipalidad de Trujillo}")
+    private String fromName;
 
     @jakarta.annotation.PostConstruct
     void verificarConfiguracion() {
-        if (fromEmail == null || fromEmail.isBlank()) {
-            log.error("spring.mail.username esta vacio: ningun correo se podra enviar hasta que se configure.");
+        if (apiKey == null || apiKey.isBlank() || fromEmail == null || fromEmail.isBlank()) {
+            log.error("brevo.api-key o brevo.from-email estan vacios: ningun correo se podra enviar hasta que se configuren.");
         } else {
-            log.info("EmailService configurado (SMTP Gmail). from={}", fromEmail);
+            log.info("EmailService configurado (Brevo). from={}", fromEmail);
         }
     }
 
     private void enviarHtml(String destinatario, String asunto, String html, String contexto) {
         try {
-            MimeMessage mensaje = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mensaje, "UTF-8");
-            helper.setFrom(fromEmail);
-            helper.setTo(destinatario);
-            helper.setSubject(asunto);
-            helper.setText(html, true);
-            mailSender.send(mensaje);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("api-key", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+            Map<String, Object> body = Map.of(
+                "sender", Map.of("name", fromName, "email", fromEmail),
+                "to", List.of(Map.of("email", destinatario)),
+                "subject", asunto,
+                "htmlContent", html
+            );
+
+            restTemplate.postForEntity(BREVO_URL, new HttpEntity<>(body, headers), String.class);
         } catch (Exception e) {
             log.error("Error enviando email ({}) a {}", contexto, destinatario, e);
         }
