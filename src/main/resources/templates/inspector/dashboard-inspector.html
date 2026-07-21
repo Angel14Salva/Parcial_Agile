@@ -84,7 +84,8 @@
     </div>
   </div>
 
-  <!-- ── Licencias vigentes para fiscalización ─────────────────────────── -->
+  <!-- ── Licencias vigentes para fiscalización (solo fiscalizador, no inspector ITSE) ── -->
+  <div th:if="${mostrarFiscalizacion}">
   <h5 class="fw-semibold mb-3">
     <i class="bi bi-shield-check me-2 text-success"></i>Licencias vigentes
     <small class="text-muted fw-normal fs-6 ms-2">— Fiscalización e inspecciones de oficio</small>
@@ -170,6 +171,7 @@
         </tr>
       </tbody>
     </table>
+  </div>
   </div>
 
 </div>
