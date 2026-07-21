@@ -201,6 +201,13 @@ public class Solicitud {
     public LocalDateTime getCreadoEn()           { return creadoEn; }
     public Usuario getUsuario()                  { return usuario; }
     public List<Inspeccion> getInspecciones()    { return inspecciones; }
+
+    public Inspeccion getInspeccionPendiente() {
+        for (Inspeccion i : inspecciones) {
+            if (i.getResultado() == Enums.ResultadoInspeccion.PENDIENTE) return i;
+        }
+        return null;
+    }
     public Licencia getLicencia()                { return licencia; }
 
     // Setters

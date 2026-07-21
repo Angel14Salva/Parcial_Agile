@@ -44,12 +44,6 @@
       <a href="/admin/inspectores" class="btn btn-outline-info btn-sm">
         <i class="bi bi-people me-1"></i>Inspectores
       </a>
-      <a href="/inspector/buscar" class="btn btn-outline-primary btn-sm">
-        <i class="bi bi-search me-1"></i>Buscar licencia
-      </a>
-      <a href="/multas" class="btn btn-outline-danger btn-sm">
-        <i class="bi bi-list-ul me-1"></i>Registro de multas
-      </a>
     </div>
   </div>
 
@@ -62,7 +56,7 @@
     <table class="table table-hover table-sm bg-white shadow-sm rounded">
       <thead style="background:#1D3557;color:#fff">
         <tr>
-          <th>#</th><th>Razón social</th><th>Rubro</th><th>Estado</th><th>Fecha</th><th></th>
+          <th>#</th><th>Razón social</th><th>Rubro</th><th>Estado</th><th>Registrado</th><th>Fecha inspección</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -75,6 +69,11 @@
                   th:text="${s.estado.name().replace('_',' ')}"></span>
           </td>
           <td class="small text-muted" th:text="${#temporals.format(s.creadoEn,'dd/MM/yy')}"></td>
+          <td class="small">
+            <span th:if="${s.inspeccionPendiente != null}"
+                  th:text="${#temporals.format(s.inspeccionPendiente.fechaProgramada,'dd/MM/yy')}"></span>
+            <span th:if="${s.inspeccionPendiente == null}" class="text-muted">-</span>
+          </td>
           <td class="d-flex gap-1">
             <a th:href="@{/solicitud/{id}/detalle(id=${s.id})}"
                class="btn btn-outline-secondary btn-sm">
