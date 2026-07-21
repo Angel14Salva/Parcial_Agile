@@ -2,17 +2,30 @@ package com.municipalidad.licencias.service;
 
 import com.resend.*;
 import com.resend.services.emails.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
     @Value("${resend.api-key}")
     private String apiKey;
 
     @Value("${resend.from:onboarding@resend.dev}")
     private String fromEmail;
+
+    @jakarta.annotation.PostConstruct
+    void verificarConfiguracion() {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.error("resend.api-key esta vacio: ningun correo se podra enviar hasta que se configure.");
+        } else {
+            log.info("EmailService configurado. from={} apiKey(len)={}", fromEmail, apiKey.length());
+        }
+    }
 
     public void enviarComprobanteYCodigo(String destinatario, String razonSocial, String ruc,
                                         String codigoSeguimiento, String numeroFactura,
@@ -73,7 +86,7 @@ public class EmailService {
 
             resend.emails().send(params);
         } catch (Exception e) {
-            System.err.println("Error enviando email comprobante/seguimiento: " + e.getMessage());
+            log.error("Error enviando email comprobante/seguimiento a {}", destinatario, e);
         }
     }
 
@@ -118,7 +131,7 @@ public class EmailService {
             resend.emails().send(params);
         } catch (Exception e) {
             // Log error pero no fallar el flujo principal
-            System.err.println("Error enviando email: " + e.getMessage());
+            log.error("Error enviando email de código de seguimiento a {}", destinatario, e);
         }
     }
 
@@ -161,7 +174,7 @@ public class EmailService {
                 .build();
             resend.emails().send(params);
         } catch (Exception e) {
-            System.err.println("Error enviando email licencia: " + e.getMessage());
+            log.error("Error enviando email de licencia a {}", destinatario, e);
         }
     }
 
@@ -198,7 +211,7 @@ public class EmailService {
 
             resend.emails().send(params);
         } catch (Exception e) {
-            System.err.println("Error enviando email actualización: " + e.getMessage());
+            log.error("Error enviando email de actualización a {}", destinatario, e);
         }
     }
 }
