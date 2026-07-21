@@ -566,10 +566,12 @@ class CajeroController {
     String pagoQrForm(@RequestParam String ruc,
                       @RequestParam String razonSocial,
                       @RequestParam(required = false) String direccion,
+                      @RequestParam(required = false) String email,
                       Model model) {
         model.addAttribute("ruc", ruc);
         model.addAttribute("razonSocial", razonSocial);
         model.addAttribute("direccion", direccion);
+        model.addAttribute("email", email);
         model.addAttribute("montoTramite", montoTramite);
         return "cajero/pago-qr";
     }
@@ -578,6 +580,7 @@ class CajeroController {
     String iniciarPagoQr(@RequestParam String ruc,
                          @RequestParam String razonSocial,
                          @RequestParam(required = false) String direccion,
+                         @RequestParam String email,
                          @AuthenticationPrincipal UserDetails ud,
                          jakarta.servlet.http.HttpServletRequest request,
                          RedirectAttributes ra) {
@@ -595,17 +598,14 @@ class CajeroController {
             String urlRetorno = baseUrl + "/cajero/pago/qr/retorno?facturaId=" + factura.getId();
             String urlConfirmacion = baseUrl + "/cajero/pago/qr/confirmar?facturaId=" + factura.getId();
 
-            String emailPagador = cajero.getEmail() != null && !cajero.getEmail().isBlank()
-                ? cajero.getEmail() : "publico@licencias.gob.pe";
-
             var orden = flowService.crearOrdenFactura(factura.getId(),
-                emailPagador, razonSocial, montoTramite.doubleValue(),
+                email, razonSocial, 2.0,
                 urlRetorno, urlConfirmacion);
 
             return "redirect:" + orden.url();
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Error al conectar con el sistema de pago: " + e.getMessage());
-            return "redirect:/cajero/pago/qr?ruc=" + ruc + "&razonSocial=" + razonSocial;
+            return "redirect:/cajero/pago/qr?ruc=" + ruc + "&razonSocial=" + razonSocial + "&email=" + email;
         }
     }
 

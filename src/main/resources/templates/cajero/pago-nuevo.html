@@ -49,8 +49,15 @@
              placeholder="Se autorellena con el RUC" style="background:#f8fff8"/>
 
       <label class="form-label fw-semibold">Dirección fiscal</label>
-      <input type="text" id="inputDireccion" class="form-control auto-field" readonly
+      <input type="text" id="inputDireccion" class="form-control mb-3 auto-field" readonly
              placeholder="Se autorellena con el RUC" style="background:#f8fff8"/>
+
+      <label class="form-label fw-semibold">Correo electrónico del cliente <span class="text-danger">*</span></label>
+      <input type="email" id="inputEmail" class="form-control"
+             placeholder="correo@ejemplo.com" required/>
+      <div class="field-hint text-muted mt-1" style="font-size:.78rem">
+        Necesario para generar el comprobante de pago con la pasarela.
+      </div>
     </div>
   </div>
 
@@ -109,10 +116,18 @@
       window.scrollTo({top:0, behavior:'smooth'});
       return;
     }
+    const email = document.getElementById('inputEmail').value.trim();
+    if (!email || !email.includes('@')) {
+      errDiv.textContent = 'Debes ingresar un correo electrónico válido del cliente.';
+      errDiv.classList.remove('d-none');
+      window.scrollTo({top:0, behavior:'smooth'});
+      return;
+    }
     const ruc = encodeURIComponent(document.getElementById('inputRuc').value.trim());
     const razonSocial = encodeURIComponent(datosRuc.razonSocial);
     const direccion = encodeURIComponent(datosRuc.direccion || '');
-    window.location.href = `/cajero/pago/${metodo}?ruc=${ruc}&razonSocial=${razonSocial}&direccion=${direccion}`;
+    const emailEnc = encodeURIComponent(email);
+    window.location.href = `/cajero/pago/${metodo}?ruc=${ruc}&razonSocial=${razonSocial}&direccion=${direccion}&email=${emailEnc}`;
   }
 
   document.getElementById('btnEfectivo').addEventListener('click', () => irAPagar('efectivo'));

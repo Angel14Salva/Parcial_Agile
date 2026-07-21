@@ -39,6 +39,8 @@
         <dd class="col-sm-7" th:text="${razonSocial}"></dd>
         <dt class="col-sm-5 text-muted">RUC</dt>
         <dd class="col-sm-7" th:text="${ruc}"></dd>
+        <dt class="col-sm-5 text-muted">Correo</dt>
+        <dd class="col-sm-7" th:text="${email}"></dd>
       </dl>
     </div>
     <div class="card-footer d-flex justify-content-between align-items-center">
@@ -58,6 +60,7 @@
     <input type="hidden" name="ruc" th:value="${ruc}"/>
     <input type="hidden" name="razonSocial" th:value="${razonSocial}"/>
     <input type="hidden" name="direccion" th:value="${direccion}"/>
+    <input type="hidden" name="email" th:value="${email}"/>
     <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold">
       <i class="bi bi-credit-card me-2"></i>Ir a la pasarela de pago
     </button>
