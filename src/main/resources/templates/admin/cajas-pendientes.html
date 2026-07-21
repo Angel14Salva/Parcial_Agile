@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head><meta charset="UTF-8"/><title>Cierres de caja pendientes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>body{background:#f0f4f8}</style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4" style="background:#1D3557">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/dashboard"><i class="bi bi-building me-2"></i>Licencias Municipales</a>
+    <div class="ms-auto d-flex gap-3 align-items-center">
+      <span class="text-white-50 small" sec:authentication="name"></span>
+      <form action="/auth/logout" method="post" style="display:inline">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Salir</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div th:if="${exito}" class="alert alert-success alert-dismissible fade show">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${exito}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-1"><i class="bi bi-cash-coin me-2 text-primary"></i>Cierres de caja pendientes</h4>
+      <p class="text-muted small mb-0">Cierres con diferencia entre el monto contado y el esperado, a la espera de tu aprobación.</p>
+    </div>
+    <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+  </div>
+
+  <div th:if="${#lists.isEmpty(sesiones)}" class="text-center py-5">
+    <i class="bi bi-check2-circle text-muted" style="font-size:3rem"></i>
+    <p class="text-muted mt-3">No hay cierres de caja pendientes de revisión.</p>
+  </div>
+
+  <div class="row g-3" th:unless="${#lists.isEmpty(sesiones)}">
+    <div class="col-12" th:each="s : ${sesiones}">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between flex-wrap gap-2">
+            <div>
+              <h6 class="fw-bold mb-1" th:text="${s.cajero.nombreCompleto} + ' (' + ${s.cajero.username} + ')'"></h6>
+              <p class="text-muted small mb-1">
+                Abierta: <span th:text="${#temporals.format(s.fechaApertura,'dd/MM/yy HH:mm')}"></span>
+                — Monto inicial: S/ <span th:text="${s.montoApertura}"></span>
+              </p>
+              <p class="small mb-1">
+                Esperado: <strong>S/ <span th:text="${s.montoCierreEsperado}"></span></strong>
+                &nbsp;|&nbsp; Contado: <strong>S/ <span th:text="${s.montoCierreContado}"></span></strong>
+                &nbsp;|&nbsp;
+                <span class="badge" th:classappend="${s.diferencia.signum() > 0} ? 'bg-info text-dark' : 'bg-danger'"
+                      th:text="(${s.diferencia.signum() > 0} ? 'Sobrante S/ ' : 'Faltante S/ ') + ${s.diferencia.abs()}"></span>
+              </p>
+              <p th:if="${s.observacionesCajero != null and !s.observacionesCajero.isBlank()}" class="text-muted small mb-0">
+                <i class="bi bi-chat-left-text me-1"></i>Nota del cajero: <span th:text="${s.observacionesCajero}"></span>
+              </p>
+            </div>
+            <div class="d-flex flex-column gap-2" style="min-width:260px">
+              <form th:action="@{/admin/cajas/{id}/aprobar(id=${s.id})}" method="post" class="d-flex gap-2">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="text" name="comentario" class="form-control form-control-sm" placeholder="Comentario (opcional)"/>
+                <button type="submit" class="btn btn-success btn-sm text-nowrap"><i class="bi bi-check-lg me-1"></i>Aprobar</button>
+              </form>
+              <form th:action="@{/admin/cajas/{id}/rechazar(id=${s.id})}" method="post" class="d-flex gap-2">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="text" name="comentario" class="form-control form-control-sm" placeholder="Motivo (recomendado)"/>
+                <button type="submit" class="btn btn-outline-danger btn-sm text-nowrap"><i class="bi bi-x-lg me-1"></i>Rechazar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

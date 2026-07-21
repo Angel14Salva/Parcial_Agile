@@ -40,17 +40,20 @@ class DashboardController {
     private final InspeccionService inspeccionService;
     private final com.municipalidad.licencias.service.NotificacionService notificacionService;
     private final LicenciaService licenciaService;
+    private final com.municipalidad.licencias.service.CajaSesionService cajaSesionService;
 
     DashboardController(UsuarioRepository usuarioRepo,
                         SolicitudService solicitudService,
                         InspeccionService inspeccionService,
                         com.municipalidad.licencias.service.NotificacionService notificacionService,
-                        LicenciaService licenciaService) {
+                        LicenciaService licenciaService,
+                        com.municipalidad.licencias.service.CajaSesionService cajaSesionService) {
         this.usuarioRepo         = usuarioRepo;
         this.solicitudService    = solicitudService;
         this.inspeccionService   = inspeccionService;
         this.notificacionService = notificacionService;
         this.licenciaService     = licenciaService;
+        this.cajaSesionService   = cajaSesionService;
     }
 
     @GetMapping("/dashboard")
@@ -89,6 +92,7 @@ class DashboardController {
             return "inspector/dashboard-inspector";
         } else {
             model.addAttribute("tramitesActivos", solicitudService.obtenerTramitesActivos());
+            model.addAttribute("cajasPendientes", cajaSesionService.obtenerPendientesAprobacion().size());
             return "admin/dashboard-admin";
         }
     }
@@ -446,6 +450,7 @@ class CajeroController {
     private final com.municipalidad.licencias.repository.LicenciaRepository  licenciaRepo;
     private final com.municipalidad.licencias.service.FacturaCajaService facturaService;
     private final com.municipalidad.licencias.service.FlowService flowService;
+    private final com.municipalidad.licencias.service.CajaSesionService cajaSesionService;
 
     @org.springframework.beans.factory.annotation.Value("${app.pago.tramite}")
     private java.math.BigDecimal montoTramite;
@@ -456,7 +461,8 @@ class CajeroController {
                      com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
                      com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
                      com.municipalidad.licencias.service.FacturaCajaService facturaService,
-                     com.municipalidad.licencias.service.FlowService flowService) {
+                     com.municipalidad.licencias.service.FlowService flowService,
+                     com.municipalidad.licencias.service.CajaSesionService cajaSesionService) {
         this.solicitudService = solicitudService;
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
@@ -464,6 +470,7 @@ class CajeroController {
         this.licenciaRepo     = licenciaRepo;
         this.facturaService   = facturaService;
         this.flowService      = flowService;
+        this.cajaSesionService = cajaSesionService;
     }
 
     private Usuario getUsuario(UserDetails ud) {
@@ -473,14 +480,51 @@ class CajeroController {
 
     @GetMapping("/dashboard")
     String dashboard(@AuthenticationPrincipal UserDetails ud, Model model) {
-        model.addAttribute("usuario", getUsuario(ud));
+        Usuario usuario = getUsuario(ud);
+        model.addAttribute("usuario", usuario);
+        model.addAttribute("sesionCaja", cajaSesionService.obtenerSesionActual(usuario).orElse(null));
         return "cajero/dashboard";
     }
 
+    // ── Apertura y cierre de caja ────────────────────────────────────────────
+    @PostMapping("/caja/abrir")
+    String abrirCaja(@RequestParam java.math.BigDecimal montoApertura,
+                     @AuthenticationPrincipal UserDetails ud,
+                     RedirectAttributes ra) {
+        try {
+            cajaSesionService.abrir(getUsuario(ud), montoApertura);
+            ra.addFlashAttribute("exito", "Caja abierta con S/ " + montoApertura + ".");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/cajero/dashboard";
+    }
+
+    @PostMapping("/caja/cerrar")
+    String cerrarCaja(@RequestParam java.math.BigDecimal montoContado,
+                      @RequestParam(required = false) String observaciones,
+                      @AuthenticationPrincipal UserDetails ud,
+                      RedirectAttributes ra) {
+        try {
+            var sesion = cajaSesionService.cerrar(getUsuario(ud), montoContado, observaciones);
+            if (sesion.getEstado() == com.municipalidad.licencias.model.Enums.EstadoSesionCaja.CERRADA) {
+                ra.addFlashAttribute("exito", "Caja cerrada correctamente. El monto contado coincide con lo esperado.");
+            } else {
+                ra.addFlashAttribute("error",
+                    "El monto contado no coincide con lo esperado (diferencia de S/ " + sesion.getDiferencia().abs() +
+                        "). Se envió una solicitud al administrador para que revise el cierre.");
+            }
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/cajero/dashboard";
+    }
+
     // ── Paso 0: número de operación (o ir a pagar) ──────────────────────────
+    // De momento se omite esta pantalla intermedia y se va directo a pagar el trámite.
     @GetMapping("/nueva")
     String inicio(Model model) {
-        return "cajero/inicio";
+        return "redirect:/cajero/pago/nuevo";
     }
 
     // ── Paso 1 (si ya tiene operación): formulario completo del trámite ────
@@ -1602,6 +1646,60 @@ class InspectorAdminController {
             ra.addFlashAttribute("error", "No se puede eliminar: el inspector tiene inspecciones o registros asociados.");
         }
         return referer != null ? "redirect:" + referer : "redirect:/admin/inspectores";
+    }
+}
+
+// ── Revisión de cierres de caja con inconsistencias (admin) ─────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/admin/cajas")
+class AdminCajaController {
+
+    private final com.municipalidad.licencias.service.CajaSesionService cajaSesionService;
+    private final UsuarioRepository usuarioRepo;
+
+    AdminCajaController(com.municipalidad.licencias.service.CajaSesionService cajaSesionService,
+                        UsuarioRepository usuarioRepo) {
+        this.cajaSesionService = cajaSesionService;
+        this.usuarioRepo = usuarioRepo;
+    }
+
+    private Usuario getUsuario(UserDetails ud) {
+        return usuarioRepo.findByUsername(ud.getUsername())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+
+    @GetMapping("/pendientes")
+    String pendientes(Model model) {
+        model.addAttribute("sesiones", cajaSesionService.obtenerPendientesAprobacion());
+        return "admin/cajas-pendientes";
+    }
+
+    @PostMapping("/{id}/aprobar")
+    String aprobar(@PathVariable Long id,
+                   @RequestParam(required = false) String comentario,
+                   @AuthenticationPrincipal UserDetails ud,
+                   RedirectAttributes ra) {
+        try {
+            cajaSesionService.aprobar(id, getUsuario(ud), comentario);
+            ra.addFlashAttribute("exito", "Cierre de caja aprobado.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/cajas/pendientes";
+    }
+
+    @PostMapping("/{id}/rechazar")
+    String rechazar(@PathVariable Long id,
+                    @RequestParam(required = false) String comentario,
+                    @AuthenticationPrincipal UserDetails ud,
+                    RedirectAttributes ra) {
+        try {
+            cajaSesionService.rechazar(id, getUsuario(ud), comentario);
+            ra.addFlashAttribute("exito", "Cierre de caja rechazado. Se notificó al cajero para que vuelva a contar.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/cajas/pendientes";
     }
 }
 

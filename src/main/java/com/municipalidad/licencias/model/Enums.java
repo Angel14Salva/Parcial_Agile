@@ -79,5 +79,10 @@ public class Enums {
         FISICA
     }
 
-    
+    public enum EstadoSesionCaja {
+        ABIERTA,
+        PENDIENTE_APROBACION,
+        CERRADA
+    }
+
 }
