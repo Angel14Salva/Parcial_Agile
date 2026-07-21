@@ -96,6 +96,7 @@ public class Inspeccion {
     public Usuario getInspector()                    { return inspector; }
     public Enums.TipoInspeccion getTipo()            { return tipo; }
     public LocalDate getFechaProgramada()            { return fechaProgramada; }
+    public void setFechaProgramada(LocalDate v)      { this.fechaProgramada = v; }
     public LocalDateTime getFechaRealizada()         { return fechaRealizada; }
     public Enums.ResultadoInspeccion getResultado()  { return resultado; }
     public String getNotasInspector()                { return notasInspector; }

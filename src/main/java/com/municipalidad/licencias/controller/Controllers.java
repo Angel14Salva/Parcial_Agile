@@ -60,6 +60,7 @@ class DashboardController {
     String dashboard(@AuthenticationPrincipal UserDetails ud, Model model) {
         Usuario usuario = getUsuario(ud);
         model.addAttribute("usuario", usuario);
+        model.addAttribute("notifCount", notificacionService.contarNoLeidas(usuario));
         if (usuario.getRol() == Enums.Rol.SUBGERENTE) {
             return "redirect:/subgerente/dashboard";
         }
@@ -448,6 +449,7 @@ class CajeroController {
     private final com.municipalidad.licencias.service.FacturaCajaService facturaService;
     private final com.municipalidad.licencias.service.FlowService flowService;
     private final com.municipalidad.licencias.service.CajaSesionService cajaSesionService;
+    private final com.municipalidad.licencias.service.NotificacionService notificacionService;
 
     @org.springframework.beans.factory.annotation.Value("${app.pago.tramite}")
     private java.math.BigDecimal montoTramite;
@@ -459,7 +461,8 @@ class CajeroController {
                      com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
                      com.municipalidad.licencias.service.FacturaCajaService facturaService,
                      com.municipalidad.licencias.service.FlowService flowService,
-                     com.municipalidad.licencias.service.CajaSesionService cajaSesionService) {
+                     com.municipalidad.licencias.service.CajaSesionService cajaSesionService,
+                     com.municipalidad.licencias.service.NotificacionService notificacionService) {
         this.solicitudService = solicitudService;
         this.licenciaService  = licenciaService;
         this.usuarioRepo      = usuarioRepo;
@@ -468,6 +471,7 @@ class CajeroController {
         this.facturaService   = facturaService;
         this.flowService      = flowService;
         this.cajaSesionService = cajaSesionService;
+        this.notificacionService = notificacionService;
     }
 
     private Usuario getUsuario(UserDetails ud) {
@@ -479,6 +483,7 @@ class CajeroController {
     String dashboard(@AuthenticationPrincipal UserDetails ud, Model model) {
         Usuario usuario = getUsuario(ud);
         model.addAttribute("usuario", usuario);
+        model.addAttribute("notifCount", notificacionService.contarNoLeidas(usuario));
         var sesionCaja = cajaSesionService.obtenerSesionActual(usuario).orElse(null);
         model.addAttribute("sesionCaja", sesionCaja);
         if (sesionCaja != null && sesionCaja.getEstado() == com.municipalidad.licencias.model.Enums.EstadoSesionCaja.ABIERTA) {
@@ -1402,7 +1407,7 @@ class PublicoController {
                         emailService.enviarCodigoSeguimiento(
                             s.getCorreoElectronico(), s.getRazonSocial(),
                             "RENOVACION-" + licencia.getNumeroLicencia(),
-                            s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO");
+                            s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO", null);
                     }
                     model.addAttribute("licencia", licencia);
                     model.addAttribute("nuevaFecha", nuevaFecha);
@@ -1710,6 +1715,31 @@ class AdminCajaController {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/cajas/pendientes";
+    }
+}
+
+// ── Herramienta de prueba: adelantar una inspección a hoy (solo admin) ──────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/admin/inspecciones")
+class AdminInspeccionController {
+
+    private final InspeccionService inspeccionService;
+
+    AdminInspeccionController(InspeccionService inspeccionService) {
+        this.inspeccionService = inspeccionService;
+    }
+
+    @PostMapping("/{id}/hoy")
+    String reprogramarParaHoy(@PathVariable Long id,
+                              @org.springframework.web.bind.annotation.RequestHeader(value = "Referer", required = false) String referer,
+                              RedirectAttributes ra) {
+        try {
+            inspeccionService.reprogramarParaHoy(id);
+            ra.addFlashAttribute("exito", "Inspección adelantada a hoy (prueba). Ya debería aparecer en el panel del inspector.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return referer != null ? "redirect:" + referer : "redirect:/dashboard";
     }
 }
 

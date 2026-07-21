@@ -233,6 +233,12 @@ public class InspeccionService {
                 "\" (" + s.getDireccionEstablecimiento() + ") — trámite " +
                 (s.getCodigoSeguimiento() != null ? s.getCodigoSeguimiento() : s.getId()) + ".",
                 "/inspector/inspeccion/" + i.getId());
+            if (i.getInspector().getEmail() != null && !i.getInspector().getEmail().isBlank()) {
+                emailService.enviarInspeccionHoyInspector(
+                    i.getInspector().getEmail(), i.getInspector().getNombreCompleto(),
+                    s.getNombreComercial(), s.getDireccionEstablecimiento(),
+                    s.getCodigoSeguimiento() != null ? s.getCodigoSeguimiento() : ("Solicitud #" + s.getId()));
+            }
         }
     }
 
@@ -243,5 +249,19 @@ public class InspeccionService {
     public Inspeccion obtenerPorId(Long id) {
         return inspeccionRepo.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Inspección no encontrada: " + id));
+    }
+
+    /**
+     * Herramienta de prueba (solo admin): adelanta la fecha programada de una
+     * inspección pendiente a hoy, para poder verificar sin esperar el flujo de
+     * "inspecciones del día" (panel del inspector + notificarInspeccionesDeHoy).
+     */
+    @Transactional
+    public void reprogramarParaHoy(Long inspeccionId) {
+        Inspeccion i = obtenerPorId(inspeccionId);
+        if (i.getResultado() != Enums.ResultadoInspeccion.PENDIENTE)
+            throw new IllegalStateException("Esta inspección ya fue registrada.");
+        i.setFechaProgramada(LocalDate.now());
+        inspeccionRepo.save(i);
     }
 }

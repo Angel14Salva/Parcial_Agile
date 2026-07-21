@@ -92,6 +92,38 @@
     </div>
   </div>
 
+  <!-- Inspecciones -->
+  <div th:if="${solicitud.inspecciones != null and not #lists.isEmpty(solicitud.inspecciones)}" class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold"><i class="bi bi-clipboard-check me-2"></i>Inspecciones</div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr><th>Tipo</th><th>Fecha programada</th><th>Resultado</th><th sec:authorize="hasRole('ADMIN')"></th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="i : ${solicitud.inspecciones}">
+            <td th:text="${i.tipo.name()}"></td>
+            <td th:text="${#temporals.format(i.fechaProgramada,'dd/MM/yyyy')}"></td>
+            <td>
+              <span class="badge" th:classappend="${i.resultado.name() == 'PENDIENTE'} ? 'bg-secondary' :
+                                   (${i.resultado.name() == 'CONFORME'} ? 'bg-success' : 'bg-warning text-dark')"
+                    th:text="${i.resultado.name()}"></span>
+            </td>
+            <td sec:authorize="hasRole('ADMIN')">
+              <form th:if="${i.resultado.name() == 'PENDIENTE'}"
+                    th:action="@{/admin/inspecciones/{id}/hoy(id=${i.id})}" method="post" style="display:inline">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn btn-outline-warning btn-sm">
+                  <i class="bi bi-clock-history me-1"></i>Adelantar a hoy (prueba)
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Acciones del Subgerente -->
   <div sec:authorize="hasAnyRole('SUBGERENTE','ADMIN','GERENTE_MUNICIPAL','GERENTE_DISTRITAL')"
        class="card shadow-sm mb-3 border-primary">

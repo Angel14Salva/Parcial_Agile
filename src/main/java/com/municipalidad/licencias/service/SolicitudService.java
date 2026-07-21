@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -155,14 +156,15 @@ public class SolicitudService {
         s.setReferenciaPago(referenciaPago);
         s.setEstado(Enums.EstadoTramite.ADMITIDO);
         solicitudRepo.save(s);
-        inspeccionService.programarPrimeraInspeccion(s);
+        var inspeccion = inspeccionService.programarPrimeraInspeccion(s);
         // Enviar email con código de seguimiento
         if (s.getCorreoElectronico() != null && s.getCodigoSeguimiento() != null) {
             emailService.enviarCodigoSeguimiento(
                 s.getCorreoElectronico(),
                 s.getRazonSocial(),
                 s.getCodigoSeguimiento(),
-                s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO"
+                s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO",
+                inspeccion.getFechaProgramada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
             );
         }
         return s;
@@ -258,7 +260,8 @@ public class SolicitudService {
                 : "CAJA-" + cajero.getUsername().toUpperCase() + "-" + System.currentTimeMillis());
 
         solicitudRepo.save(s);
-        inspeccionService.programarPrimeraInspeccion(s);
+        var inspeccion = inspeccionService.programarPrimeraInspeccion(s);
+        String fechaInspeccion = inspeccion.getFechaProgramada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
         if (s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank()) {
             var facturaOpt = (referenciaPagoExterna != null && !referenciaPagoExterna.isBlank())
@@ -281,12 +284,13 @@ public class SolicitudService {
                     f.getMetodoPago().name(),
                     f.getNumeroOperacion(),
                     s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO",
-                    facturaPdf
+                    facturaPdf,
+                    fechaInspeccion
                 );
             } else {
                 emailService.enviarCodigoSeguimiento(
                     s.getCorreoElectronico(), s.getRazonSocial(), s.getCodigoSeguimiento(),
-                    s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO");
+                    s.getDistrito() != null ? s.getDistrito().name() : "TRUJILLO", fechaInspeccion);
             }
         }
         return s;

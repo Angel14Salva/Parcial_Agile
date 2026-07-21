@@ -79,7 +79,7 @@ public class EmailService {
                                         String codigoSeguimiento, String numeroFactura,
                                         String concepto, String total, String metodoPago,
                                         String numeroOperacion, String distrito,
-                                        byte[] facturaPdf) {
+                                        byte[] facturaPdf, String fechaInspeccion) {
         String html = """
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
               <div style="background:#1D3557;color:#fff;padding:24px;border-radius:8px 8px 0 0;text-align:center">
@@ -95,6 +95,11 @@ public class EmailService {
                   <p style="margin:0;color:#666;font-size:14px">Su Código de Seguimiento es:</p>
                   <h1 style="margin:8px 0;color:#1D3557;font-size:32px;letter-spacing:4px">%s</h1>
                   <p style="margin:0;color:#666;font-size:12px">Guarde este código para consultar el estado de su trámite e inspección</p>
+                </div>
+
+                <div style="background:#fff3cd;border:1px solid #ffe69c;border-radius:8px;padding:16px;margin:20px 0;text-align:center">
+                  <p style="margin:0;color:#664d03;font-size:14px">📅 Tu inspección técnica está programada para el:</p>
+                  <h3 style="margin:6px 0 0;color:#664d03">%s</h3>
                 </div>
 
                 <div style="background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:16px;margin:20px 0">
@@ -122,6 +127,7 @@ public class EmailService {
               </div>
             </div>
             """.formatted(razonSocial, ruc, distrito.replace("_"," "), codigoSeguimiento,
+                          fechaInspeccion,
                           numeroFactura, concepto, metodoPago, numeroOperacion, total, codigoSeguimiento);
 
         enviarHtml(destinatario, "📄 Comprobante de Pago y Código de Seguimiento - " + codigoSeguimiento,
@@ -129,7 +135,16 @@ public class EmailService {
     }
 
     public void enviarCodigoSeguimiento(String destinatario, String nombreNegocio,
-                                        String codigo, String distrito) {
+                                        String codigo, String distrito, String fechaInspeccion) {
+        String bloqueInspeccion = fechaInspeccion != null && !fechaInspeccion.isBlank()
+            ? """
+                <div style="background:#fff3cd;border:1px solid #ffe69c;border-radius:8px;padding:16px;margin:20px 0;text-align:center">
+                  <p style="margin:0;color:#664d03;font-size:14px">📅 Tu inspección técnica está programada para el:</p>
+                  <h3 style="margin:6px 0 0;color:#664d03">%s</h3>
+                </div>
+                """.formatted(fechaInspeccion)
+            : "";
+
         String html = """
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
               <div style="background:#1D3557;color:#fff;padding:24px;border-radius:8px 8px 0 0;text-align:center">
@@ -144,6 +159,7 @@ public class EmailService {
                   <h1 style="margin:8px 0;color:#1D3557;font-size:32px;letter-spacing:4px">%s</h1>
                   <p style="margin:0;color:#666;font-size:12px">Guarda este código — lo necesitarás para consultar el estado de tu trámite</p>
                 </div>
+                %s
                 <p>Consulta el estado de tu trámite en cualquier momento en:</p>
                 <a href="https://parcial-agile.onrender.com/seguimiento"
                    style="display:inline-block;background:#1D3557;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold">
@@ -155,7 +171,7 @@ public class EmailService {
                 </p>
               </div>
             </div>
-            """.formatted(nombreNegocio, distrito.replace("_"," "), codigo);
+            """.formatted(nombreNegocio, distrito.replace("_"," "), codigo, bloqueInspeccion);
 
         enviarHtml(destinatario, "Código de seguimiento - Licencia de Funcionamiento | " + codigo,
             html, "código de seguimiento");
@@ -217,5 +233,32 @@ public class EmailService {
             """.formatted(codigo, nombreNegocio, estado, detalle, codigo);
 
         enviarHtml(destinatario, "Actualización de trámite " + codigo, html, "actualización");
+    }
+
+    public void enviarInspeccionHoyInspector(String destinatario, String nombreInspector,
+                                              String nombreNegocio, String direccion, String codigoTramite) {
+        String html = """
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+              <div style="background:#1D3557;color:#fff;padding:24px;border-radius:8px 8px 0 0;text-align:center">
+                <h2 style="margin:0">🏛️ Municipalidad de Trujillo</h2>
+                <p style="margin:8px 0 0;opacity:.8">Inspección técnica ITSE</p>
+              </div>
+              <div style="background:#f8f9fa;padding:24px;border-radius:0 0 8px 8px">
+                <h3 style="color:#1D3557">Tienes una inspección programada para hoy</h3>
+                <p>Hola %s, hoy debes visitar el siguiente local:</p>
+                <div style="background:#fff;border:1px solid #dee2e6;border-radius:8px;padding:16px;margin:20px 0">
+                  <p style="margin:0 0 6px"><strong>Negocio:</strong> %s</p>
+                  <p style="margin:0 0 6px"><strong>Dirección:</strong> %s</p>
+                  <p style="margin:0"><strong>Trámite:</strong> %s</p>
+                </div>
+                <a href="https://parcial-agile.onrender.com/dashboard"
+                   style="display:inline-block;background:#1D3557;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold">
+                  Ver mis inspecciones de hoy →
+                </a>
+              </div>
+            </div>
+            """.formatted(nombreInspector, nombreNegocio, direccion != null ? direccion : "-", codigoTramite);
+
+        enviarHtml(destinatario, "Tienes una inspección programada para hoy", html, "inspección del día (inspector)");
     }
 }

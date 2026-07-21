@@ -47,6 +47,10 @@ public class DataInitializer implements CommandLineRunner {
         ejecutarSeguro("ALTER TABLE caja_sesiones DROP CONSTRAINT IF EXISTS caja_sesiones_estado_check");
         ejecutarSeguro("ALTER TABLE caja_sesiones ALTER COLUMN monto_apertura DROP NOT NULL");
 
+        // crearUsuarioSiNoExiste solo crea si no existe; para actualizar el correo del
+        // inspector ya creado en deploys anteriores hace falta este UPDATE puntual.
+        ejecutarSeguro("UPDATE usuarios SET email = 'angellmauricio123@gmail.com' WHERE username = 'inspector.garcia'");
+
         ejecutarSeguro("UPDATE inspecciones SET inspector_id = (SELECT id FROM usuarios WHERE username = 'inspector.garcia') " +
             "WHERE inspector_id IN (SELECT id FROM usuarios WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
         ejecutarSeguro("UPDATE solicitudes SET inspector_id = (SELECT id FROM usuarios WHERE username = 'inspector.garcia') " +
@@ -76,7 +80,7 @@ public class DataInitializer implements CommandLineRunner {
         log.info("Limpieza inicial completada.");
 
                 // Inspector (uno solo, encargado de todas las inspecciones ITSE)
-        crearUsuarioSiNoExiste("inspector.garcia",  "insp1234", "inspector.garcia@municipalidad.gob.pe",  "GARCIA LOPEZ, CARLOS",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        crearUsuarioSiNoExiste("inspector.garcia",  "insp1234", "angellmauricio123@gmail.com",  "GARCIA LOPEZ, CARLOS",   Enums.Rol.INSPECTOR,  com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
         // Cajeros (atención presencial en ventanilla)
         crearUsuarioSiNoExiste("cajero1", "caja1234", "cajero1@municipalidad.gob.pe",
             "MEDINA ROJAS, PATRICIA", Enums.Rol.CAJERO, com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
