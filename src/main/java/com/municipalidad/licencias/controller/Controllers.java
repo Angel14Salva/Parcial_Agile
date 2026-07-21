@@ -479,7 +479,11 @@ class CajeroController {
     String dashboard(@AuthenticationPrincipal UserDetails ud, Model model) {
         Usuario usuario = getUsuario(ud);
         model.addAttribute("usuario", usuario);
-        model.addAttribute("sesionCaja", cajaSesionService.obtenerSesionActual(usuario).orElse(null));
+        var sesionCaja = cajaSesionService.obtenerSesionActual(usuario).orElse(null);
+        model.addAttribute("sesionCaja", sesionCaja);
+        if (sesionCaja != null && sesionCaja.getEstado() == com.municipalidad.licencias.model.Enums.EstadoSesionCaja.ABIERTA) {
+            model.addAttribute("montoEnCaja", cajaSesionService.calcularMontoEsperado(sesionCaja));
+        }
         return "cajero/dashboard";
     }
 

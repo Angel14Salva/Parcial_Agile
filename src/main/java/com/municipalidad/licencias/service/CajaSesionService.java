@@ -66,7 +66,8 @@ public class CajaSesionService {
         return sesion;
     }
 
-    private BigDecimal calcularMontoEsperado(CajaSesion sesion) {
+    /** Monto inicial + efectivo cobrado hasta ahora en esta sesion (para mostrar en vivo en el panel). */
+    public BigDecimal calcularMontoEsperado(CajaSesion sesion) {
         BigDecimal efectivo = facturaRepo.sumarPorCajeroYMetodo(
             sesion.getCajero(), Enums.MetodoPago.EFECTIVO, Enums.EstadoFactura.PAGADA,
             sesion.getFechaApertura(), LocalDateTime.now());

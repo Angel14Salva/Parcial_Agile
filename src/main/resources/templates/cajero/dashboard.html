@@ -55,6 +55,7 @@
         <p class="text-muted small mb-0">
           Desde <span th:text="${#temporals.format(sesionCaja.fechaApertura,'HH:mm')}"></span>
           — monto inicial S/ <span th:text="${sesionCaja.montoApertura}"></span>
+          — en caja ahora: <strong>S/ <span th:text="${#numbers.formatDecimal(montoEnCaja, 1, 2)}"></span></strong>
         </p>
       </div>
       <div th:if="${estadoCaja == 'PENDIENTE_CIERRE'}">
