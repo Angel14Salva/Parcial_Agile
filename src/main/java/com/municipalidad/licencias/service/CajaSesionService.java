@@ -51,19 +51,16 @@ public class CajaSesionService {
     }
 
     @Transactional
-    public CajaSesion solicitarApertura(Usuario cajero, BigDecimal montoApertura) {
-        if (montoApertura == null || montoApertura.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException("El monto de apertura no puede ser negativo.");
+    public CajaSesion solicitarApertura(Usuario cajero) {
         if (obtenerSesionActual(cajero).isPresent())
             throw new IllegalStateException("Ya tienes una caja abierta o una solicitud en curso.");
 
-        CajaSesion sesion = cajaSesionRepo.save(
-            CajaSesion.builder().cajero(cajero).montoApertura(montoApertura).build());
+        CajaSesion sesion = cajaSesionRepo.save(CajaSesion.builder().cajero(cajero).build());
 
         for (Usuario admin : usuarioRepo.findByRol(Enums.Rol.ADMIN)) {
             notificacionService.crear(admin,
                 "Solicitud de apertura de caja",
-                "El cajero " + cajero.getNombreCompleto() + " solicita abrir caja con S/ " + montoApertura + ".",
+                "El cajero " + cajero.getNombreCompleto() + " solicita abrir caja. Debes asignar el monto inicial en efectivo.",
                 "/admin/cajas/pendientes");
         }
         return sesion;
@@ -120,19 +117,22 @@ public class CajaSesionService {
     }
 
     @Transactional
-    public void aprobar(Long id, Usuario admin, String comentario) {
+    public void aprobar(Long id, Usuario admin, BigDecimal montoApertura, String comentario) {
         CajaSesion sesion = obtenerPendiente(id);
         sesion.setRevisadoPor(admin);
         sesion.setFechaRevision(LocalDateTime.now());
         sesion.setComentarioAdmin(comentario);
 
         if (sesion.getEstado() == Enums.EstadoSesionCaja.PENDIENTE_APERTURA) {
+            if (montoApertura == null || montoApertura.compareTo(BigDecimal.ZERO) < 0)
+                throw new IllegalArgumentException("Debes indicar el monto en efectivo que se le entrega al cajero.");
+            sesion.setMontoApertura(montoApertura);
             sesion.setEstado(Enums.EstadoSesionCaja.ABIERTA);
             sesion.setFechaApertura(LocalDateTime.now());
             cajaSesionRepo.save(sesion);
             notificacionService.crear(sesion.getCajero(),
                 "Apertura de caja aprobada",
-                "El administrador aprobó la apertura de tu caja con S/ " + sesion.getMontoApertura() + ". Ya puedes operar." +
+                "El administrador aprobó la apertura de tu caja con S/ " + montoApertura + ". Ya puedes operar." +
                     comentarioSuffix(comentario));
         } else {
             sesion.setEstado(Enums.EstadoSesionCaja.CERRADA);

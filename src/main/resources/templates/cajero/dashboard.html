@@ -42,12 +42,12 @@
     <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div th:if="${estadoCaja == 'CERRADA'}">
         <span class="badge bg-secondary mb-1">Caja cerrada</span>
-        <p class="text-muted small mb-0">Solicita la apertura indicando el monto inicial en efectivo. El administrador debe aprobarla antes de que puedas operar.</p>
+        <p class="text-muted small mb-0">Solicita la apertura al administrador; él define el monto inicial en efectivo con el que empiezas el día.</p>
       </div>
       <div th:if="${estadoCaja == 'PENDIENTE_APERTURA'}">
         <span class="badge bg-warning text-dark mb-1">Solicitud de apertura enviada</span>
         <p class="text-muted small mb-0">
-          Esperando que el administrador apruebe la apertura con S/ <span th:text="${sesionCaja.montoApertura}"></span>.
+          Esperando que el administrador apruebe la apertura y te asigne el monto inicial.
         </p>
       </div>
       <div th:if="${estadoCaja == 'ABIERTA'}">
@@ -123,9 +123,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <label class="form-label small">Monto inicial en efectivo (S/)</label>
-        <input type="number" step="0.01" min="0" name="montoApertura" class="form-control" required/>
-        <p class="text-muted small mt-2 mb-0">El administrador debe aprobar esta solicitud antes de que puedas empezar a cobrar.</p>
+        <p class="mb-0">Se enviará una solicitud al administrador para abrir tu caja. Él definirá el monto inicial en efectivo con el que vas a empezar el día y deberá aprobarla antes de que puedas operar.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>

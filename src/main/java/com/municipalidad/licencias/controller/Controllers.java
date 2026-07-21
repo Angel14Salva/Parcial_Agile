@@ -488,12 +488,10 @@ class CajeroController {
 
     // ── Apertura y cierre de caja (ambas requieren aprobación del admin) ────
     @PostMapping("/caja/abrir")
-    String abrirCaja(@RequestParam java.math.BigDecimal montoApertura,
-                     @AuthenticationPrincipal UserDetails ud,
-                     RedirectAttributes ra) {
+    String abrirCaja(@AuthenticationPrincipal UserDetails ud, RedirectAttributes ra) {
         try {
-            cajaSesionService.solicitarApertura(getUsuario(ud), montoApertura);
-            ra.addFlashAttribute("exito", "Se envió tu solicitud de apertura de caja al administrador. Espera su aprobación.");
+            cajaSesionService.solicitarApertura(getUsuario(ud));
+            ra.addFlashAttribute("exito", "Se envió tu solicitud de apertura de caja al administrador. Espera a que te asigne el monto inicial y la apruebe.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
@@ -1685,12 +1683,13 @@ class AdminCajaController {
 
     @PostMapping("/{id}/aprobar")
     String aprobar(@PathVariable Long id,
+                   @RequestParam(required = false) java.math.BigDecimal montoApertura,
                    @RequestParam(required = false) String comentario,
                    @AuthenticationPrincipal UserDetails ud,
                    RedirectAttributes ra) {
         try {
-            cajaSesionService.aprobar(id, getUsuario(ud), comentario);
-            ra.addFlashAttribute("exito", "Cierre de caja aprobado.");
+            cajaSesionService.aprobar(id, getUsuario(ud), montoApertura, comentario);
+            ra.addFlashAttribute("exito", "Solicitud aprobada.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
         }

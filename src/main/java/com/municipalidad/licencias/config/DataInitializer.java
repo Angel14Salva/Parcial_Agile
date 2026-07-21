@@ -39,6 +39,13 @@ public class DataInitializer implements CommandLineRunner {
         // Limpieza via SQL directo para evitar problemas de cascada.
         // Cada sentencia va en su propio try/catch para que un fallo puntual
         // no cancele el resto de la limpieza.
+
+        // Hibernate genera un CHECK constraint con los valores del enum vigentes al crear la
+        // columna, pero ddl-auto=update no lo actualiza cuando el enum cambia despues (ya paso
+        // antes con usuarios_rol_check). Se elimina para que futuros valores del enum no rompan
+        // los inserts; la validacion de valores queda a cargo de @Enumerated en la app.
+        ejecutarSeguro("ALTER TABLE caja_sesiones DROP CONSTRAINT IF EXISTS caja_sesiones_estado_check");
+
         ejecutarSeguro("UPDATE inspecciones SET inspector_id = (SELECT id FROM usuarios WHERE username = 'inspector.garcia') " +
             "WHERE inspector_id IN (SELECT id FROM usuarios WHERE rol = 'INSPECTOR' AND username != 'inspector.garcia')");
         ejecutarSeguro("UPDATE solicitudes SET inspector_id = (SELECT id FROM usuarios WHERE username = 'inspector.garcia') " +

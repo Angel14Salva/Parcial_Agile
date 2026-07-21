@@ -57,8 +57,8 @@
               <p class="text-muted small mb-1">
                 Solicitada: <span th:text="${#temporals.format(s.fechaApertura,'dd/MM/yy HH:mm')}"></span>
               </p>
-              <p th:if="${esApertura}" class="small mb-1">
-                Monto inicial solicitado: <strong>S/ <span th:text="${s.montoApertura}"></span></strong>
+              <p th:if="${esApertura}" class="small mb-1 text-muted">
+                El cajero solicita abrir caja. Indica el monto en efectivo que le vas a entregar para aprobar.
               </p>
               <p th:unless="${esApertura}" class="small mb-1">
                 Monto inicial: S/ <span th:text="${s.montoApertura}"></span>
@@ -78,6 +78,8 @@
             <div class="d-flex flex-column gap-2" style="min-width:260px">
               <form th:action="@{/admin/cajas/{id}/aprobar(id=${s.id})}" method="post" class="d-flex gap-2">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input th:if="${esApertura}" type="number" step="0.01" min="0" name="montoApertura"
+                       class="form-control form-control-sm" placeholder="Monto S/" style="max-width:110px" required/>
                 <input type="text" name="comentario" class="form-control form-control-sm" placeholder="Comentario (opcional)"/>
                 <button type="submit" class="btn btn-success btn-sm text-nowrap"><i class="bi bi-check-lg me-1"></i>Aprobar</button>
               </form>

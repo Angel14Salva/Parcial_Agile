@@ -16,7 +16,7 @@ public class CajaSesion {
     @JoinColumn(name = "cajero_id", nullable = false)
     private Usuario cajero;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(precision = 10, scale = 2)
     private BigDecimal montoApertura;
 
     @Column(nullable = false)
@@ -73,6 +73,7 @@ public class CajaSesion {
     public Long getId()                          { return id; }
     public Usuario getCajero()                    { return cajero; }
     public BigDecimal getMontoApertura()          { return montoApertura; }
+    public void setMontoApertura(BigDecimal v)    { this.montoApertura = v; }
     public LocalDateTime getFechaApertura()       { return fechaApertura; }
     public void setFechaApertura(LocalDateTime v) { this.fechaApertura = v; }
     public BigDecimal getMontoCierreContado()     { return montoCierreContado; }
