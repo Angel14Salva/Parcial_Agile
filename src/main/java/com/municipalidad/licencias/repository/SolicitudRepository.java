@@ -18,4 +18,5 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
     List<Solicitud> findTramitesActivos();
     java.util.List<Solicitud> findByDistrito(com.municipalidad.licencias.model.Enums.Distrito distrito);
     java.util.Optional<Solicitud> findByCodigoSeguimientoAndDni(String codigo, String dni);
+    java.util.Optional<Solicitud> findByCodigoSeguimiento(String codigo);
 }

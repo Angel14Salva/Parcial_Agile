@@ -604,6 +604,28 @@ class CajeroController {
         }
     }
 
+    // ── Subsanar observaciones (búsqueda solo por código de seguimiento) ────
+    @GetMapping("/subsanar")
+    String subsanarBuscarForm() {
+        return "cajero/subsanar-buscar";
+    }
+
+    @PostMapping("/subsanar/buscar")
+    String subsanarBuscar(@RequestParam String codigo, RedirectAttributes ra) {
+        var solicitudOpt = solicitudRepo.findByCodigoSeguimiento(codigo.trim().toUpperCase());
+        if (solicitudOpt.isEmpty()) {
+            ra.addFlashAttribute("error", "No se encontró ninguna solicitud con ese código de seguimiento.");
+            return "redirect:/cajero/subsanar";
+        }
+        Solicitud s = solicitudOpt.get();
+        if (s.getEstado() != Enums.EstadoTramite.OBSERVADO
+            && s.getEstado() != Enums.EstadoTramite.SEGUNDA_INSPECCION_PROGRAMADA) {
+            ra.addFlashAttribute("error", "Esta solicitud no tiene observaciones pendientes de subsanar.");
+            return "redirect:/cajero/subsanar";
+        }
+        return "redirect:/solicitud/" + s.getId() + "/observaciones";
+    }
+
     // ── Paso 1 (si NO tiene operación): pedir RUC/Razón social y elegir método ──
     @GetMapping("/pago/nuevo")
     String pagoNuevoForm(@AuthenticationPrincipal UserDetails ud, RedirectAttributes ra) {

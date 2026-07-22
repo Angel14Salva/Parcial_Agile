@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8"/><title>Observaciones del trámite</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
@@ -21,7 +22,11 @@
 
 <div class="container" style="max-width:720px">
   <div class="d-flex align-items-center gap-2 mb-4">
-    <a th:href="@{/solicitud/{id}/detalle(id=${solicitud.id})}"
+    <a sec:authorize="hasRole('CAJERO')" href="/cajero/dashboard"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <a sec:authorize="!hasRole('CAJERO')" th:href="@{/solicitud/{id}/detalle(id=${solicitud.id})}"
        class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -144,7 +149,10 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <div class="text-center mt-4 mb-4">
-    <a href="/publico" class="btn btn-outline-secondary">
+    <a sec:authorize="hasRole('CAJERO')" href="/cajero/dashboard" class="btn btn-outline-secondary">
+      <i class="bi bi-house me-1"></i>Volver al panel de caja
+    </a>
+    <a sec:authorize="!hasRole('CAJERO')" href="/publico" class="btn btn-outline-secondary">
       <i class="bi bi-house me-1"></i>Volver al inicio
     </a>
   </div>

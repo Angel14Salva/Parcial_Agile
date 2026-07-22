@@ -28,7 +28,7 @@
   </div>
 </nav>
 
-<div class="container" style="max-width:820px">
+<div class="container" style="max-width:1080px">
   <div th:if="${exito}" class="alert alert-success alert-dismissible fade show">
     <i class="bi bi-check-circle me-2"></i><span th:text="${exito}"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -83,7 +83,7 @@
   </div>
 
   <div class="row g-4" th:with="cajaAbierta=${sesionCaja != null and sesionCaja.estado.name() == 'ABIERTA'}">
-    <div class="col-md-6">
+    <div class="col-md-4">
       <div class="card shadow-sm h-100" th:classappend="${cajaAbierta} ? '' : 'opacity-50'">
         <div class="card-body text-center py-5">
           <i class="bi bi-file-earmark-plus text-primary" style="font-size:2.5rem"></i>
@@ -99,7 +99,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
       <div class="card shadow-sm h-100" th:classappend="${cajaAbierta} ? '' : 'opacity-50'">
         <div class="card-body text-center py-5">
           <i class="bi bi-arrow-repeat text-success" style="font-size:2.5rem"></i>
@@ -112,6 +112,18 @@
             <i class="bi bi-lock-fill me-1"></i>Buscar por RUC
           </button>
           <p th:unless="${cajaAbierta}" class="text-muted small mt-2 mb-0">Debes tener la caja abierta para usar esta opción.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-file-earmark-check text-warning" style="font-size:2.5rem"></i>
+          <h5 class="fw-semibold mt-3">Subsanar observaciones</h5>
+          <p class="text-muted small">Atiende a un negocio que viene a corregir las observaciones de su inspección, buscándolo por su código de seguimiento.</p>
+          <a href="/cajero/subsanar" class="btn btn-warning">
+            <i class="bi bi-search me-1"></i>Buscar por código
+          </a>
         </div>
       </div>
     </div>
