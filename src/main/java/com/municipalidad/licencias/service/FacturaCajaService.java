@@ -83,6 +83,11 @@ public class FacturaCajaService {
     public synchronized FacturaCaja crearParteEfectivo(String ruc, String razonSocial, String direccion, String email,
                                                         BigDecimal montoParte, BigDecimal montoRecibido,
                                                         String grupoPago, Usuario cajero) {
+        // En Peru no hay monedas de 1 centimo: en efectivo solo se aceptan multiplos de S/ 0.10.
+        if (!esMultiploDeDiezCentimos(montoParte))
+            throw new IllegalArgumentException("En efectivo el monto debe ser múltiplo de S/ 0.10 (no hay monedas de 1 céntimo en Perú).");
+        if (!esMultiploDeDiezCentimos(montoRecibido))
+            throw new IllegalArgumentException("El monto recibido en efectivo debe ser múltiplo de S/ 0.10 (no hay monedas de 1 céntimo en Perú).");
         if (montoRecibido.compareTo(montoParte) < 0)
             throw new IllegalArgumentException("El monto recibido es menor al monto de esta parte (S/ " + montoParte + ").");
         BigDecimal vuelto = montoRecibido.subtract(montoParte).setScale(2, RoundingMode.HALF_UP);
@@ -119,9 +124,11 @@ public class FacturaCajaService {
         }
         BigDecimal suma = partes.stream().map(FacturaCaja::getImporteTotal)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (suma.compareTo(totalEsperado) != 0)
+        // El QR puede quedar unos centimos por encima del total (para que el efectivo
+        // redondee a monedas reales), pero nunca puede faltar dinero.
+        if (suma.compareTo(totalEsperado) < 0)
             throw new IllegalStateException(
-                "La suma de las partes (S/ " + suma + ") no coincide con el monto del trámite (S/ " + totalEsperado + ").");
+                "La suma de las partes (S/ " + suma + ") es menor al monto del trámite (S/ " + totalEsperado + ").");
         BigDecimal recibido = partes.stream()
             .map(f -> f.getMontoRecibido() != null ? f.getMontoRecibido() : f.getImporteTotal())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -167,6 +174,11 @@ public class FacturaCajaService {
         BigDecimal valorVenta = importeTotal.divide(UNO_MAS_IGV, 2, RoundingMode.HALF_UP);
         BigDecimal igv = importeTotal.subtract(valorVenta);
         return new BigDecimal[]{valorVenta, igv};
+    }
+
+    private boolean esMultiploDeDiezCentimos(BigDecimal monto) {
+        return monto.setScale(2, RoundingMode.HALF_UP)
+            .multiply(new BigDecimal("100")).intValueExact() % 10 == 0;
     }
 
     public FacturaCaja obtenerPorId(Long id) {

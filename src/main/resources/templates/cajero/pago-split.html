@@ -54,6 +54,10 @@
       <div class="field-hint text-muted mt-1" style="font-size:.8rem" th:if="${metodo == 'qr'}">
         Cada parte pagada por QR debe ser de al menos S/ 2.00 (mínimo de la pasarela de pago).
       </div>
+      <div class="field-hint text-muted mt-1" style="font-size:.8rem" th:unless="${metodo == 'qr'}">
+        En efectivo el monto se redondea a múltiplos de S/ 0.10 (no hay monedas de 1 céntimo en Perú).
+        Por QR puede ir sin redondear, incluso un poco por encima del total, pero nunca por debajo.
+      </div>
     </div>
   </div>
 
@@ -98,13 +102,55 @@
   let partes = []; // { monto, metodo: 'qr'|'efectivo', facturaId, estado: 'pendiente'|'esperando'|'pagado' }
   let polling = null;
 
+  // En Perú no hay monedas de 1 céntimo: en efectivo solo se aceptan múltiplos de S/ 0.10.
+  function centimosValidosEfectivo(monto) {
+    const centimos = Math.round(monto * 100);
+    return centimos % 10 === 0;
+  }
+  function redondearA10Centimos(monto) {
+    return Math.round(monto * 10) / 10;
+  }
+
   function crearFilas(n) {
     partes = [];
-    const montoParte = (MONTO_TOTAL / n).toFixed(2);
     for (let i = 0; i < n; i++) {
-      partes.push({ monto: montoParte, metodo: SOLO_QR ? 'qr' : 'efectivo', facturaId: null, estado: 'pendiente' });
+      partes.push({ monto: '0.00', metodo: SOLO_QR ? 'qr' : 'efectivo', facturaId: null, estado: 'pendiente' });
     }
+    distribuirMontos();
     render();
+  }
+
+  // Reparte el total entre las partes: el efectivo siempre en múltiplos de S/ 0.10,
+  // y el/los QR absorben el resto exacto (ahí sí puede quedar con céntimos sueltos).
+  function distribuirMontos() {
+    const totalCentimos = Math.round(MONTO_TOTAL * 100);
+    const efIdx = partes.map((p, i) => p.metodo === 'efectivo' ? i : -1).filter(i => i >= 0);
+    const qrIdx = partes.map((p, i) => p.metodo === 'qr' ? i : -1).filter(i => i >= 0);
+
+    if (qrIdx.length === 0) {
+      // Todo efectivo: repartir en múltiplos exactos de 10 céntimos que sumen el total exacto.
+      const totalDecenas = Math.round(totalCentimos / 10);
+      const base = Math.floor(totalDecenas / partes.length);
+      let usadas = 0;
+      partes.forEach((p, i) => {
+        const decenas = (i === partes.length - 1) ? (totalDecenas - usadas) : base;
+        p.monto = ((decenas * 10) / 100).toFixed(2);
+        usadas += decenas;
+      });
+    } else {
+      const shareEf = efIdx.length > 0
+        ? Math.floor((totalCentimos / partes.length) / 10) * 10 : 0;
+      let usados = 0;
+      efIdx.forEach(i => { partes[i].monto = (shareEf / 100).toFixed(2); usados += shareEf; });
+      const restanteQr = totalCentimos - usados;
+      const porQr = Math.floor(restanteQr / qrIdx.length);
+      let asignadoQr = 0;
+      qrIdx.forEach((i, idx) => {
+        const val = (idx === qrIdx.length - 1) ? (restanteQr - asignadoQr) : porQr;
+        partes[i].monto = (val / 100).toFixed(2);
+        asignadoQr += val;
+      });
+    }
   }
 
   function render() {
@@ -121,7 +167,8 @@
             <div class="col-md-3">
               <div class="input-group input-group-sm">
                 <span class="input-group-text">S/</span>
-                <input type="number" step="0.01" min="0" class="form-control monto-input"
+                <input type="number" step="${p.metodo === 'efectivo' ? '0.10' : '0.01'}" min="0"
+                       class="form-control monto-input"
                        value="${p.monto}" ${pagado ? 'disabled' : ''}/>
               </div>
             </div>
@@ -151,11 +198,21 @@
       const statusMsg     = div.querySelector('.status-msg');
 
       montoInput.addEventListener('input', () => { p.monto = montoInput.value; actualizarSuma(); });
+      if (p.metodo === 'efectivo') {
+        montoInput.addEventListener('blur', () => {
+          const val = parseFloat(montoInput.value);
+          if (val > 0 && !centimosValidosEfectivo(val)) {
+            p.monto = redondearA10Centimos(val).toFixed(2);
+            render();
+          }
+        });
+      }
 
       if (metodoSelect) {
         metodoSelect.addEventListener('change', () => {
           p.metodo = metodoSelect.value;
           recibidoCol.style.display = p.metodo === 'efectivo' ? '' : 'none';
+          distribuirMontos();
           render();
         });
       }
@@ -192,13 +249,14 @@
     const suma = partes.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
     const label = document.getElementById('sumaLabel');
     label.textContent = 'S/ ' + suma.toFixed(2) + ' de S/ ' + MONTO_TOTAL.toFixed(2);
-    label.className = Math.abs(suma - MONTO_TOTAL) < 0.001 ? 'fw-bold fs-5 text-success' : 'fw-bold fs-5 text-danger';
+    label.className = suma >= MONTO_TOTAL - 0.001 ? 'fw-bold fs-5 text-success' : 'fw-bold fs-5 text-danger';
     revisarCompleto();
   }
 
   function revisarCompleto() {
+    const suma = partes.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
     const todosPagados = partes.length > 0 && partes.every(p => p.estado === 'pagado');
-    document.getElementById('btnContinuar').disabled = !todosPagados;
+    document.getElementById('btnContinuar').disabled = !(todosPagados && suma >= MONTO_TOTAL - 0.001);
   }
 
   async function generarQr(i) {
@@ -241,7 +299,15 @@
     const recibidoInput = div.querySelector('.recibido-input');
     const recibido = parseFloat(recibidoInput.value);
     if (!monto || monto <= 0) { alert('Ingresa un monto válido para esta parte.'); return; }
+    if (!centimosValidosEfectivo(monto)) {
+      alert('En efectivo el monto debe ser múltiplo de S/ 0.10 (no hay monedas de 1 céntimo en Perú).');
+      return;
+    }
     if (!recibido || recibido < monto) { alert('El monto recibido debe cubrir esta parte (S/ ' + monto.toFixed(2) + ').'); return; }
+    if (!centimosValidosEfectivo(recibido)) {
+      alert('El monto recibido en efectivo debe ser múltiplo de S/ 0.10 (no hay monedas de 1 céntimo en Perú).');
+      return;
+    }
     try {
       const body = new URLSearchParams({ ruc: RUC, razonSocial: RAZON_SOCIAL, direccion: DIRECCION || '',
         email: EMAIL, monto: monto.toFixed(2), montoRecibido: recibido.toFixed(2), grupoPago: GRUPO_PAGO });
