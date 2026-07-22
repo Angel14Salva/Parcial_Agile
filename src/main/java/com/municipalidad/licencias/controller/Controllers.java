@@ -306,13 +306,6 @@ class SolicitudController {
         } else {
             model.addAttribute("multasLicencia", java.util.List.of());
         }
-        // Fiscalizadores e inspectores del distrito para asignación manual
-        if (s.getDistrito() != null) {
-            java.util.List<com.municipalidad.licencias.model.Usuario> disponibles = new java.util.ArrayList<>();
-            disponibles.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.FISCALIZADOR, s.getDistrito()));
-            disponibles.addAll(usuarioRepo.findByRolAndDistrito(Enums.Rol.INSPECTOR, s.getDistrito()));
-            model.addAttribute("inspectoresDisponibles", disponibles);
-        }
         return "solicitud/detalle";
     }
 }
@@ -1299,28 +1292,6 @@ class SubgerenteController {
             usuarioRepo.findByRolAndDistrito(com.municipalidad.licencias.model.Enums.Rol.FISCALIZADOR, distrito) :
             java.util.List.of());
         return "subgerente/dashboard";
-    }
-
-    @org.springframework.web.bind.annotation.PostMapping("/solicitud/{id}/asignar")
-    String asignarInspector(@org.springframework.web.bind.annotation.PathVariable Long id,
-                             @org.springframework.web.bind.annotation.RequestParam Long inspectorId,
-                             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        try {
-            com.municipalidad.licencias.model.Solicitud s = solicitudRepo.findById(id).orElseThrow();
-            com.municipalidad.licencias.model.Usuario inspector = usuarioRepo.findById(inspectorId).orElseThrow();
-            s.setInspector(inspector);
-            solicitudRepo.save(s);
-            // Crear inspección si no existe
-            java.util.List<com.municipalidad.licencias.model.Inspeccion> inspecciones =
-                inspeccionService.obtenerPorSolicitud(s);
-            if (inspecciones.isEmpty()) {
-                inspeccionService.programarPrimeraInspeccionConInspector(s, inspector);
-            }
-            ra.addFlashAttribute("exito", "Inspector " + inspector.getNombreCompleto() + " asignado correctamente.");
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", "Error al asignar: " + e.getMessage());
-        }
-        return "redirect:/solicitud/" + id + "/detalle";
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/solicitud/{id}/aprobar")

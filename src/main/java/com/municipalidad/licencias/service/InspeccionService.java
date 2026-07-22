@@ -52,18 +52,6 @@ public class InspeccionService {
         this.emailService        = emailService;
     }
 
-    @Transactional
-    public Inspeccion programarPrimeraInspeccionConInspector(Solicitud solicitud, Usuario inspector) {
-        java.time.LocalDate fecha = diasHabiles.siguienteDiaHabil(java.time.LocalDate.now().plusDays(diasAnticipacionInspeccion));
-        Inspeccion inspeccion = Inspeccion.builder()
-            .solicitud(solicitud).inspector(inspector)
-            .tipo(Enums.TipoInspeccion.PRIMERA).fechaProgramada(fecha)
-            .resultado(Enums.ResultadoInspeccion.PENDIENTE).build();
-        solicitud.setEstado(Enums.EstadoTramite.INSPECCION_PROGRAMADA);
-        solicitudRepo.save(solicitud);
-        return inspeccionRepo.save(inspeccion);
-    }
-
     public Inspeccion programarPrimeraInspeccion(Solicitud solicitud) {
         Usuario inspector = obtenerInspectorUnico();
         LocalDate fecha = buscarFechaDisponible(inspector, LocalDate.now().plusDays(diasAnticipacionInspeccion));
