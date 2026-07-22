@@ -117,6 +117,9 @@ class SolicitudController {
     private final com.municipalidad.licencias.service.MultaService multaServiceDet;
     private final org.springframework.core.env.Environment environment;
 
+    @org.springframework.beans.factory.annotation.Value("${app.pago.tramite}")
+    private java.math.BigDecimal montoTramite;
+
     SolicitudController(SolicitudService solicitudService,
                         LicenciaService licenciaService,
                         UsuarioRepository usuarioRepo,
@@ -198,6 +201,7 @@ class SolicitudController {
     String pagoForm(@PathVariable Long id, Model model) {
         model.addAttribute("solicitud", solicitudService.obtenerPorId(id));
         model.addAttribute("esLocal", java.util.Arrays.asList(environment.getActiveProfiles()).contains("local"));
+        model.addAttribute("montoTramite", montoTramite);
         return "solicitud/pago";
     }
 
@@ -218,7 +222,7 @@ class SolicitudController {
                 s.getCorreoElectronico() : "publico@licencias.gob.pe";
             String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : "Ciudadano";
             com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
-                flowService.crearOrden(id, email, nombre, 2.0, urlRetorno, urlConfirmacion);
+                flowService.crearOrden(id, email, nombre, montoTramite.doubleValue(), urlRetorno, urlConfirmacion);
             solicitudService.guardarReferencia(id, orden.token());
             return "redirect:" + orden.url();
         } catch (Exception e) {
@@ -714,7 +718,7 @@ class CajeroController {
             String urlConfirmacion = baseUrl + "/cajero/pago/qr/confirmar?facturaId=" + factura.getId();
 
             var orden = flowService.crearOrdenFactura(factura.getId(),
-                email, razonSocial, 2.0,
+                email, razonSocial, montoTramite.doubleValue(),
                 urlRetorno, urlConfirmacion);
 
             return "redirect:" + orden.url();
@@ -727,6 +731,7 @@ class CajeroController {
     @GetMapping("/pago/qr/retorno")
     String retornoQr(@RequestParam Long facturaId,
                      @RequestParam(required = false) String token,
+                     @RequestParam(required = false, defaultValue = "false") boolean split,
                      Model model, RedirectAttributes ra) {
         try {
             if (token != null) {
@@ -734,14 +739,141 @@ class CajeroController {
                 if (estado != null && estado.path("status").asInt() == 2) {
                     var factura = facturaService.confirmarPagoQR(facturaId, token);
                     model.addAttribute("factura", factura);
+                    model.addAttribute("split", split);
                     return "cajero/pago-confirmado";
                 }
             }
+            if (split) {
+                model.addAttribute("split", true);
+                model.addAttribute("errorSplit", "El pago no fue confirmado. Cierra esta ventana e intenta nuevamente desde la pantalla principal.");
+                return "cajero/pago-confirmado";
+            }
             ra.addFlashAttribute("error", "El pago no fue confirmado. Intenta nuevamente.");
         } catch (Exception e) {
+            if (split) {
+                model.addAttribute("split", true);
+                model.addAttribute("errorSplit", "Error al verificar el pago: " + e.getMessage());
+                return "cajero/pago-confirmado";
+            }
             ra.addFlashAttribute("error", "Error al verificar el pago: " + e.getMessage());
         }
         return "redirect:/cajero/pago/nuevo";
+    }
+
+    // ── Pago dividido en varias partes (efectivo y/o QR) ─────────────────────
+    @GetMapping("/pago/split")
+    String pagoSplitForm(@RequestParam String ruc,
+                         @RequestParam String razonSocial,
+                         @RequestParam(required = false) String direccion,
+                         @RequestParam(required = false) String email,
+                         @RequestParam(defaultValue = "hibrido") String metodo,
+                         @RequestParam(required = false) String grupoPago,
+                         Model model) {
+        model.addAttribute("ruc", ruc);
+        model.addAttribute("razonSocial", razonSocial);
+        model.addAttribute("direccion", direccion);
+        model.addAttribute("email", email);
+        model.addAttribute("metodo", metodo);
+        model.addAttribute("montoTramite", montoTramite);
+        model.addAttribute("grupoPago", grupoPago != null && !grupoPago.isBlank()
+            ? grupoPago : java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        return "cajero/pago-split";
+    }
+
+    @PostMapping("/pago/split/parte/qr")
+    @org.springframework.web.bind.annotation.ResponseBody
+    java.util.Map<String, Object> splitParteQr(
+            @RequestParam String ruc,
+            @RequestParam String razonSocial,
+            @RequestParam(required = false) String direccion,
+            @RequestParam String email,
+            @RequestParam java.math.BigDecimal monto,
+            @RequestParam String grupoPago,
+            @AuthenticationPrincipal UserDetails ud,
+            jakarta.servlet.http.HttpServletRequest request) {
+        try {
+            Usuario cajero = getUsuario(ud);
+            var factura = facturaService.crearParteQR(ruc, razonSocial, direccion, email, monto, grupoPago, cajero);
+
+            String scheme = request.getHeader("X-Forwarded-Proto") != null ?
+                request.getHeader("X-Forwarded-Proto") : request.getScheme();
+            String host = request.getHeader("X-Forwarded-Host") != null ?
+                request.getHeader("X-Forwarded-Host") : request.getServerName();
+            String baseUrl = scheme + "://" + host;
+            String urlRetorno = baseUrl + "/cajero/pago/qr/retorno?facturaId=" + factura.getId() + "&split=true";
+            String urlConfirmacion = baseUrl + "/cajero/pago/qr/confirmar?facturaId=" + factura.getId();
+
+            var orden = flowService.crearOrdenFactura(factura.getId(), email, razonSocial,
+                monto.doubleValue(), urlRetorno, urlConfirmacion);
+
+            return java.util.Map.of("ok", true, "facturaId", factura.getId(), "urlPago", orden.url());
+        } catch (Exception e) {
+            return java.util.Map.of("ok", false, "error", e.getMessage());
+        }
+    }
+
+    @PostMapping("/pago/split/parte/efectivo")
+    @org.springframework.web.bind.annotation.ResponseBody
+    java.util.Map<String, Object> splitParteEfectivo(
+            @RequestParam String ruc,
+            @RequestParam String razonSocial,
+            @RequestParam(required = false) String direccion,
+            @RequestParam String email,
+            @RequestParam java.math.BigDecimal monto,
+            @RequestParam java.math.BigDecimal montoRecibido,
+            @RequestParam String grupoPago,
+            @AuthenticationPrincipal UserDetails ud) {
+        try {
+            Usuario cajero = getUsuario(ud);
+            var factura = facturaService.crearParteEfectivo(
+                ruc, razonSocial, direccion, email, monto, montoRecibido, grupoPago, cajero);
+            return java.util.Map.of("ok", true, "facturaId", factura.getId(), "vuelto", factura.getVuelto());
+        } catch (Exception e) {
+            return java.util.Map.of("ok", false, "error", e.getMessage());
+        }
+    }
+
+    @GetMapping("/pago/split/estado")
+    @org.springframework.web.bind.annotation.ResponseBody
+    java.util.Map<String, Object> splitEstado(@RequestParam String grupoPago) {
+        var partes = facturaService.obtenerPorGrupo(grupoPago);
+        java.math.BigDecimal suma = partes.stream()
+            .filter(f -> f.getEstado() == com.municipalidad.licencias.model.Enums.EstadoFactura.PAGADA)
+            .map(com.municipalidad.licencias.model.FacturaCaja::getImporteTotal)
+            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        boolean completo = !partes.isEmpty() && partes.stream()
+            .allMatch(f -> f.getEstado() == com.municipalidad.licencias.model.Enums.EstadoFactura.PAGADA)
+            && suma.compareTo(montoTramite) == 0;
+        var lista = partes.stream().map(f -> java.util.Map.of(
+            "facturaId", f.getId(),
+            "metodoPago", f.getMetodoPago().name(),
+            "monto", f.getImporteTotal(),
+            "estado", f.getEstado().name()
+        )).toList();
+        return java.util.Map.of("partes", lista, "suma", suma, "completo", completo);
+    }
+
+    @PostMapping("/pago/split/finalizar")
+    String splitFinalizar(@RequestParam String grupoPago,
+                          @RequestParam String ruc,
+                          @RequestParam String razonSocial,
+                          @RequestParam(required = false) String direccion,
+                          @RequestParam(required = false) String email,
+                          RedirectAttributes ra) {
+        try {
+            var factura = facturaService.consolidarGrupo(grupoPago, montoTramite);
+            return "redirect:/cajero/nueva/datos?operacion=" + factura.getNumeroOperacion()
+                + "&ruc=" + java.net.URLEncoder.encode(ruc, java.nio.charset.StandardCharsets.UTF_8)
+                + "&razonSocial=" + java.net.URLEncoder.encode(razonSocial, java.nio.charset.StandardCharsets.UTF_8)
+                + (direccion != null ? "&direccion=" + java.net.URLEncoder.encode(direccion, java.nio.charset.StandardCharsets.UTF_8) : "")
+                + (email != null ? "&email=" + java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8) : "");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/cajero/pago/split?grupoPago=" + grupoPago
+                + "&ruc=" + java.net.URLEncoder.encode(ruc, java.nio.charset.StandardCharsets.UTF_8)
+                + "&razonSocial=" + java.net.URLEncoder.encode(razonSocial, java.nio.charset.StandardCharsets.UTF_8)
+                + (email != null ? "&email=" + java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8) : "");
+        }
     }
 
     @PostMapping("/pago/qr/confirmar")

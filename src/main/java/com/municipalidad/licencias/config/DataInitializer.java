@@ -49,6 +49,8 @@ public class DataInitializer implements CommandLineRunner {
         // los inserts; la validacion de valores queda a cargo de @Enumerated en la app.
         ejecutarSeguro("ALTER TABLE caja_sesiones DROP CONSTRAINT IF EXISTS caja_sesiones_estado_check");
         ejecutarSeguro("ALTER TABLE caja_sesiones ALTER COLUMN monto_apertura DROP NOT NULL");
+        // Se agrego el valor MIXTO al enum MetodoPago (pagos divididos en varias partes).
+        ejecutarSeguro("ALTER TABLE facturas_caja DROP CONSTRAINT IF EXISTS facturas_caja_metodo_pago_check");
 
         // Reinicio unico de datos para demo (activar con RESET_DEMO=true en Render).
         // Borra TODAS las solicitudes/inspecciones/licencias/observaciones/multas/facturas

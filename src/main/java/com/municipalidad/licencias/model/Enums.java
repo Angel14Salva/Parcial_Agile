@@ -34,7 +34,11 @@ public class Enums {
 
     public enum MetodoPago {
         EFECTIVO,
-        QR
+        QR,
+        // Factura consolidada de un pago dividido en varias partes (efectivo y/o QR).
+        // No representa dinero recibido por si misma: cada parte real queda registrada
+        // por separado con su propio metodo, para no descuadrar el arqueo de caja.
+        MIXTO
     }
 
     public enum EstadoFactura {

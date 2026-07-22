@@ -68,6 +68,10 @@ public class FacturaCaja {
 
     private Long solicitudId;
 
+    // Agrupa las partes de un pago dividido (efectivo + QR / varios QR). Null para
+    // pagos normales de una sola parte.
+    private String grupoPago;
+
     private LocalDateTime creadoEn;
 
     @PrePersist
@@ -146,6 +150,7 @@ public class FacturaCaja {
     public Enums.EstadoFactura getEstado()       { return estado; }
     public Usuario getCajero()                   { return cajero; }
     public Long getSolicitudId()                 { return solicitudId; }
+    public String getGrupoPago()                 { return grupoPago; }
     public LocalDateTime getCreadoEn()           { return creadoEn; }
 
     // Setters
@@ -154,6 +159,7 @@ public class FacturaCaja {
     public void setFlowToken(String v)           { this.flowToken = v; }
     public void setEstado(Enums.EstadoFactura v) { this.estado = v; }
     public void setSolicitudId(Long v)           { this.solicitudId = v; }
+    public void setGrupoPago(String v)           { this.grupoPago = v; }
     public void setMontoRecibido(BigDecimal v)   { this.montoRecibido = v; }
     public void setVuelto(BigDecimal v)          { this.vuelto = v; }
 }

@@ -50,7 +50,8 @@
     </div>
     <div class="card-footer d-flex justify-content-between align-items-center">
       <span class="text-muted">Derecho de trámite (Ley N°28976)</span>
-      <span class="fw-bold fs-5 text-success">S/ 2.00</span>
+      <span class="fw-bold fs-5 text-success"
+            th:text="'S/ ' + ${#numbers.formatDecimal(montoTramite, 1, 2)}"></span>
     </div>
   </div>
 

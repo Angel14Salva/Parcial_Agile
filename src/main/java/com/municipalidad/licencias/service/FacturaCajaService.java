@@ -64,6 +64,86 @@ public class FacturaCajaService {
         return factura;
     }
 
+    // ── Pago dividido en varias partes (efectivo y/o QR) ────────────────────────
+
+    @Transactional
+    public synchronized FacturaCaja crearParteQR(String ruc, String razonSocial, String direccion, String email,
+                                                  BigDecimal montoParte, String grupoPago, Usuario cajero) {
+        if (montoParte.compareTo(new BigDecimal("2.00")) < 0)
+            throw new IllegalArgumentException("La pasarela de pago no acepta montos menores a S/ 2.00.");
+        BigDecimal[] valores = calcularValorVentaEIgv(montoParte);
+        FacturaCaja factura = construirBase(ruc, razonSocial, direccion, email,
+            "Derecho de tramite - Licencia de Funcionamiento (parte)", montoParte, valores, cajero, Enums.MetodoPago.QR);
+        factura.setEstado(Enums.EstadoFactura.PENDIENTE);
+        factura.setGrupoPago(grupoPago);
+        return facturaRepo.save(factura);
+    }
+
+    @Transactional
+    public synchronized FacturaCaja crearParteEfectivo(String ruc, String razonSocial, String direccion, String email,
+                                                        BigDecimal montoParte, BigDecimal montoRecibido,
+                                                        String grupoPago, Usuario cajero) {
+        if (montoRecibido.compareTo(montoParte) < 0)
+            throw new IllegalArgumentException("El monto recibido es menor al monto de esta parte (S/ " + montoParte + ").");
+        BigDecimal vuelto = montoRecibido.subtract(montoParte).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal[] valores = calcularValorVentaEIgv(montoParte);
+        FacturaCaja factura = construirBase(ruc, razonSocial, direccion, email,
+            "Derecho de tramite - Licencia de Funcionamiento (parte)", montoParte, valores, cajero, Enums.MetodoPago.EFECTIVO);
+        factura.setMontoRecibido(montoRecibido);
+        factura.setVuelto(vuelto);
+        factura.setEstado(Enums.EstadoFactura.PAGADA);
+        factura.setGrupoPago(grupoPago);
+        factura = facturaRepo.save(factura);
+        factura.setNumeroOperacion("EFECTIVO-" + factura.getId() + "-" + System.currentTimeMillis());
+        return facturaRepo.save(factura);
+    }
+
+    public java.util.List<FacturaCaja> obtenerPorGrupo(String grupoPago) {
+        return facturaRepo.findByGrupoPago(grupoPago);
+    }
+
+    /**
+     * Junta las partes ya pagadas de un grupo en una factura consolidada (MIXTO) que
+     * representa el monto total, para poder emitir un solo comprobante y continuar el
+     * registro del tramite. Las partes originales NO se tocan ni se borran: cada una
+     * sigue contando por separado (EFECTIVO/QR) para el arqueo de caja.
+     */
+    @Transactional
+    public synchronized FacturaCaja consolidarGrupo(String grupoPago, BigDecimal totalEsperado) {
+        java.util.List<FacturaCaja> partes = facturaRepo.findByGrupoPago(grupoPago);
+        if (partes.isEmpty())
+            throw new IllegalArgumentException("No se encontraron pagos para este grupo.");
+        for (FacturaCaja p : partes) {
+            if (p.getEstado() != Enums.EstadoFactura.PAGADA)
+                throw new IllegalStateException("Aún hay partes de este pago sin confirmar.");
+        }
+        BigDecimal suma = partes.stream().map(FacturaCaja::getImporteTotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (suma.compareTo(totalEsperado) != 0)
+            throw new IllegalStateException(
+                "La suma de las partes (S/ " + suma + ") no coincide con el monto del trámite (S/ " + totalEsperado + ").");
+        BigDecimal recibido = partes.stream()
+            .map(f -> f.getMontoRecibido() != null ? f.getMontoRecibido() : f.getImporteTotal())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal vuelto = partes.stream()
+            .map(f -> f.getVuelto() != null ? f.getVuelto() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        FacturaCaja base = partes.get(0);
+        BigDecimal[] valores = calcularValorVentaEIgv(suma);
+        FacturaCaja consolidada = construirBase(base.getRucCliente(), base.getRazonSocialCliente(),
+            base.getDireccionCliente(), base.getEmailCliente(),
+            "Derecho de tramite - Licencia de Funcionamiento (pago dividido)",
+            suma, valores, base.getCajero(), Enums.MetodoPago.MIXTO);
+        consolidada.setMontoRecibido(recibido);
+        consolidada.setVuelto(vuelto);
+        consolidada.setEstado(Enums.EstadoFactura.PAGADA);
+        consolidada.setGrupoPago(grupoPago);
+        consolidada = facturaRepo.save(consolidada);
+        consolidada.setNumeroOperacion("MIXTO-" + consolidada.getId() + "-" + System.currentTimeMillis());
+        return facturaRepo.save(consolidada);
+    }
+
     private FacturaCaja construirBase(String ruc, String razonSocial, String direccion, String email, String concepto,
                                        BigDecimal importeTotal, BigDecimal[] valores, Usuario cajero,
                                        Enums.MetodoPago metodoPago) {

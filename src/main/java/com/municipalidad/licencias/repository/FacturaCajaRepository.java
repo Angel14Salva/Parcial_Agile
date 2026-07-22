@@ -16,6 +16,7 @@ import java.util.Optional;
 public interface FacturaCajaRepository extends JpaRepository<FacturaCaja, Long> {
 
     Optional<FacturaCaja> findByNumeroOperacion(String numeroOperacion);
+    java.util.List<FacturaCaja> findByGrupoPago(String grupoPago);
 
     @Query("SELECT COALESCE(MAX(f.numero), 0) FROM FacturaCaja f")
     Long obtenerUltimoNumero();

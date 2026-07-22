@@ -62,15 +62,16 @@
   </div>
 
   <h6 class="fw-semibold mb-3">Selecciona el método de pago</h6>
-  <div class="row g-3">
-    <div class="col-md-6">
-      <button type="button" id="btnEfectivo" class="btn btn-outline-success btn-lg w-100 py-4">
-        <i class="bi bi-cash-stack d-block mb-2" style="font-size:1.8rem"></i>Efectivo
-      </button>
-    </div>
-    <div class="col-md-6">
-      <button type="button" id="btnQr" class="btn btn-outline-primary btn-lg w-100 py-4">
-        <i class="bi bi-qr-code d-block mb-2" style="font-size:1.8rem"></i>QR / Pasarela de pago
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <label class="form-label fw-semibold">Método de pago</label>
+      <select id="selectMetodo" class="form-select form-select-lg mb-3">
+        <option value="efectivo">Efectivo</option>
+        <option value="qr">QR</option>
+        <option value="hibrido">Híbrido (efectivo + QR)</option>
+      </select>
+      <button type="button" id="btnContinuar" class="btn btn-primary btn-lg w-100">
+        <i class="bi bi-arrow-right-circle me-2"></i>Continuar
       </button>
     </div>
   </div>
@@ -108,30 +109,37 @@
     }
   });
 
-  function irAPagar(metodo) {
+  function datosValidos() {
     const errDiv = document.getElementById('alertaError');
     if (!rucOk) {
       errDiv.textContent = 'Debes validar el RUC antes de continuar.';
       errDiv.classList.remove('d-none');
       window.scrollTo({top:0, behavior:'smooth'});
-      return;
+      return null;
     }
     const email = document.getElementById('inputEmail').value.trim();
     if (!email || !email.includes('@')) {
       errDiv.textContent = 'Debes ingresar un correo electrónico válido del cliente.';
       errDiv.classList.remove('d-none');
       window.scrollTo({top:0, behavior:'smooth'});
-      return;
+      return null;
     }
-    const ruc = encodeURIComponent(document.getElementById('inputRuc').value.trim());
-    const razonSocial = encodeURIComponent(datosRuc.razonSocial);
-    const direccion = encodeURIComponent(datosRuc.direccion || '');
-    const emailEnc = encodeURIComponent(email);
-    window.location.href = `/cajero/pago/${metodo}?ruc=${ruc}&razonSocial=${razonSocial}&direccion=${direccion}&email=${emailEnc}`;
+    return {
+      ruc: encodeURIComponent(document.getElementById('inputRuc').value.trim()),
+      razonSocial: encodeURIComponent(datosRuc.razonSocial),
+      direccion: encodeURIComponent(datosRuc.direccion || ''),
+      email: encodeURIComponent(email)
+    };
   }
 
-  document.getElementById('btnEfectivo').addEventListener('click', () => irAPagar('efectivo'));
-  document.getElementById('btnQr').addEventListener('click', () => irAPagar('qr'));
+  document.getElementById('btnContinuar').addEventListener('click', () => {
+    const d = datosValidos();
+    if (!d) return;
+    const metodo = document.getElementById('selectMetodo').value;
+    const destino = metodo === 'efectivo' ? 'efectivo' : 'split';
+    const extra = metodo === 'efectivo' ? '' : `&metodo=${metodo}`;
+    window.location.href = `/cajero/pago/${destino}?ruc=${d.ruc}&razonSocial=${d.razonSocial}&direccion=${d.direccion}&email=${d.email}${extra}`;
+  });
 </script>
 </body>
 </html>

@@ -19,33 +19,47 @@
 </nav>
 
 <div class="container" style="max-width:560px">
-  <div class="text-center mb-4">
-    <i class="bi bi-check-circle-fill text-success" style="font-size:3.5rem"></i>
-    <h4 class="fw-bold mt-2">¡Pago confirmado!</h4>
-    <p class="text-muted" th:text="${factura.razonSocialCliente} + ' — RUC ' + ${factura.rucCliente}"></p>
+
+  <!-- Ventana de una parte de un pago dividido: solo confirma, no continua el tramite -->
+  <div th:if="${split}" class="text-center mb-4">
+    <i th:if="${factura != null}" class="bi bi-check-circle-fill text-success" style="font-size:3.5rem"></i>
+    <i th:if="${factura == null}" class="bi bi-x-circle-fill text-danger" style="font-size:3.5rem"></i>
+    <h4 class="fw-bold mt-2" th:text="${factura != null} ? 'Parte pagada' : 'No se pudo confirmar'"></h4>
+    <p th:if="${factura != null}" class="text-success fw-semibold"
+       th:text="'S/ ' + ${#numbers.formatDecimal(factura.importeTotal, 1, 2)} + ' confirmados.'"></p>
+    <p th:if="${errorSplit != null}" class="text-danger" th:text="${errorSplit}"></p>
+    <p class="text-muted small mt-3">Ya puedes cerrar esta ventana y volver a la pestaña principal para continuar.</p>
   </div>
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <dl class="row mb-0">
-        <dt class="col-sm-5 text-muted">N.° de operación</dt>
-        <dd class="col-sm-7 fw-semibold" th:text="${factura.numeroOperacion}"></dd>
-        <dt class="col-sm-5 text-muted">Monto pagado</dt>
-        <dd class="col-sm-7 fw-bold text-success"
-            th:text="'S/ ' + ${#numbers.formatDecimal(factura.importeTotal, 1, 2)}"></dd>
-      </dl>
+  <div th:unless="${split}">
+    <div class="text-center mb-4">
+      <i class="bi bi-check-circle-fill text-success" style="font-size:3.5rem"></i>
+      <h4 class="fw-bold mt-2">¡Pago confirmado!</h4>
+      <p class="text-muted" th:text="${factura.razonSocialCliente} + ' — RUC ' + ${factura.rucCliente}"></p>
     </div>
-  </div>
 
-  <div class="d-grid gap-2">
-    <a th:href="@{/cajero/factura/{id}(id=${factura.id})}" target="_blank"
-       class="btn btn-outline-primary btn-lg">
-      <i class="bi bi-printer me-2"></i>Imprimir factura
-    </a>
-    <a th:href="@{/cajero/nueva/datos(operacion=${factura.numeroOperacion}, ruc=${factura.rucCliente}, razonSocial=${factura.razonSocialCliente}, direccion=${factura.direccionCliente}, email=${factura.emailCliente})}"
-       class="btn btn-primary btn-lg">
-      <i class="bi bi-arrow-right-circle me-2"></i>Continuar al formulario del trámite
-    </a>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5 text-muted">N.° de operación</dt>
+          <dd class="col-sm-7 fw-semibold" th:text="${factura.numeroOperacion}"></dd>
+          <dt class="col-sm-5 text-muted">Monto pagado</dt>
+          <dd class="col-sm-7 fw-bold text-success"
+              th:text="'S/ ' + ${#numbers.formatDecimal(factura.importeTotal, 1, 2)}"></dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="d-grid gap-2">
+      <a th:href="@{/cajero/factura/{id}(id=${factura.id})}" target="_blank"
+         class="btn btn-outline-primary btn-lg">
+        <i class="bi bi-printer me-2"></i>Imprimir factura
+      </a>
+      <a th:href="@{/cajero/nueva/datos(operacion=${factura.numeroOperacion}, ruc=${factura.rucCliente}, razonSocial=${factura.razonSocialCliente}, direccion=${factura.direccionCliente}, email=${factura.emailCliente})}"
+         class="btn btn-primary btn-lg">
+        <i class="bi bi-arrow-right-circle me-2"></i>Continuar al formulario del trámite
+      </a>
+    </div>
   </div>
 </div>
 </body>
