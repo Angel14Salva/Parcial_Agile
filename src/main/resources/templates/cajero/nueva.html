@@ -115,15 +115,9 @@
         <!-- RUC -->
         <div class="col-md-6">
           <label class="form-label fw-semibold">N° RUC <span class="text-danger">*</span></label>
-          <div class="input-group">
-            <input type="text" id="inputRuc" name="ruc" class="form-control"
-                   th:value="${solicitudDto.ruc}"
-                   placeholder="20 + 9 dígitos (empresa)" maxlength="11" pattern="20\d{9}" required/>
-            <button type="button" class="btn btn-outline-primary" id="btnBuscarRuc">
-              <i class="bi bi-search"></i>
-            </button>
-          </div>
-          <div id="rucStatus" class="field-hint mt-1"></div>
+          <input type="text" id="inputRuc" name="ruc" class="form-control"
+                 th:value="${solicitudDto.ruc}"
+                 placeholder="20 + 9 dígitos (empresa)" maxlength="11" pattern="20\d{9}" required/>
         </div>
 
         <!-- DNI -->
@@ -331,9 +325,6 @@
       </div>
     </div>
 
-    <!-- Campo oculto para el RUC autorellenado -->
-    <input type="hidden" id="rucValidado" value=""/>
-
     <div class="d-flex gap-2 mb-5">
       <a href="/cajero/dashboard" class="btn btn-outline-secondary">
         <i class="bi bi-x me-1"></i>Cancelar
@@ -348,44 +339,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  let rucOk = false;
-
-  // ── Buscar RUC ──────────────────────────────────────────────────────────────
-  document.getElementById('btnBuscarRuc').addEventListener('click', async () => {
-    const ruc = document.getElementById('inputRuc').value.trim();
-    const status = document.getElementById('rucStatus');
-    if (!/^20\d{9}$/.test(ruc)) {
-      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Solo se aceptan RUC de empresas (deben iniciar con 20, 11 dígitos en total).</span>';
-      return;
-    }
-    status.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Consultando SUNAT...</span>';
-    document.getElementById('btnBuscarRuc').disabled = true;
-    try {
-      const res = await fetch(`/api/validar/ruc/${ruc}`);
-      const data = await res.json();
-      if (!res.ok) {
-        status.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error || 'RUC no encontrado'}</span>`;
-        rucOk = false;
-      } else {
-        document.getElementById('inputRazonSocial').value = data.razonSocial;
-        document.getElementById('inputDomicilio').value   = data.domicilioFiscal;
-        document.getElementById('rucValidado').value      = ruc;
-        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i><strong>${data.razonSocial}</strong> · ${data.condicion}</span>`;
-        rucOk = true;
-      }
-    } catch(e) {
-      status.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión.</span>';
-      rucOk = false;
-    } finally {
-      document.getElementById('btnBuscarRuc').disabled = false;
-    }
-  });
-
-  // ── Buscar con Enter ────────────────────────────────────────────────────────
-  document.getElementById('inputRuc').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnBuscarRuc').click(); }
-  });
-
   // ── Widget de horario ─────────────────────────────────────────────────────────
   const diasSeleccionados = new Set();
   const horarios = [];
