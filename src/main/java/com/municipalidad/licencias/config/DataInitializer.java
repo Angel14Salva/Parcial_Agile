@@ -21,6 +21,9 @@ public class DataInitializer implements CommandLineRunner {
     private final com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
+    @org.springframework.beans.factory.annotation.Value("${app.demo.reset-solicitudes:false}")
+    private boolean resetSolicitudesDemo;
+
     public DataInitializer(UsuarioRepository usuarioRepo, PasswordEncoder encoder,
                            com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
                            com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
@@ -46,6 +49,24 @@ public class DataInitializer implements CommandLineRunner {
         // los inserts; la validacion de valores queda a cargo de @Enumerated en la app.
         ejecutarSeguro("ALTER TABLE caja_sesiones DROP CONSTRAINT IF EXISTS caja_sesiones_estado_check");
         ejecutarSeguro("ALTER TABLE caja_sesiones ALTER COLUMN monto_apertura DROP NOT NULL");
+
+        // Reinicio unico de datos para demo (activar con RESET_DEMO=true en Render).
+        // Borra TODAS las solicitudes/inspecciones/licencias/observaciones/multas para
+        // empezar el flujo desde cero. No toca usuarios ni sesiones de caja. Volver a
+        // poner RESET_DEMO en false (o quitarla) despues de que corra una vez, para que
+        // no se repita en cada redeploy.
+        if (resetSolicitudesDemo) {
+            log.warn("=== RESET_DEMO=true: eliminando todas las solicitudes/inspecciones/licencias existentes ===");
+            ejecutarSeguro("DELETE FROM multas");
+            ejecutarSeguro("DELETE FROM observaciones");
+            ejecutarSeguro("DELETE FROM inspecciones");
+            ejecutarSeguro("DELETE FROM licencias");
+            ejecutarSeguro("UPDATE facturas_caja SET solicitud_id = NULL");
+            ejecutarSeguro("DELETE FROM solicitudes");
+            ejecutarSeguro("DELETE FROM notificaciones WHERE usuario_id IN " +
+                "(SELECT id FROM usuarios WHERE username IN ('publico','inspector.garcia'))");
+            log.warn("=== RESET_DEMO completado. Recuerda poner RESET_DEMO=false en Render. ===");
+        }
 
         // crearUsuarioSiNoExiste solo crea si no existe; para actualizar el correo del
         // inspector ya creado en deploys anteriores hace falta este UPDATE puntual.

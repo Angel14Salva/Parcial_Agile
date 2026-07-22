@@ -31,6 +31,11 @@ public class InspeccionService {
     @Value("${app.inspeccion.capacidad-diaria:4}")
     private int capacidadDiariaInspector;
 
+    // Días de anticipación mínima para la primera inspección (1 = "mañana como muy pronto").
+    // En 0 para la demo, para que las inspecciones que se creen de ahora en adelante caigan hoy.
+    @Value("${app.inspeccion.dias-anticipacion:1}")
+    private int diasAnticipacionInspeccion;
+
     public InspeccionService(InspeccionRepository inspeccionRepo,
                              SolicitudRepository solicitudRepo,
                              ObservacionRepository observacionRepo,
@@ -49,7 +54,7 @@ public class InspeccionService {
 
     @Transactional
     public Inspeccion programarPrimeraInspeccionConInspector(Solicitud solicitud, Usuario inspector) {
-        java.time.LocalDate fecha = diasHabiles.siguienteDiaHabil(java.time.LocalDate.now().plusDays(1));
+        java.time.LocalDate fecha = diasHabiles.siguienteDiaHabil(java.time.LocalDate.now().plusDays(diasAnticipacionInspeccion));
         Inspeccion inspeccion = Inspeccion.builder()
             .solicitud(solicitud).inspector(inspector)
             .tipo(Enums.TipoInspeccion.PRIMERA).fechaProgramada(fecha)
@@ -61,7 +66,7 @@ public class InspeccionService {
 
     public Inspeccion programarPrimeraInspeccion(Solicitud solicitud) {
         Usuario inspector = obtenerInspectorUnico();
-        LocalDate fecha = buscarFechaDisponible(inspector, LocalDate.now().plusDays(1));
+        LocalDate fecha = buscarFechaDisponible(inspector, LocalDate.now().plusDays(diasAnticipacionInspeccion));
 
         Inspeccion inspeccion = Inspeccion.builder()
             .solicitud(solicitud).inspector(inspector)
