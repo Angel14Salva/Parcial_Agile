@@ -124,7 +124,8 @@
         <div class="col-md-6">
           <label class="form-label fw-semibold">N° DNI del representante <span class="text-danger">*</span></label>
           <input type="text" id="inputDni" name="dni" class="form-control"
-                 placeholder="8 dígitos" maxlength="8" pattern="\d{8}" required/>
+                 placeholder="8 dígitos" maxlength="8" pattern="\d{8}"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'')" required/>
         </div>
 
         <!-- Razón social -->
@@ -176,9 +177,10 @@
 
         <!-- DNI representante -->
         <div class="col-md-5">
-          <label class="form-label fw-semibold">N° DNI / C.E.</label>
+          <label class="form-label fw-semibold">N° DNI</label>
           <input type="text" th:field="*{dniRepresentante}" id="inputDniRep"
-                 class="form-control" placeholder="Según su DNI"/>
+                 class="form-control" placeholder="8 dígitos" maxlength="8" pattern="\d{8}"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
         </div>
 
         <!-- Partida SUNARP -->
