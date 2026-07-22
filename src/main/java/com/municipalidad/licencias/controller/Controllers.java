@@ -458,6 +458,9 @@ class CajeroController {
     @org.springframework.beans.factory.annotation.Value("${app.pago.tramite}")
     private java.math.BigDecimal montoTramite;
 
+    @org.springframework.beans.factory.annotation.Value("${app.pago.renovacion}")
+    private java.math.BigDecimal montoRenovacion;
+
     CajeroController(SolicitudService solicitudService,
                      LicenciaService licenciaService,
                      UsuarioRepository usuarioRepo,
@@ -920,6 +923,7 @@ class CajeroController {
                 );
             model.addAttribute("ruc", ruc);
         }
+        model.addAttribute("montoRenovacion", montoRenovacion);
         return "cajero/renovar";
     }
 
@@ -1470,6 +1474,9 @@ class PublicoController {
     private final com.municipalidad.licencias.service.FlowService flowService;
     private final com.municipalidad.licencias.service.EmailService emailService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.pago.renovacion}")
+    private java.math.BigDecimal montoRenovacion;
+
     PublicoController(com.municipalidad.licencias.repository.SolicitudRepository solicitudRepo,
                       com.municipalidad.licencias.repository.InspeccionRepository inspeccionRepo,
                       com.municipalidad.licencias.repository.LicenciaRepository licenciaRepo,
@@ -1540,6 +1547,7 @@ class PublicoController {
                        jakarta.servlet.http.HttpServletRequest request) {
         com.municipalidad.licencias.model.Licencia licencia = licenciaRepo.findById(id).orElseThrow();
         model.addAttribute("licencia", licencia);
+        model.addAttribute("montoRenovacion", montoRenovacion);
         return "publico/renovar-pago";
     }
 
@@ -1558,7 +1566,7 @@ class PublicoController {
             String email = s.getCorreoElectronico() != null ? s.getCorreoElectronico() : "publico@licencias.gob.pe";
             String nombre = s.getNombreRepresentante() != null ? s.getNombreRepresentante() : "Ciudadano";
             com.municipalidad.licencias.service.FlowService.OrdenFlow orden =
-                flowService.crearOrden(id + 10000L, email, nombre, 2.0, urlRetorno, urlConfirmacion);
+                flowService.crearOrden(id + 10000L, email, nombre, montoRenovacion.doubleValue(), urlRetorno, urlConfirmacion);
             return "redirect:" + orden.url();
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Error al conectar con el sistema de pago: " + e.getMessage());

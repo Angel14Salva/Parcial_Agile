@@ -30,12 +30,13 @@
       </table>
       <div class="alert alert-warning small mb-4">
         <i class="bi bi-exclamation-triangle me-1"></i>
-        El derecho de renovación es de <strong>S/ 2.00</strong> y no es reembolsable.
+        El derecho de renovación es de <strong th:text="'S/ ' + ${#numbers.formatDecimal(montoRenovacion, 1, 2)}"></strong> y no es reembolsable.
       </div>
       <form th:action="@{/publico/licencia/{id}/renovar/flow(id=${licencia.id})}" method="post">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         <button type="submit" class="btn btn-success btn-lg w-100 fw-semibold">
-          <i class="bi bi-credit-card me-2"></i>Pagar renovación S/ 2.00
+          <i class="bi bi-credit-card me-2"></i>
+          <span th:text="'Pagar renovación S/ ' + ${#numbers.formatDecimal(montoRenovacion, 1, 2)}"></span>
         </button>
       </form>
       <a href="/seguimiento" class="btn btn-outline-secondary w-100 mt-2">Volver</a>
