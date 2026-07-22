@@ -518,15 +518,44 @@ class CajeroController {
         return "redirect:/cajero/dashboard";
     }
 
-    // ── Paso 0: número de operación (o ir a pagar) ──────────────────────────
-    // De momento se omite esta pantalla intermedia y se va directo a pagar el trámite.
+    // ── Paso 0: número de operación (si ya pagó) o ir a pagar en caja ───────
     @GetMapping("/nueva")
-    String inicio(@AuthenticationPrincipal UserDetails ud, RedirectAttributes ra) {
+    String inicio(@AuthenticationPrincipal UserDetails ud, Model model, RedirectAttributes ra) {
         if (!cajaSesionService.tieneCajaAbierta(getUsuario(ud))) {
             ra.addFlashAttribute("error", "Debes tener la caja abierta (con aprobación del administrador) para registrar solicitudes.");
             return "redirect:/cajero/dashboard";
         }
-        return "redirect:/cajero/pago/nuevo";
+        return "cajero/inicio";
+    }
+
+    @PostMapping("/nueva/validar-operacion")
+    String validarOperacion(@RequestParam String operacion,
+                            @AuthenticationPrincipal UserDetails ud,
+                            RedirectAttributes ra) {
+        if (!cajaSesionService.tieneCajaAbierta(getUsuario(ud))) {
+            ra.addFlashAttribute("error", "Debes tener la caja abierta (con aprobación del administrador) para registrar solicitudes.");
+            return "redirect:/cajero/dashboard";
+        }
+        try {
+            var factura = facturaService.obtenerPorNumeroOperacion(operacion.trim());
+            if (factura.getEstado() != com.municipalidad.licencias.model.Enums.EstadoFactura.PAGADA) {
+                ra.addFlashAttribute("error", "Esa operación aún no tiene el pago confirmado.");
+                return "redirect:/cajero/nueva";
+            }
+            if (factura.getSolicitudId() != null) {
+                ra.addFlashAttribute("error", "Esa operación ya fue utilizada para registrar una solicitud.");
+                return "redirect:/cajero/nueva";
+            }
+            String url = "redirect:/cajero/nueva/datos?operacion=" + factura.getNumeroOperacion()
+                + "&ruc=" + factura.getRucCliente()
+                + "&razonSocial=" + java.net.URLEncoder.encode(factura.getRazonSocialCliente(), java.nio.charset.StandardCharsets.UTF_8)
+                + (factura.getDireccionCliente() != null ? "&direccion=" + java.net.URLEncoder.encode(factura.getDireccionCliente(), java.nio.charset.StandardCharsets.UTF_8) : "")
+                + (factura.getEmailCliente() != null ? "&email=" + java.net.URLEncoder.encode(factura.getEmailCliente(), java.nio.charset.StandardCharsets.UTF_8) : "");
+            return url;
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "No se encontró ninguna operación con ese número.");
+            return "redirect:/cajero/nueva";
+        }
     }
 
     // ── Paso 1 (si ya tiene operación): formulario completo del trámite ────

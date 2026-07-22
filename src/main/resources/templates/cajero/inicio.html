@@ -26,39 +26,31 @@
     </ol>
   </nav>
 
+  <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${error}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
   <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Registrar solicitud presencial</h4>
   <p class="text-muted small mb-4">Primero indica si el negocio ya cuenta con un número de operación de pago, o si debes cobrarle el trámite ahora.</p>
 
   <div class="card shadow-sm">
     <div class="card-body p-4">
-      <label class="form-label fw-semibold">N.° de operación de pago (si ya lo tiene)</label>
-      <input type="text" id="inputOperacion" class="form-control form-control-lg mb-3"
-             placeholder="Ej: código de depósito, transferencia, etc."/>
-      <div class="d-grid gap-2">
-        <button type="button" id="btnSiguiente" class="btn btn-primary btn-lg">
-          <i class="bi bi-arrow-right-circle me-2"></i>Siguiente (ya tiene N.° de operación)
+      <form th:action="@{/cajero/nueva/validar-operacion}" method="post">
+        <label class="form-label fw-semibold">N.° de operación de pago (si ya lo tiene)</label>
+        <input type="text" name="operacion" class="form-control form-control-lg mb-3"
+               placeholder="Ej: código de depósito, transferencia, etc." required/>
+        <button type="submit" class="btn btn-primary btn-lg w-100">
+          <i class="bi bi-check-circle me-2"></i>Validar número de operación
         </button>
-        <div class="text-center text-muted small my-1">— o —</div>
-        <button type="button" id="btnPagar" class="btn btn-success btn-lg">
-          <i class="bi bi-cash-coin me-2"></i>Pagar trámite (aún no tiene N.° de operación)
-        </button>
-      </div>
+      </form>
+      <div class="text-center text-muted small my-3">— o —</div>
+      <a href="/cajero/pago/nuevo" class="btn btn-success btn-lg w-100">
+        <i class="bi bi-cash-coin me-2"></i>Pagar en caja (aún no tiene N.° de operación)
+      </a>
     </div>
   </div>
 </div>
-
-<script>
-  document.getElementById('btnSiguiente').addEventListener('click', () => {
-    const op = document.getElementById('inputOperacion').value.trim();
-    if (!op) {
-      alert('Ingresa el número de operación, o usa el botón "Pagar trámite" si el cliente aún no ha pagado.');
-      return;
-    }
-    window.location.href = '/cajero/nueva/datos?operacion=' + encodeURIComponent(op);
-  });
-  document.getElementById('btnPagar').addEventListener('click', () => {
-    window.location.href = '/cajero/pago/nuevo';
-  });
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
