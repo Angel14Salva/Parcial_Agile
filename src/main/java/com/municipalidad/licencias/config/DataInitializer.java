@@ -51,17 +51,18 @@ public class DataInitializer implements CommandLineRunner {
         ejecutarSeguro("ALTER TABLE caja_sesiones ALTER COLUMN monto_apertura DROP NOT NULL");
 
         // Reinicio unico de datos para demo (activar con RESET_DEMO=true en Render).
-        // Borra TODAS las solicitudes/inspecciones/licencias/observaciones/multas para
-        // empezar el flujo desde cero. No toca usuarios ni sesiones de caja. Volver a
-        // poner RESET_DEMO en false (o quitarla) despues de que corra una vez, para que
-        // no se repita en cada redeploy.
+        // Borra TODAS las solicitudes/inspecciones/licencias/observaciones/multas/facturas
+        // de caja para empezar el flujo desde cero. No toca usuarios ni sesiones de caja
+        // (apertura/cierre); "en caja ahora" volvera a mostrar solo el monto de apertura al
+        // no quedar facturas que sumar. Volver a poner RESET_DEMO en false (o quitarla)
+        // despues de que corra una vez, para que no se repita en cada redeploy.
         if (resetSolicitudesDemo) {
-            log.warn("=== RESET_DEMO=true: eliminando todas las solicitudes/inspecciones/licencias existentes ===");
+            log.warn("=== RESET_DEMO=true: eliminando todas las solicitudes/inspecciones/licencias/facturas existentes ===");
             ejecutarSeguro("DELETE FROM multas");
             ejecutarSeguro("DELETE FROM observaciones");
             ejecutarSeguro("DELETE FROM inspecciones");
             ejecutarSeguro("DELETE FROM licencias");
-            ejecutarSeguro("UPDATE facturas_caja SET solicitud_id = NULL");
+            ejecutarSeguro("DELETE FROM facturas_caja");
             ejecutarSeguro("DELETE FROM solicitudes");
             ejecutarSeguro("DELETE FROM notificaciones WHERE usuario_id IN " +
                 "(SELECT id FROM usuarios WHERE username IN ('publico','inspector.garcia'))");
