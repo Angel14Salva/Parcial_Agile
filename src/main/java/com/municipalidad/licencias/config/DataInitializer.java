@@ -73,12 +73,13 @@ public class DataInitializer implements CommandLineRunner {
         // inspector ya creado en deploys anteriores hace falta este UPDATE puntual.
         ejecutarSeguro("UPDATE usuarios SET email = 'angellmauricio123@gmail.com' WHERE username = 'inspector.garcia'");
 
-        // Unicas cuentas de staff permitidas: admin, cajero1, inspector.garcia (+ 'publico',
-        // cuenta interna del ciudadano virtual/presencial). Cualquier otro usuario (de pruebas,
-        // deploys anteriores o creado manualmente desde /admin/inspectores) se elimina en cada
-        // arranque para que la base de datos nunca acumule cuentas de mas.
+        // Unicas cuentas de staff permitidas: admin, inspector.garcia (+ 'publico', cuenta interna
+        // del ciudadano virtual/presencial), mas CUALQUIER cajero (rol CAJERO) creado desde
+        // /admin/cajeros. Cualquier otro usuario (de pruebas, deploys anteriores o creado
+        // manualmente desde /admin/inspectores) se elimina en cada arranque para que la base de
+        // datos nunca acumule cuentas de mas.
         final String NO_PERMITIDOS =
-            "(SELECT id FROM usuarios WHERE username NOT IN ('admin','cajero1','inspector.garcia','publico'))";
+            "(SELECT id FROM usuarios WHERE username NOT IN ('admin','cajero1','inspector.garcia','publico') AND rol != 'CAJERO')";
 
         // Reasignar al inspector titular lo que apuntaba a un inspector no permitido, para no
         // perder el tramite/inspeccion en si al borrar la cuenta vieja.
@@ -98,7 +99,7 @@ public class DataInitializer implements CommandLineRunner {
         ejecutarSeguro("DELETE FROM inspecciones WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN " + NO_PERMITIDOS + ")");
         ejecutarSeguro("DELETE FROM licencias WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE usuario_id IN " + NO_PERMITIDOS + ")");
         ejecutarSeguro("DELETE FROM solicitudes WHERE usuario_id IN " + NO_PERMITIDOS);
-        ejecutarSeguro("DELETE FROM usuarios WHERE username NOT IN ('admin','cajero1','inspector.garcia','publico')");
+        ejecutarSeguro("DELETE FROM usuarios WHERE username NOT IN ('admin','cajero1','inspector.garcia','publico') AND rol != 'CAJERO'");
         // Limpiar borradores
         ejecutarSeguro("DELETE FROM inspecciones WHERE solicitud_id IN (SELECT id FROM solicitudes WHERE estado = 'BORRADOR')");
         ejecutarSeguro("DELETE FROM solicitudes WHERE estado = 'BORRADOR'");

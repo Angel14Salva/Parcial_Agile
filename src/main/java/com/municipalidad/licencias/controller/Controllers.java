@@ -1714,6 +1714,70 @@ class InspectorAdminController {
     }
 }
 
+// ── Gestión de cajeros (admin) ───────────────────────────────────────────────
+@org.springframework.stereotype.Controller
+@org.springframework.web.bind.annotation.RequestMapping("/admin/cajeros")
+class AdminCajeroController {
+
+    private final UsuarioRepository usuarioRepo;
+    private final org.springframework.security.crypto.password.PasswordEncoder encoder;
+
+    AdminCajeroController(UsuarioRepository usuarioRepo,
+                           org.springframework.security.crypto.password.PasswordEncoder encoder) {
+        this.usuarioRepo = usuarioRepo;
+        this.encoder     = encoder;
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping
+    String listar(org.springframework.ui.Model model) {
+        model.addAttribute("cajeros", usuarioRepo.findByRol(Enums.Rol.CAJERO));
+        return "admin/cajeros";
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/nuevo")
+    String nuevoForm(org.springframework.ui.Model model) {
+        model.addAttribute("dto", new com.municipalidad.licencias.dto.CajeroDto());
+        return "admin/cajero-form";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/nuevo")
+    String crear(@jakarta.validation.Valid @org.springframework.web.bind.annotation.ModelAttribute("dto")
+                     com.municipalidad.licencias.dto.CajeroDto dto,
+                 org.springframework.validation.BindingResult errors,
+                 org.springframework.web.servlet.mvc.support.RedirectAttributes ra,
+                 org.springframework.ui.Model model) {
+        if (errors.hasErrors()) return "admin/cajero-form";
+        if (usuarioRepo.findByUsername(dto.getUsername()).isPresent()) {
+            model.addAttribute("errorUsername", "El usuario ya existe.");
+            return "admin/cajero-form";
+        }
+        Usuario cajero = Usuario.builder()
+            .username(dto.getUsername())
+            .password(encoder.encode(dto.getPassword()))
+            .email(dto.getEmail())
+            .nombreCompleto(dto.getNombreCompleto())
+            .rol(Enums.Rol.CAJERO)
+            .activo(true)
+            .build();
+        cajero.setDni(dto.getDni());
+        cajero.setTelefono(dto.getTelefono());
+        cajero.setDistrito(com.municipalidad.licencias.model.Enums.Distrito.TRUJILLO);
+        usuarioRepo.save(cajero);
+        ra.addFlashAttribute("exito", "Cajero " + dto.getNombreCompleto() + " creado correctamente.");
+        return "redirect:/admin/cajeros";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/desactivar")
+    String desactivar(@org.springframework.web.bind.annotation.PathVariable Long id,
+                      org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        Usuario cajero = usuarioRepo.findById(id).orElseThrow();
+        cajero.setActivo(!cajero.isActivo());
+        usuarioRepo.save(cajero);
+        ra.addFlashAttribute("exito", cajero.isActivo() ? "Cajero activado." : "Cajero desactivado.");
+        return "redirect:/admin/cajeros";
+    }
+}
+
 // ── Revisión de cierres de caja con inconsistencias (admin) ─────────────────
 @org.springframework.stereotype.Controller
 @org.springframework.web.bind.annotation.RequestMapping("/admin/cajas")
