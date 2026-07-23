@@ -256,5 +256,22 @@ public class InspeccionService {
             throw new IllegalStateException("Esta inspección ya fue registrada.");
         i.setFechaProgramada(LocalDate.now());
         inspeccionRepo.save(i);
+
+        // La fecha ya comunicada al negocio (correo/notificación de cuando se creó
+        // la inspección) queda desactualizada tras este adelanto manual: se avisa
+        // la nueva fecha para que no quede una discrepancia visible.
+        Solicitud s = i.getSolicitud();
+        String fechaTexto = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        notificacionService.crear(s.getUsuario(),
+            "Se actualizó la fecha de tu inspección",
+            "Tu inspección técnica fue reprogramada para hoy " + fechaTexto + ".",
+            "/solicitud/" + s.getId() + "/detalle");
+        if (s.getCorreoElectronico() != null && !s.getCorreoElectronico().isBlank()) {
+            emailService.enviarActualizacion(
+                s.getCorreoElectronico(), s.getRazonSocial(),
+                s.getCodigoSeguimiento() != null ? s.getCodigoSeguimiento() : "",
+                "Fecha de inspección actualizada",
+                "Tu inspección técnica fue reprogramada para hoy " + fechaTexto + ".");
+        }
     }
 }
