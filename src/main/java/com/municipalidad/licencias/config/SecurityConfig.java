@@ -59,6 +59,13 @@ public class SecurityConfig {
                 .ignoringRequestMatchers("/api/validar/**")
                 .ignoringRequestMatchers("/pago/**")
                 .ignoringRequestMatchers("/cajero/pago/qr/confirmar")
+                // El token CSRF por defecto se guarda en la sesion HTTP: si el flujo de pago
+                // (que puede tardar varios minutos e implica salir a la pasarela externa en otra
+                // pestaña) hace que la sesion se pierda o se reinicie el servidor, las peticiones
+                // POST posteriores (p.ej. generar el QR de la siguiente parte de un pago dividido)
+                // fallan con 403 aunque el usuario siga autenticado. Con la cookie el token no
+                // depende del estado de sesion en el servidor.
+                .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
             );
         return http.build();
     }

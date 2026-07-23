@@ -771,8 +771,22 @@ class CajeroController {
         model.addAttribute("email", email);
         model.addAttribute("metodo", metodo);
         model.addAttribute("montoTramite", montoTramite);
-        model.addAttribute("grupoPago", grupoPago != null && !grupoPago.isBlank()
-            ? grupoPago : java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        String grupo = grupoPago != null && !grupoPago.isBlank()
+            ? grupoPago : java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        model.addAttribute("grupoPago", grupo);
+
+        // Si el cajero recarga esta pantalla (p.ej. tras un error de conexion al generar
+        // el siguiente QR), se descartan intentos QR previos que quedaron sin pagar y se
+        // envian al JS las partes YA PAGADAS de este grupo, para no reiniciar el progreso.
+        facturaService.descartarPendientesQR(grupo);
+        var partesExistentes = facturaService.obtenerPorGrupo(grupo).stream()
+            .filter(f -> f.getEstado() == com.municipalidad.licencias.model.Enums.EstadoFactura.PAGADA)
+            .map(f -> java.util.Map.of(
+                "facturaId", (Object) f.getId(),
+                "monto", f.getImporteTotal(),
+                "metodo", f.getMetodoPago().name().toLowerCase()))
+            .toList();
+        model.addAttribute("partesExistentes", partesExistentes);
         return "cajero/pago-split";
     }
 

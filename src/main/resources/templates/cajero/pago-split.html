@@ -98,6 +98,7 @@
   const SOLO_QR        = METODO === 'qr';
   const CSRF_TOKEN     = /*[[${_csrf.token}]]*/ '';
   const CSRF_HEADER    = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+  const PARTES_EXISTENTES = /*[[${partesExistentes}]]*/ [];
 
   let partes = []; // { monto, metodo: 'qr'|'efectivo', facturaId, estado: 'pendiente'|'esperando'|'pagado' }
   let polling = null;
@@ -120,34 +121,60 @@
     render();
   }
 
-  // Reparte el total entre las partes: el efectivo siempre en múltiplos de S/ 0.10,
-  // y el/los QR absorben el resto exacto (ahí sí puede quedar con céntimos sueltos).
+  // Si al cargar la pantalla ya hay partes pagadas de este grupo (recarga tras un error,
+  // o tras volver de pagar un QR), se muestran como pagadas y solo se reparte el saldo
+  // pendiente entre filas nuevas, en vez de reiniciar todo el formulario desde cero.
+  function rehidratar() {
+    if (!PARTES_EXISTENTES || PARTES_EXISTENTES.length === 0) {
+      crearFilas(2);
+      return;
+    }
+    partes = PARTES_EXISTENTES.map(pe => ({
+      monto: Number(pe.monto).toFixed(2), metodo: pe.metodo, facturaId: pe.facturaId, estado: 'pagado'
+    }));
+    const pendientes = Math.max(1, 2 - partes.length);
+    for (let i = 0; i < pendientes; i++) {
+      partes.push({ monto: '0.00', metodo: SOLO_QR ? 'qr' : 'efectivo', facturaId: null, estado: 'pendiente' });
+    }
+    document.getElementById('inputPartes').value = partes.length;
+    distribuirMontos();
+    render();
+  }
+
+  // Reparte el saldo pendiente (total menos lo ya pagado) entre las partes SIN pagar:
+  // el efectivo siempre en múltiplos de S/ 0.10, y el/los QR absorben el resto exacto
+  // (ahí sí puede quedar con céntimos sueltos). Las partes ya pagadas no se tocan.
   function distribuirMontos() {
-    const totalCentimos = Math.round(MONTO_TOTAL * 100);
-    const efIdx = partes.map((p, i) => p.metodo === 'efectivo' ? i : -1).filter(i => i >= 0);
-    const qrIdx = partes.map((p, i) => p.metodo === 'qr' ? i : -1).filter(i => i >= 0);
+    const pagadas = partes.filter(p => p.estado === 'pagado');
+    const porRepartir = partes.filter(p => p.estado !== 'pagado');
+    if (porRepartir.length === 0) return;
+
+    const sumaPagada = pagadas.reduce((acc, p) => acc + Math.round(Number(p.monto) * 100), 0);
+    const totalCentimos = Math.max(0, Math.round(MONTO_TOTAL * 100) - sumaPagada);
+    const efIdx = porRepartir.filter(p => p.metodo === 'efectivo');
+    const qrIdx = porRepartir.filter(p => p.metodo === 'qr');
 
     if (qrIdx.length === 0) {
-      // Todo efectivo: repartir en múltiplos exactos de 10 céntimos que sumen el total exacto.
+      // Todo efectivo: repartir en múltiplos exactos de 10 céntimos que sumen el saldo exacto.
       const totalDecenas = Math.round(totalCentimos / 10);
-      const base = Math.floor(totalDecenas / partes.length);
+      const base = Math.floor(totalDecenas / porRepartir.length);
       let usadas = 0;
-      partes.forEach((p, i) => {
-        const decenas = (i === partes.length - 1) ? (totalDecenas - usadas) : base;
+      porRepartir.forEach((p, i) => {
+        const decenas = (i === porRepartir.length - 1) ? (totalDecenas - usadas) : base;
         p.monto = ((decenas * 10) / 100).toFixed(2);
         usadas += decenas;
       });
     } else {
       const shareEf = efIdx.length > 0
-        ? Math.floor((totalCentimos / partes.length) / 10) * 10 : 0;
+        ? Math.floor((totalCentimos / porRepartir.length) / 10) * 10 : 0;
       let usados = 0;
-      efIdx.forEach(i => { partes[i].monto = (shareEf / 100).toFixed(2); usados += shareEf; });
+      efIdx.forEach(p => { p.monto = (shareEf / 100).toFixed(2); usados += shareEf; });
       const restanteQr = totalCentimos - usados;
       const porQr = Math.floor(restanteQr / qrIdx.length);
       let asignadoQr = 0;
-      qrIdx.forEach((i, idx) => {
+      qrIdx.forEach((p, idx) => {
         const val = (idx === qrIdx.length - 1) ? (restanteQr - asignadoQr) : porQr;
-        partes[i].monto = (val / 100).toFixed(2);
+        p.monto = (val / 100).toFixed(2);
         asignadoQr += val;
       });
     }
@@ -276,6 +303,12 @@
       const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
       headers[CSRF_HEADER] = CSRF_TOKEN;
       const res = await fetch('/cajero/pago/split/parte/qr', { method: 'POST', headers, body });
+      if (res.status === 403) {
+        p.estado = 'error';
+        p.errorMsg = 'Tu sesión de seguridad venció. Recarga la página (no perderás las partes ya pagadas) e inténtalo de nuevo.';
+        render();
+        return;
+      }
       const data = await res.json();
       if (!data.ok) {
         p.estado = 'error';
@@ -314,6 +347,10 @@
       const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
       headers[CSRF_HEADER] = CSRF_TOKEN;
       const res = await fetch('/cajero/pago/split/parte/efectivo', { method: 'POST', headers, body });
+      if (res.status === 403) {
+        alert('Tu sesión de seguridad venció. Recarga la página (no perderás las partes ya pagadas) e inténtalo de nuevo.');
+        return;
+      }
       const data = await res.json();
       if (!data.ok) { alert(data.error || 'No se pudo confirmar el pago en efectivo.'); return; }
       p.estado = 'pagado';
@@ -357,7 +394,7 @@
     if (document.getElementById('btnContinuar').disabled) e.preventDefault();
   });
 
-  crearFilas(2);
+  rehidratar();
 </script>
 </body>
 </html>

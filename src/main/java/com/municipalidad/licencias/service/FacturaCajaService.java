@@ -66,11 +66,25 @@ public class FacturaCajaService {
 
     // ── Pago dividido en varias partes (efectivo y/o QR) ────────────────────────
 
+    /**
+     * Descarta (borra) las partes QR de un grupo que quedaron en PENDIENTE sin pagar,
+     * p.ej. porque el cajero cerro la ventana de la pasarela sin completar el pago.
+     * Si no se limpian, esas filas huerfanas bloquean consolidarGrupo() para siempre
+     * (exige que TODAS las partes del grupo esten PAGADA).
+     */
+    @Transactional
+    public void descartarPendientesQR(String grupoPago) {
+        obtenerPorGrupo(grupoPago).stream()
+            .filter(f -> f.getEstado() == Enums.EstadoFactura.PENDIENTE)
+            .forEach(f -> facturaRepo.deleteById(f.getId()));
+    }
+
     @Transactional
     public synchronized FacturaCaja crearParteQR(String ruc, String razonSocial, String direccion, String email,
                                                   BigDecimal montoParte, String grupoPago, Usuario cajero) {
         if (montoParte.compareTo(new BigDecimal("2.00")) < 0)
             throw new IllegalArgumentException("La pasarela de pago no acepta montos menores a S/ 2.00.");
+        descartarPendientesQR(grupoPago);
         BigDecimal[] valores = calcularValorVentaEIgv(montoParte);
         FacturaCaja factura = construirBase(ruc, razonSocial, direccion, email,
             "Derecho de tramite - Licencia de Funcionamiento (parte)", montoParte, valores, cajero, Enums.MetodoPago.QR);
