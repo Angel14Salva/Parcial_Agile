@@ -27,9 +27,16 @@ public class CloudinaryService {
 
     @SuppressWarnings("unchecked")
     public String subirArchivo(MultipartFile archivo, String folder) throws IOException {
+        // Los PDF subidos como resource_type "auto"/"image" caen bajo la
+        // restriccion de seguridad de Cloudinary que bloquea con 401 la entrega
+        // publica de PDF/ZIP como imagen. Subiendolos como "raw" se entregan
+        // directo (URL /raw/upload/...), sin esa restriccion. Las imagenes (jpg/png)
+        // siguen como "image" para conservar la vista previa.
+        String nombre = archivo.getOriginalFilename();
+        boolean esPdf = nombre != null && nombre.toLowerCase().endsWith(".pdf");
         Map<String, Object> options = ObjectUtils.asMap(
             "folder",        "licencias/" + folder,
-            "resource_type", "auto"
+            "resource_type", esPdf ? "raw" : "image"
         );
         Map<String, Object> result = cloudinary.uploader()
             .upload(archivo.getBytes(), options);
